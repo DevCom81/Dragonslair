@@ -5,7 +5,7 @@ import { FIGURINES } from '@/constants/figurines';
 import { COLORS } from '@/constants/theme';
 import { getSpriteOffset } from '@/lib/spriteUtils';
 
-const SPRITE_SOURCE = require('../Assets/figurines.png');
+const SPRITE_SOURCE = require('../assets/figurines.png');
 
 interface FigurineSelectorProps {
   selectedId: number | null;
