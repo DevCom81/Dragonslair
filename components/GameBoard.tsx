@@ -18,8 +18,8 @@ import { measureSprite } from '@/lib/spriteUtils';
 import { useGameStore } from '@/lib/gameStore';
 import type { Player } from '@/types/game';
 
-const BOARD_SOURCE = require('../assets/Plateau.png');
-const SPRITE_SOURCE = require('../assets/figurines.png');
+const BOARD_SOURCE = require('../Assets/Plateau.png');
+const SPRITE_SOURCE = require('../Assets/figurines.png');
 
 interface GameBoardProps {
   onMoveRequest?: (x: number, y: number) => void;

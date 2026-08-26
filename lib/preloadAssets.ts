@@ -1,8 +1,8 @@
 import { Asset } from 'expo-asset';
 import { useEffect } from 'react';
 
-const BOARD = require('../assets/Plateau.png');
-const SPRITES = require('../assets/figurines.png');
+const BOARD = require('../Assets/Plateau.png');
+const SPRITES = require('../Assets/figurines.png');
 
 export function usePreloadAssets() {
   useEffect(() => {

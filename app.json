@@ -7,22 +7,22 @@
     "scheme": "jdr-mobile",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "icon": "./assets/icon.png",
+    "icon": "./Assets/icon.png",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0D0D0D",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./Assets/android-icon-foreground.png",
+        "backgroundImage": "./Assets/android-icon-background.png",
+        "monochromeImage": "./Assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.devcom81sorganization.dragonslair"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./Assets/favicon.png"
     },
     "plugins": [
       "expo-router",

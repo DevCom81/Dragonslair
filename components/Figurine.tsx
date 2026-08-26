@@ -10,7 +10,7 @@ import Animated, {
 import { COLORS } from '@/constants/theme';
 import { getSpriteOffset } from '@/lib/spriteUtils';
 
-const SPRITE_SOURCE = require('../assets/figurines.png');
+const SPRITE_SOURCE = require('../Assets/figurines.png');
 
 interface FigurineProps {
   figurineId: number;
