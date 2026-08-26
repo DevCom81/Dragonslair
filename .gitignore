@@ -20,3 +20,6 @@ coverage/
 *.orig.*
 
 .DS_Store
+
+*.md
+!README.md
