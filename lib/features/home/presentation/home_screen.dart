@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
@@ -65,6 +66,11 @@ class HomeScreen extends ConsumerWidget {
                 OutlinedButton(
                   onPressed: null,
                   child: const Text('Rejoindre une partie'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => context.goNamed('game-master'),
+                  child: const Text('Tester le MJ IA'),
                 ),
                 const Spacer(),
               ],
