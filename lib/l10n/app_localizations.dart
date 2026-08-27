@@ -1163,6 +1163,60 @@ abstract class AppLocalizations {
   /// **'The adventure is only beginning.'**
   String get demoAdventureBegins;
 
+  /// No description provided for @tryDragonsLairFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Try DragonsLair for free'**
+  String get tryDragonsLairFree;
+
+  /// No description provided for @unlockDragonsLairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock DragonsLair'**
+  String get unlockDragonsLairTitle;
+
+  /// No description provided for @unlockTheGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock the game'**
+  String get unlockTheGame;
+
+  /// No description provided for @demoBenefitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'10 minutes'**
+  String get demoBenefitMinutes;
+
+  /// No description provided for @demoBenefitSoloPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Solo'**
+  String get demoBenefitSoloPlay;
+
+  /// No description provided for @demoBenefitAiGm.
+  ///
+  /// In en, this message translates to:
+  /// **'AI game master'**
+  String get demoBenefitAiGm;
+
+  /// No description provided for @demoBenefitCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Character creation'**
+  String get demoBenefitCharacter;
+
+  /// No description provided for @demoBenefitDice.
+  ///
+  /// In en, this message translates to:
+  /// **'Dice'**
+  String get demoBenefitDice;
+
+  /// No description provided for @demoBenefitCombat.
+  ///
+  /// In en, this message translates to:
+  /// **'Combat'**
+  String get demoBenefitCombat;
+
   /// No description provided for @unlockDragonsLair.
   ///
   /// In en, this message translates to:
@@ -1172,7 +1226,7 @@ abstract class AppLocalizations {
   /// No description provided for @unlockBenefitCustom.
   ///
   /// In en, this message translates to:
-  /// **'Unlimited custom scenarios'**
+  /// **'Create your own adventures'**
   String get unlockBenefitCustom;
 
   /// No description provided for @unlockBenefitSolo.
@@ -1184,19 +1238,19 @@ abstract class AppLocalizations {
   /// No description provided for @unlockBenefitMultiplayer.
   ///
   /// In en, this message translates to:
-  /// **'Multiplayer'**
+  /// **'Play with friends'**
   String get unlockBenefitMultiplayer;
 
   /// No description provided for @unlockBenefitSave.
   ///
   /// In en, this message translates to:
-  /// **'Saved games'**
+  /// **'Save your games'**
   String get unlockBenefitSave;
 
   /// No description provided for @unlockBenefitUnlimited.
   ///
   /// In en, this message translates to:
-  /// **'Adventures with no 10-minute limit'**
+  /// **'Play with no time limit'**
   String get unlockBenefitUnlimited;
 
   /// No description provided for @demoPurchaseLater.

@@ -594,22 +594,49 @@ class AppLocalizationsFr extends AppLocalizations {
   String get demoAdventureBegins => 'L aventure ne fait que commencer.';
 
   @override
+  String get tryDragonsLairFree => 'Essayez DragonsLair gratuitement';
+
+  @override
+  String get unlockDragonsLairTitle => 'Debloquez DragonsLair';
+
+  @override
+  String get unlockTheGame => 'Debloquer le jeu';
+
+  @override
+  String get demoBenefitMinutes => '10 minutes';
+
+  @override
+  String get demoBenefitSoloPlay => 'Solo';
+
+  @override
+  String get demoBenefitAiGm => 'MJ IA';
+
+  @override
+  String get demoBenefitCharacter => 'Creation personnage';
+
+  @override
+  String get demoBenefitDice => 'Des';
+
+  @override
+  String get demoBenefitCombat => 'Combat';
+
+  @override
   String get unlockDragonsLair => 'Debloquer DragonsLair';
 
   @override
-  String get unlockBenefitCustom => 'Scenarios personnalises illimites';
+  String get unlockBenefitCustom => 'Creer vos propres aventures';
 
   @override
   String get unlockBenefitSolo => 'Solo complet';
 
   @override
-  String get unlockBenefitMultiplayer => 'Multijoueur';
+  String get unlockBenefitMultiplayer => 'Jouer avec vos amis';
 
   @override
-  String get unlockBenefitSave => 'Parties sauvegardees';
+  String get unlockBenefitSave => 'Sauvegarder vos parties';
 
   @override
-  String get unlockBenefitUnlimited => 'Aventures sans limite de 10 minutes';
+  String get unlockBenefitUnlimited => 'Jouer sans limite';
 
   @override
   String get demoPurchaseLater => 'L achat n est pas encore disponible.';

@@ -47,7 +47,7 @@ class GameSummaryScreen extends ConsumerWidget {
     return GameSummaryView(
       recap: recap,
       onBackToTavern: () => context.goNamed('play-hub'),
-      onUnlock: () => startUnlockCheckout(context: context, ref: ref),
+      onUnlock: () => context.pushNamed('access'),
       onRestore: () => restorePurchases(context: context, ref: ref),
     );
   }

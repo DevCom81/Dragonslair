@@ -8,6 +8,7 @@ import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/access_offer_screen.dart';
 import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/demo_start.dart';
 import '../../access/presentation/purchase_flow.dart';
@@ -30,6 +31,14 @@ class PlayHubScreen extends ConsumerWidget {
         ? null
         : localizedClassLabel(l10n, profile!.classId!);
 
+    final entitlement = ref.watch(currentEntitlementProvider);
+    final isDemo = entitlement.maybeWhen(
+      data: (value) => value?.level.isDemo ?? true,
+      error: (error, stackTrace) => true,
+      orElse: () => false,
+    );
+    final accessPending = entitlement.isLoading;
+
     return _EntitlementResumeListener(
       child: Scaffold(
         appBar: AppBar(
@@ -45,7 +54,21 @@ class PlayHubScreen extends ConsumerWidget {
                   child: Padding(
                     padding: context.pagePadding,
                     child: ContentConstraint(
-                      child: context.isExpanded
+                      child: accessPending
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.gold,
+                              ),
+                            )
+                          : isDemo
+                          ? _DemoAccessHub(
+                              welcome: _welcomeText(l10n, profile, classLabel),
+                              subtitle: l10n.hubSubtitle,
+                              guestBanner: user is User && user.isAnonymous
+                                  ? l10n.guestBanner
+                                  : null,
+                            )
+                          : context.isExpanded
                           ? _ExpandedHub(
                               welcome: _welcomeText(l10n, profile, classLabel),
                               subtitle: l10n.hubSubtitle,
@@ -144,58 +167,46 @@ String _welcomeText(
   return l10n.welcomeNamedClass(profile.displayName, classLabel);
 }
 
+Future<void> _runDemo(BuildContext context, WidgetRef ref) async {
+  try {
+    await startOrResumeDemo(context: context, ref: ref);
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+}
+
 class _HubActions extends ConsumerWidget {
   const _HubActions();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final entitlement = ref.watch(currentEntitlementProvider).value;
-    final isDemo = entitlement?.level.isDemo ?? false;
-    final session = ref.watch(currentDemoSessionProvider).value;
-    final demoLabel =
-        session != null && session.roomId != null && session.roomId!.isNotEmpty
-        ? (session.isConsumed ? l10n.demoSeeEnding : l10n.resumeDemo)
-        : l10n.startDemo;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (isDemo) ...[
-          FilledButton(
-            onPressed: () => _runDemo(context, ref),
-            child: Text(demoLabel),
-          ),
-          const SizedBox(height: 12),
-          Text(l10n.demoHubHint, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 12),
-          FilledButton.tonal(
-            onPressed: () => startUnlockCheckout(context: context, ref: ref),
-            child: Text(l10n.unlockDragonsLair),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: () => restorePurchases(context: context, ref: ref),
-            child: Text(l10n.restorePurchase),
-          ),
-          const SizedBox(height: 16),
-        ] else ...[
-          FilledButton(
-            onPressed: () => context.pushNamed('create-room'),
-            child: Text(l10n.createGame),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.pushNamed('rooms'),
-            child: Text(l10n.joinGame),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: () => context.pushNamed('join-room'),
-            child: Text(l10n.joinByCode),
-          ),
-          const SizedBox(height: 8),
-        ],
+        FilledButton(
+          onPressed: () => context.pushNamed('create-room'),
+          child: Text(l10n.createGame),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('rooms'),
+          child: Text(l10n.joinGame),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('join-room'),
+          child: Text(l10n.joinByCode),
+        ),
+        const SizedBox(height: 8),
         OutlinedButton(
           onPressed: () => context.pushNamed('character-sheet'),
           child: Text(l10n.mySheet),
@@ -203,20 +214,48 @@ class _HubActions extends ConsumerWidget {
       ],
     );
   }
+}
 
-  Future<void> _runDemo(BuildContext context, WidgetRef ref) async {
-    try {
-      await startOrResumeDemo(context: context, ref: ref);
-    } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.toString()),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
+class _DemoAccessHub extends ConsumerWidget {
+  const _DemoAccessHub({
+    required this.welcome,
+    required this.subtitle,
+    this.guestBanner,
+  });
+
+  final String welcome;
+  final String subtitle;
+  final String? guestBanner;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final session = ref.watch(currentDemoSessionProvider).value;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(welcome, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+        if (guestBanner != null) ...[
+          const SizedBox(height: 12),
+          Text(guestBanner!, style: Theme.of(context).textTheme.bodySmall),
+        ],
+        const SizedBox(height: 24),
+        AccessOfferView(
+          demoCtaLabel: demoOfferCtaLabel(l10n, session),
+          onStartDemo: () => _runDemo(context, ref),
+          onUnlock: () => startUnlockCheckout(context: context, ref: ref),
+          onRestore: () => restorePurchases(context: context, ref: ref),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('character-sheet'),
+          child: Text(l10n.mySheet),
+        ),
+      ],
+    );
   }
 }
 

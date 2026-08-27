@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/access/presentation/access_offer_screen.dart';
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/character_sheet_screen.dart';
 import '../features/auth/presentation/display_name_screen.dart';
@@ -27,9 +28,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/auth',
         name: 'auth',
-        builder: (context, state) => AuthScreen(
-          isSignUp: state.uri.queryParameters['mode'] != 'login',
-        ),
+        builder: (context, state) =>
+            AuthScreen(isSignUp: state.uri.queryParameters['mode'] != 'login'),
       ),
       GoRoute(
         path: '/display-name',
@@ -40,6 +40,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/play',
         name: 'play-hub',
         builder: (context, state) => const PlayHubScreen(),
+      ),
+      GoRoute(
+        path: '/access',
+        name: 'access',
+        builder: (context, state) => const AccessOfferScreen(),
       ),
       GoRoute(
         path: '/character-sheet',
@@ -69,30 +74,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rooms/:roomId/figurines',
         name: 'figurines',
-        builder: (context, state) => FigurineSelectionScreen(
-          roomId: state.pathParameters['roomId']!,
-        ),
+        builder: (context, state) =>
+            FigurineSelectionScreen(roomId: state.pathParameters['roomId']!),
       ),
       GoRoute(
         path: '/rooms/:roomId/lobby',
         name: 'lobby',
-        builder: (context, state) => LobbyScreen(
-          roomId: state.pathParameters['roomId']!,
-        ),
+        builder: (context, state) =>
+            LobbyScreen(roomId: state.pathParameters['roomId']!),
       ),
       GoRoute(
         path: '/rooms/:roomId/board',
         name: 'board',
-        builder: (context, state) => BoardScreen(
-          roomId: state.pathParameters['roomId']!,
-        ),
+        builder: (context, state) =>
+            BoardScreen(roomId: state.pathParameters['roomId']!),
       ),
       GoRoute(
         path: '/rooms/:roomId/summary',
         name: 'summary',
-        builder: (context, state) => GameSummaryScreen(
-          roomId: state.pathParameters['roomId']!,
-        ),
+        builder: (context, state) =>
+            GameSummaryScreen(roomId: state.pathParameters['roomId']!),
       ),
     ],
   );
