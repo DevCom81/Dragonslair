@@ -676,28 +676,128 @@ async def fetch_room_world_state(*, room_id: str) -> dict:
     return public_world_state(rows[0].get("world_state"))
 
 
-async def fetch_room_gm_secrets(*, room_id: str) -> list[str]:
+async def fetch_room_gm_row(*, room_id: str) -> dict:
     async with httpx.AsyncClient(timeout=15) as client:
         response = await client.get(
             f"{_supabase_url()}/rest/v1/room_gm_state",
             params={
                 "room_id": f"eq.{room_id}",
-                "select": "gm_secrets",
+                "select": "gm_secrets,gm_state",
                 "limit": "1",
             },
             headers=_admin_headers(),
         )
 
     if response.status_code >= 400:
-        raise SupabaseAdminError("Unable to load GM secrets.")
+        raise SupabaseAdminError("Unable to load GM state.")
 
     rows = response.json()
     if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
-        return []
-    secrets = rows[0].get("gm_secrets")
+        return {"gm_secrets": [], "gm_state": {}}
+    row = rows[0]
+    secrets = row.get("gm_secrets")
     if not isinstance(secrets, list):
+        secrets = []
+    gm_state = row.get("gm_state")
+    if not isinstance(gm_state, dict):
+        gm_state = {}
+    return {
+        "gm_secrets": [
+            str(item).strip()[:240] for item in secrets if str(item).strip()
+        ][:12],
+        "gm_state": gm_state,
+    }
+
+
+async def fetch_room_gm_secrets(*, room_id: str) -> list[str]:
+    row = await fetch_room_gm_row(room_id=room_id)
+    return list(row.get("gm_secrets") or [])
+
+
+async def count_room_events(*, room_id: str) -> int:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/game_events",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": "id",
+            },
+            headers={
+                **_admin_headers(),
+                "Prefer": "count=exact",
+                "Range": "0-0",
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to count game events.")
+
+    header = (
+        response.headers.get("content-range")
+        or response.headers.get("Content-Range")
+        or ""
+    )
+    if "/" in header:
+        total = header.rsplit("/", 1)[-1]
+        if total.isdigit():
+            return int(total)
+    rows = response.json()
+    if isinstance(rows, list):
+        return len(rows)
+    return 0
+
+
+async def fetch_recent_room_events(*, room_id: str, limit: int) -> list[dict]:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/game_events",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": "type,content,created_at,id",
+                "order": "created_at.desc,id.desc",
+                "limit": str(max(1, limit)),
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load recent game events.")
+
+    rows = response.json()
+    if not isinstance(rows, list):
         return []
-    return [str(item).strip()[:240] for item in secrets if str(item).strip()][:12]
+    chronological = list(reversed(rows))
+    return [row for row in chronological if isinstance(row, dict)]
+
+
+async def fetch_room_events_slice(
+    *,
+    room_id: str,
+    offset: int,
+    limit: int,
+) -> list[dict]:
+    if limit <= 0:
+        return []
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/game_events",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": "type,content,created_at,id",
+                "order": "created_at.asc,id.asc",
+                "offset": str(max(0, offset)),
+                "limit": str(limit),
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load game events for summary.")
+
+    rows = response.json()
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
 
 
 async def patch_room_world_state(
@@ -731,8 +831,16 @@ async def patch_room_world_state(
 async def upsert_room_gm_state(
     *,
     room_id: str,
-    gm_secrets: list[str],
+    gm_secrets: list[str] | None = None,
+    gm_state: dict | None = None,
 ) -> None:
+    payload: dict = {"room_id": room_id}
+    if gm_secrets is not None:
+        payload["gm_secrets"] = gm_secrets
+    if gm_state is not None:
+        payload["gm_state"] = gm_state
+    if len(payload) == 1:
+        return
     async with httpx.AsyncClient(timeout=15) as client:
         response = await client.post(
             f"{_supabase_url()}/rest/v1/room_gm_state",
@@ -741,15 +849,12 @@ async def upsert_room_gm_state(
                 **_admin_headers(),
                 "Prefer": "resolution=merge-duplicates,return=minimal",
             },
-            json={
-                "room_id": room_id,
-                "gm_secrets": gm_secrets,
-            },
+            json=payload,
         )
 
     if response.status_code >= 400:
         raise SupabaseAdminError(
-            f"Unable to save GM secrets ({response.status_code})."
+            f"Unable to save GM state ({response.status_code})."
         )
 
 

@@ -27,6 +27,20 @@ void main() {
     expect(pending?.dc, 14);
   });
 
+  test('ignores campaign_summary if present on a GM payload', () {
+    final response = GameMasterResponse.fromJson({
+      'narration': 'La taverne est calme.',
+      'actions': <Map<String, dynamic>>[],
+      'choices': <Map<String, dynamic>>[],
+      'campaign_summary': 'Le prince est un usurateur.',
+      'gm_secrets': <String>['ne pas afficher'],
+    });
+
+    expect(response.narration, 'La taverne est calme.');
+    expect(response.toJson().containsKey('campaign_summary'), isFalse);
+    expect(response.toJson().containsKey('gm_secrets'), isFalse);
+  });
+
   test('clamps parsed DC between 5 and 25', () {
     expect(
       PendingAbilityRoll.tryParse({

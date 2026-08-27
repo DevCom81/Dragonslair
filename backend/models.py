@@ -118,6 +118,7 @@ class GameMasterRequest(BaseModel):
     combat: CombatContext | None = None
     world_state: dict[str, Any] = Field(default_factory=dict)
     gm_secrets: list[str] = Field(default_factory=list, max_length=12)
+    campaign_summary: str = Field(default="", max_length=1800)
     roll_result: RollResult | None = None
 
 

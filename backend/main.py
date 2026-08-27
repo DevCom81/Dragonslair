@@ -1,9 +1,20 @@
+import logging
 import os
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from apply_actions import apply_game_master_actions
+from campaign_memory import (
+    RECENT_EVENT_LIMIT,
+    apply_memory_to_gm_state,
+    cap_recent_events,
+    next_memory,
+    parse_memory,
+    recent_events_from_rows,
+    should_summarize,
+    summary_window,
+)
 from models import (
     CombatContext,
     GameMasterRequest,
@@ -26,9 +37,12 @@ from supabase_admin import (
     SupabaseAdminError,
     assert_player_belongs_to_user,
     assert_room_host,
+    count_room_events,
     fetch_combat_session,
     fetch_pending_roll,
-    fetch_room_gm_secrets,
+    fetch_recent_room_events,
+    fetch_room_events_slice,
+    fetch_room_gm_row,
     fetch_room_player,
     fetch_room_world_state,
     get_user_id_from_access_token,
@@ -49,6 +63,8 @@ def _allowed_origins() -> list[str]:
     origins = [origin.strip() for origin in value.split(",") if origin.strip()]
     return origins or ["*"]
 
+
+logger = logging.getLogger("dragons_lair")
 
 app = FastAPI(title="DragonsLair Game Master API")
 
@@ -128,6 +144,7 @@ async def _persist_gm_response(*, room_id: str, response: GameMasterResponse) ->
             event_type="system",
             content="Actions MJ: " + "; ".join(summaries),
         )
+    await _refresh_campaign_summary(room_id=room_id)
 
 
 @app.post("/v1/game-master/resolve-roll", response_model=GameMasterResponse)
@@ -224,6 +241,38 @@ async def resolve_roll(
         raise HTTPException(status_code=502, detail=str(error)) from error
 
 
+async def _refresh_campaign_summary(*, room_id: str) -> None:
+    try:
+        event_count = await count_room_events(room_id=room_id)
+        row = await fetch_room_gm_row(room_id=room_id)
+        memory = parse_memory(row.get("gm_state"))
+        if not should_summarize(
+            event_count=event_count,
+            summarized_event_count=int(memory["summarized_event_count"]),
+        ):
+            return
+        offset, limit = summary_window(
+            event_count=event_count,
+            summarized_event_count=int(memory["summarized_event_count"]),
+        )
+        folded = await fetch_room_events_slice(
+            room_id=room_id,
+            offset=offset,
+            limit=limit,
+        )
+        updated = next_memory(
+            previous=memory,
+            folded_events=folded,
+            event_count=event_count,
+        )
+        await upsert_room_gm_state(
+            room_id=room_id,
+            gm_state=apply_memory_to_gm_state(row.get("gm_state"), updated),
+        )
+    except Exception as error:
+        logger.warning("campaign summary refresh failed: %s", error)
+
+
 async def _with_authoritative_combat(
     request: GameMasterRequest,
     *,
@@ -231,11 +280,25 @@ async def _with_authoritative_combat(
 ) -> GameMasterRequest:
     row = await fetch_combat_session(room_id=request.room_id)
     world_state = await fetch_room_world_state(room_id=request.room_id)
-    secrets = await fetch_room_gm_secrets(room_id=request.room_id)
+    try:
+        gm_row = await fetch_room_gm_row(room_id=request.room_id)
+    except SupabaseAdminError:
+        gm_row = {"gm_secrets": [], "gm_state": {}}
+    memory = parse_memory(gm_row.get("gm_state"))
+    try:
+        recent_rows = await fetch_recent_room_events(
+            room_id=request.room_id,
+            limit=RECENT_EVENT_LIMIT,
+        )
+        recent_events = recent_events_from_rows(recent_rows)
+    except SupabaseAdminError:
+        recent_events = cap_recent_events(list(request.recent_events))
     updates: dict = {
         "combat": CombatContext.model_validate(combat_context_from_row(row)),
         "world_state": world_state,
-        "gm_secrets": secrets,
+        "gm_secrets": list(gm_row.get("gm_secrets") or []),
+        "campaign_summary": str(memory.get("campaign_summary") or ""),
+        "recent_events": recent_events,
     }
     if drop_roll_result:
         updates["roll_result"] = None

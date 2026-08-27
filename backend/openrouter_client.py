@@ -4,6 +4,7 @@ import os
 import httpx
 from pydantic import ValidationError
 
+from campaign_memory import EVENT_PROMPT_MAX_CHARS, RECENT_EVENT_LIMIT
 from models import GameMasterRequest, GameMasterResponse
 
 
@@ -66,33 +67,78 @@ Contraintes:
 - n'invente jamais les degats: le client ne calcule pas les PV. Apres un jet, utilise damage_enemy / damage_player;
 - si world_state est present, respecte ce cadre (lieu, ton, objectif public) sans reveler gm_secrets;
 - n'expose jamais gm_secrets dans narration, choices, ni actions;
+- CAMPAIGN SUMMARY est la memoire longue; RECENT EVENTS sont le detail immediat;
+- ne contredis pas le resume sauf si l'action du joueur le change;
+- n'inclus jamais campaign_summary ni gm_secrets dans ta reponse JSON;
 - ne raconte pas toute la campagne: construis la suite selon l'action du joueur.
 """.strip()
 
 
-def _build_user_prompt(request: GameMasterRequest) -> str:
-    return json.dumps(
+def build_user_prompt(request: GameMasterRequest) -> str:
+    world = request.world_state or {}
+    scenario = {
+        "title": world.get("title") or "",
+        "setting": world.get("setting") or "",
+        "tone": world.get("tone") or "",
+        "public_objective": world.get("public_objective") or "",
+        "starting_location": world.get("starting_location") or {},
+    }
+    recent = [
         {
-            "room_id": request.room_id,
-            "player_id": request.player_id,
-            "player_name": request.player_name,
-            "action": request.action,
-            "players": [player.model_dump() for player in request.players],
-            "enemies": [enemy.model_dump() for enemy in request.enemies],
-            "recent_events": [
-                event.model_dump() for event in request.recent_events
-            ],
-            "combat": (
-                request.combat.model_dump() if request.combat else None
-            ),
-            "world_state": request.world_state,
-            "gm_secrets": request.gm_secrets,
-            "roll_result": (
-                request.roll_result.model_dump() if request.roll_result else None
-            ),
-        },
-        ensure_ascii=False,
-    )
+            "type": event.type,
+            "content": event.content[:EVENT_PROMPT_MAX_CHARS],
+        }
+        for event in request.recent_events[-RECENT_EVENT_LIMIT:]
+    ]
+    sections = [
+        "SCENARIO",
+        json.dumps(scenario, ensure_ascii=False),
+        "WORLD STATE",
+        json.dumps(world, ensure_ascii=False),
+        "CAMPAIGN SUMMARY",
+        request.campaign_summary.strip() or "(aucun resume encore)",
+        "CURRENT PLAYERS",
+        json.dumps(
+            [player.model_dump() for player in request.players],
+            ensure_ascii=False,
+        ),
+        "CURRENT ENEMIES",
+        json.dumps(
+            [enemy.model_dump() for enemy in request.enemies],
+            ensure_ascii=False,
+        ),
+        "COMBAT",
+        json.dumps(
+            request.combat.model_dump() if request.combat else None,
+            ensure_ascii=False,
+        ),
+        "RECENT EVENTS",
+        json.dumps(recent, ensure_ascii=False),
+        "CURRENT ACTION",
+        json.dumps(
+            {
+                "player_id": request.player_id,
+                "player_name": request.player_name,
+                "action": request.action,
+            },
+            ensure_ascii=False,
+        ),
+    ]
+    if request.roll_result is not None:
+        sections.extend(
+            [
+                "ROLL RESULT",
+                json.dumps(request.roll_result.model_dump(), ensure_ascii=False),
+            ]
+        )
+    if request.gm_secrets:
+        sections.extend(
+            [
+                "GM SECRETS — ne jamais reveler aux joueurs",
+                json.dumps(request.gm_secrets, ensure_ascii=False),
+            ]
+        )
+    return "\n".join(sections)
 
 
 async def request_game_master_response(
@@ -108,7 +154,7 @@ async def request_game_master_response(
         "model": model,
         "messages": [
             {"role": "system", "content": _build_system_prompt()},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "user", "content": build_user_prompt(request)},
         ],
         "temperature": 0.7,
         "max_tokens": 900,

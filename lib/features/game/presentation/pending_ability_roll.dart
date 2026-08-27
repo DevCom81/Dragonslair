@@ -137,7 +137,7 @@ PendingAbilityRoll? pendingRollFromResponse(GameMasterResponse response) {
 List<GameMasterRecentEvent> recentEventsForRoom(WidgetRef ref, String roomId) {
   final recent =
       ref.read(roomEventsProvider(roomId)).value ?? const <GameEvent>[];
-  final slice = recent.length <= 15 ? recent : recent.sublist(recent.length - 15);
+  final slice = recent.length <= 8 ? recent : recent.sublist(recent.length - 8);
   return slice
       .map(
         (event) => GameMasterRecentEvent(
