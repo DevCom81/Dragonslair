@@ -559,6 +559,61 @@ class AppLocalizationsEs extends AppLocalizations {
       'Defensa de una fortaleza. Guerrero y clerigo son obligatorios.';
 
   @override
+  String get scenarioDemoName => 'La puerta del wyrm';
+
+  @override
+  String get scenarioDemoDescription =>
+      'Solo, 10 minutos. Algo se agita bajo la taberna.';
+
+  @override
+  String get startDemo => 'Empezar la demo';
+
+  @override
+  String get resumeDemo => 'Reanudar la demo';
+
+  @override
+  String get demoSeeEnding => 'Ver el final de la demo';
+
+  @override
+  String get demoHubHint =>
+      'La demo es en solitario, 10 minutos de juego, un escenario dedicado. Sin multijugador ni aventuras libres.';
+
+  @override
+  String get demoAlreadyUsed => 'Esta cuenta ya ha usado la demo.';
+
+  @override
+  String get demoCannotCreateRoom =>
+      'La demo no permite crear una aventura libre.';
+
+  @override
+  String get demoCannotJoin =>
+      'La demo es en solitario. Unirse a una partida no esta disponible.';
+
+  @override
+  String get demoAdventureBegins => 'La aventura no ha hecho mas que empezar.';
+
+  @override
+  String get unlockDragonsLair => 'Desbloquear DragonsLair';
+
+  @override
+  String get unlockBenefitCustom => 'Escenarios personalizados ilimitados';
+
+  @override
+  String get unlockBenefitSolo => 'Solo completo';
+
+  @override
+  String get unlockBenefitMultiplayer => 'Multijugador';
+
+  @override
+  String get unlockBenefitSave => 'Partidas guardadas';
+
+  @override
+  String get unlockBenefitUnlimited => 'Aventuras sin limite de 10 minutos';
+
+  @override
+  String get demoPurchaseLater => 'La compra aun no esta disponible.';
+
+  @override
   String get boardTitle => 'Tablero';
 
   @override

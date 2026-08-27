@@ -1103,6 +1103,108 @@ abstract class AppLocalizations {
   /// **'Defense of a stronghold. Fighter and cleric are required.'**
   String get scenarioSiegeDescription;
 
+  /// No description provided for @scenarioDemoName.
+  ///
+  /// In en, this message translates to:
+  /// **'The Wyrm Gate'**
+  String get scenarioDemoName;
+
+  /// No description provided for @scenarioDemoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Solo, 10 minutes. Something stirs beneath the tavern.'**
+  String get scenarioDemoDescription;
+
+  /// No description provided for @startDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the demo'**
+  String get startDemo;
+
+  /// No description provided for @resumeDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume the demo'**
+  String get resumeDemo;
+
+  /// No description provided for @demoSeeEnding.
+  ///
+  /// In en, this message translates to:
+  /// **'See the demo ending'**
+  String get demoSeeEnding;
+
+  /// No description provided for @demoHubHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The demo is solo, 10 minutes of play, one dedicated scenario. No multiplayer or custom adventures.'**
+  String get demoHubHint;
+
+  /// No description provided for @demoAlreadyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has already used the demo.'**
+  String get demoAlreadyUsed;
+
+  /// No description provided for @demoCannotCreateRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'The demo cannot create a free adventure.'**
+  String get demoCannotCreateRoom;
+
+  /// No description provided for @demoCannotJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'The demo is solo. Joining a game is not available.'**
+  String get demoCannotJoin;
+
+  /// No description provided for @demoAdventureBegins.
+  ///
+  /// In en, this message translates to:
+  /// **'The adventure is only beginning.'**
+  String get demoAdventureBegins;
+
+  /// No description provided for @unlockDragonsLair.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock DragonsLair'**
+  String get unlockDragonsLair;
+
+  /// No description provided for @unlockBenefitCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited custom scenarios'**
+  String get unlockBenefitCustom;
+
+  /// No description provided for @unlockBenefitSolo.
+  ///
+  /// In en, this message translates to:
+  /// **'Full solo play'**
+  String get unlockBenefitSolo;
+
+  /// No description provided for @unlockBenefitMultiplayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplayer'**
+  String get unlockBenefitMultiplayer;
+
+  /// No description provided for @unlockBenefitSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved games'**
+  String get unlockBenefitSave;
+
+  /// No description provided for @unlockBenefitUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Adventures with no 10-minute limit'**
+  String get unlockBenefitUnlimited;
+
+  /// No description provided for @demoPurchaseLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchasing is not available yet.'**
+  String get demoPurchaseLater;
+
   /// No description provided for @boardTitle.
   ///
   /// In en, this message translates to:

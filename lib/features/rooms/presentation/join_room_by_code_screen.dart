@@ -5,6 +5,7 @@ import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/access_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/join_code.dart';
 import 'room_navigation.dart';
@@ -90,6 +91,11 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
     final l10n = AppLocalizations.of(context);
     if (user == null) {
       _showError(l10n.authRequired);
+      return;
+    }
+    final entitlement = await ref.read(currentEntitlementProvider.future);
+    if (entitlement?.level.isDemo == true) {
+      _showError(l10n.demoCannotJoin);
       return;
     }
 

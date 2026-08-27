@@ -24,6 +24,8 @@ RoomEntryAction resolveRoomEntry({
       canContinue ? RoomEntryAction.lobby : RoomEntryAction.rejectNewPlayers,
     RoomStatus.finished =>
       canContinue ? RoomEntryAction.summary : RoomEntryAction.rejectFinished,
+    RoomStatus.demoFinished =>
+      canContinue ? RoomEntryAction.summary : RoomEntryAction.rejectFinished,
   };
 }
 

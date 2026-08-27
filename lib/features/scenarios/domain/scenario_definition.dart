@@ -190,11 +190,23 @@ class ScenarioCatalog {
     requiredClassIds: [],
   );
 
+  static const demo = ScenarioDefinition(
+    id: 'demo',
+    name: 'Demo',
+    description: '',
+    minPlayers: 1,
+    allowedClassIds: CharacterClassCatalog.allIds,
+    requiredClassIds: [],
+  );
+
   static const all = [dungeon, forest, siege];
 
   static ScenarioDefinition byId(String? id) {
     if (id == custom.id) {
       return custom;
+    }
+    if (id == demo.id) {
+      return demo;
     }
     return all.firstWhere(
       (item) => item.id == id,

@@ -563,6 +563,61 @@ class AppLocalizationsDe extends AppLocalizations {
       'Verteidigung einer Festung. Kaempfer und Kleriker sind Pflicht.';
 
   @override
+  String get scenarioDemoName => 'Die Wyrmtuer';
+
+  @override
+  String get scenarioDemoDescription =>
+      'Solo, 10 Minuten. Etwas regt sich unter der Taverne.';
+
+  @override
+  String get startDemo => 'Demo starten';
+
+  @override
+  String get resumeDemo => 'Demo fortsetzen';
+
+  @override
+  String get demoSeeEnding => 'Demo-Ende ansehen';
+
+  @override
+  String get demoHubHint =>
+      'Die Demo ist solo, 10 Minuten Spielzeit, ein eigenes Szenario. Kein Mehrspieler und keine freien Abenteuer.';
+
+  @override
+  String get demoAlreadyUsed =>
+      'Diese Demo wurde mit diesem Konto bereits gespielt.';
+
+  @override
+  String get demoCannotCreateRoom => 'Die Demo erlaubt kein freies Abenteuer.';
+
+  @override
+  String get demoCannotJoin =>
+      'Die Demo ist solo. Einer Partie beizutreten ist nicht moeglich.';
+
+  @override
+  String get demoAdventureBegins => 'Das Abenteuer hat gerade erst begonnen.';
+
+  @override
+  String get unlockDragonsLair => 'DragonsLair freischalten';
+
+  @override
+  String get unlockBenefitCustom => 'Unbegrenzte eigene Szenarien';
+
+  @override
+  String get unlockBenefitSolo => 'Vollstaendiges Solo';
+
+  @override
+  String get unlockBenefitMultiplayer => 'Mehrspieler';
+
+  @override
+  String get unlockBenefitSave => 'Gespeicherte Partien';
+
+  @override
+  String get unlockBenefitUnlimited => 'Abenteuer ohne 10-Minuten-Limit';
+
+  @override
+  String get demoPurchaseLater => 'Der Kauf ist noch nicht verfuegbar.';
+
+  @override
   String get boardTitle => 'Spielfeld';
 
   @override

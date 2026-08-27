@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../scenarios/domain/scenario_definition.dart';
 import '../../scenarios/domain/world_state.dart';
 import '../domain/game_ending.dart';
 import '../domain/join_code.dart';
@@ -29,7 +30,10 @@ class SupabaseRoomRepository implements RoomRepository {
         .eq('status', RoomStatus.waiting.toJson())
         .order('created_at');
 
-    return rows.map((row) => Room.fromJson(row)).toList();
+    return rows
+        .map((row) => Room.fromJson(row))
+        .where((room) => room.scenarioId != 'demo')
+        .toList();
   }
 
   @override
@@ -39,7 +43,10 @@ class SupabaseRoomRepository implements RoomRepository {
         .stream(primaryKey: ['id'])
         .eq('status', RoomStatus.waiting.toJson())
         .order('created_at')
-        .map((rows) => rows.map((row) => Room.fromJson(row)).toList());
+        .map((rows) => rows
+            .map((row) => Room.fromJson(row))
+            .where((room) => room.scenarioId != 'demo')
+            .toList());
   }
 
   @override
@@ -189,7 +196,7 @@ class SupabaseRoomRepository implements RoomRepository {
     String epilogue = '',
   }) async {
     final current = await fetchRoom(roomId);
-    if (current.status == RoomStatus.finished) {
+    if (current.status.isClosed) {
       return;
     }
     if (current.status != RoomStatus.playing &&
@@ -205,7 +212,9 @@ class SupabaseRoomRepository implements RoomRepository {
       final row = await _requiredClient
           .from('rooms')
           .update({
-            'status': RoomStatus.finished.toJson(),
+            'status': current.scenarioId == ScenarioCatalog.demo.id
+                ? RoomStatus.demoFinished.toJson()
+                : RoomStatus.finished.toJson(),
             'finished_at': DateTime.now().toUtc().toIso8601String(),
             'ending': ending.toJson(),
           })

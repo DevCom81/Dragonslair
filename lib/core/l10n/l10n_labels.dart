@@ -53,6 +53,7 @@ String localizedScenarioName(
     return l10n.scenarioCustomName;
   }
   return switch (id) {
+    'demo' => l10n.scenarioDemoName,
     'forest' => l10n.scenarioForestName,
     'siege' => l10n.scenarioSiegeName,
     _ => l10n.scenarioDungeonName,
@@ -61,6 +62,7 @@ String localizedScenarioName(
 
 String localizedScenarioDescription(AppLocalizations l10n, String? id) {
   return switch (id) {
+    'demo' => l10n.scenarioDemoDescription,
     'forest' => l10n.scenarioForestDescription,
     'siege' => l10n.scenarioSiegeDescription,
     _ => l10n.scenarioDungeonDescription,

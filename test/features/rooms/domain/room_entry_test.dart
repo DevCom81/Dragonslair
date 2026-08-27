@@ -70,4 +70,15 @@ void main() {
       RoomEntryAction.rejectFinished,
     );
   });
+
+  test('sends members of a demo_finished room to the summary', () {
+    expect(
+      resolveRoomEntry(
+        status: RoomStatus.demoFinished,
+        alreadyJoined: true,
+        isHost: false,
+      ),
+      RoomEntryAction.summary,
+    );
+  });
 }

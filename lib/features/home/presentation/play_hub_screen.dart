@@ -8,6 +8,8 @@ import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/access_providers.dart';
+import '../../access/presentation/demo_start.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -100,36 +102,73 @@ String _welcomeText(
   return l10n.welcomeNamedClass(profile.displayName, classLabel);
 }
 
-class _HubActions extends StatelessWidget {
+class _HubActions extends ConsumerWidget {
   const _HubActions();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final entitlement = ref.watch(currentEntitlementProvider).value;
+    final isDemo = entitlement?.level.isDemo ?? false;
+    final session = ref.watch(currentDemoSessionProvider).value;
+    final demoLabel = session != null &&
+            session.roomId != null &&
+            session.roomId!.isNotEmpty
+        ? (session.isConsumed ? l10n.demoSeeEnding : l10n.resumeDemo)
+        : l10n.startDemo;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton(
-          onPressed: () => context.pushNamed('create-room'),
-          child: Text(l10n.createGame),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () => context.pushNamed('rooms'),
-          child: Text(l10n.joinGame),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: () => context.pushNamed('join-room'),
-          child: Text(l10n.joinByCode),
-        ),
-        const SizedBox(height: 8),
+        if (isDemo) ...[
+          FilledButton(
+            onPressed: () => _runDemo(context, ref),
+            child: Text(demoLabel),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.demoHubHint,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+        ] else ...[
+          FilledButton(
+            onPressed: () => context.pushNamed('create-room'),
+            child: Text(l10n.createGame),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => context.pushNamed('rooms'),
+            child: Text(l10n.joinGame),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () => context.pushNamed('join-room'),
+            child: Text(l10n.joinByCode),
+          ),
+          const SizedBox(height: 8),
+        ],
         OutlinedButton(
           onPressed: () => context.pushNamed('character-sheet'),
           child: Text(l10n.mySheet),
         ),
       ],
     );
+  }
+
+  Future<void> _runDemo(BuildContext context, WidgetRef ref) async {
+    try {
+      await startOrResumeDemo(context: context, ref: ref);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 }
 

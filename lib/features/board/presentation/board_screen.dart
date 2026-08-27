@@ -56,13 +56,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final currentUser = ref.watch(authControllerProvider).value;
     final room = ref.watch(roomProvider(widget.roomId)).value;
     final paused = room?.status == RoomStatus.paused;
-    final finished = room?.status == RoomStatus.finished;
+    final finished = room?.status.isClosed ?? false;
     final isHost =
         currentUser != null && room != null && currentUser.id == room.hostId;
 
     ref.listen(roomProvider(widget.roomId), (_, next) {
       final nextRoom = next.value;
-      if (nextRoom?.status == RoomStatus.finished &&
+      if (nextRoom?.status.isClosed == true &&
           context.mounted &&
           GoRouterState.of(context).name == 'board') {
         context.pushReplacementNamed(

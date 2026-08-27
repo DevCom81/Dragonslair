@@ -666,7 +666,7 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/rooms",
             params={
                 "id": f"eq.{room_id}",
-                "select": "world_state,scenario_prompt,scenario_id,scenario,locale,status",
+                "select": "world_state,scenario_prompt,scenario_id,scenario,locale,status,host_id",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -683,6 +683,8 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
         "world_state": public_world_state(row.get("world_state")),
         "locale": normalize_locale(row.get("locale")),
         "status": str(row.get("status") or "waiting"),
+        "scenario_id": str(row.get("scenario_id") or ""),
+        "host_id": str(row.get("host_id") or ""),
     }
 
 
@@ -873,12 +875,13 @@ async def upsert_room_gm_state(
         )
 
 
-async def finish_room(*, room_id: str, ending: dict) -> bool:
+async def finish_room(*, room_id: str, ending: dict, status: str = "finished") -> bool:
     from datetime import datetime, timezone
 
+    next_status = status if status in {"finished", "demo_finished"} else "finished"
     finished_at = datetime.now(timezone.utc).isoformat()
     payload = {
-        "status": "finished",
+        "status": next_status,
         "finished_at": finished_at,
         "ending": {
             "result": ending.get("result") or "neutral",
@@ -911,6 +914,137 @@ async def finish_room(*, room_id: str, ending: dict) -> bool:
     if isinstance(rows, dict) and rows:
         return True
     return False
+
+
+def _parse_timestamptz(value: object):
+    from datetime import datetime, timezone
+
+    if not isinstance(value, str) or not value.strip():
+        return None
+    raw = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+async def fetch_user_entitlement(*, user_id: str) -> dict:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/user_entitlements",
+            params={
+                "user_id": f"eq.{user_id}",
+                "select": "user_id,access_level,source,expires_at",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load entitlement.")
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        return rows[0]
+    return {"user_id": user_id, "access_level": "demo", "source": "default"}
+
+
+async def fetch_demo_session(*, user_id: str) -> dict | None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/demo_sessions",
+            params={
+                "user_id": f"eq.{user_id}",
+                "select": "id,user_id,room_id,started_at,expires_at,completed_at",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load demo session.")
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        return rows[0]
+    return None
+
+
+async def start_demo_clock(*, user_id: str, room_id: str, started_at, expires_at) -> None:
+    payload = {
+        "started_at": started_at.isoformat(),
+        "expires_at": expires_at.isoformat(),
+        "room_id": room_id,
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/demo_sessions",
+            params={"user_id": f"eq.{user_id}"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json=payload,
+        )
+        rows = response.json() if response.status_code < 400 else []
+        if isinstance(rows, list) and rows:
+            return
+        if isinstance(rows, dict) and rows:
+            return
+        insert = await client.post(
+            f"{_supabase_url()}/rest/v1/demo_sessions",
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=minimal",
+            },
+            json={"user_id": user_id, **payload},
+        )
+        if insert.status_code >= 400:
+            raise SupabaseAdminError(
+                f"Unable to start demo clock ({insert.status_code})."
+            )
+
+
+async def sync_demo_play(*, user_id: str, room_id: str) -> str:
+    from datetime import datetime, timezone
+
+    from demo_access import evaluate_demo_play, next_demo_clock
+
+    entitlement = await fetch_user_entitlement(user_id=user_id)
+    context = await fetch_room_narrative_context(room_id=room_id)
+    session = await fetch_demo_session(user_id=user_id)
+    now = datetime.now(timezone.utc)
+    started_at = _parse_timestamptz((session or {}).get("started_at"))
+    expires_at = _parse_timestamptz((session or {}).get("expires_at"))
+    completed_at = _parse_timestamptz((session or {}).get("completed_at"))
+    status = evaluate_demo_play(
+        access_level=entitlement.get("access_level"),
+        room_status=context.get("status"),
+        room_scenario_id=context.get("scenario_id"),
+        room_host_id=context.get("host_id"),
+        user_id=user_id,
+        started_at=started_at,
+        expires_at=expires_at,
+        completed_at=completed_at,
+        now=now,
+    )
+    if status != "ok":
+        return status
+    if str(entitlement.get("access_level") or "demo").lower() == "full":
+        return "ok"
+    start, end, clock = next_demo_clock(
+        now=now,
+        started_at=started_at,
+        expires_at=expires_at,
+        completed_at=completed_at,
+    )
+    if clock == "ok" and started_at is None:
+        await start_demo_clock(
+            user_id=user_id,
+            room_id=room_id,
+            started_at=start,
+            expires_at=end,
+        )
+    return clock
 
 
 

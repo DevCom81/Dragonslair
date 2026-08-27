@@ -15,7 +15,7 @@ from campaign_memory import (
     should_summarize,
     summary_window,
 )
-from gm_locale import normalize_locale
+from demo_access import canned_demo_ending, ensure_finish_action, normalize_access_level
 from models import (
     CombatContext,
     GameMasterRequest,
@@ -47,10 +47,12 @@ from supabase_admin import (
     fetch_room_gm_row,
     fetch_room_narrative_context,
     fetch_room_player,
+    fetch_user_entitlement,
     get_user_id_from_access_token,
     insert_game_event,
     mark_pending_roll_resolved,
     patch_room_world_state,
+    sync_demo_play,
     upsert_room_gm_state,
 )
 
@@ -108,8 +110,8 @@ async def respond(
         gm_request = await _with_authoritative_combat(
             request, drop_roll_result=True
         )
-        response = await request_game_master_response(gm_request)
-        await _persist_gm_response(room_id=request.room_id, response=response)
+        gm_request = await _apply_demo_gate(user_id=user_id, request=gm_request)
+        response = await _run_gm_turn(gm_request)
         return response
     except HTTPException:
         raise
@@ -235,8 +237,8 @@ async def resolve_roll(
                 ),
             )
         )
-        response = await request_game_master_response(gm_request)
-        await _persist_gm_response(room_id=room_id, response=response)
+        gm_request = await _apply_demo_gate(user_id=user_id, request=gm_request)
+        response = await _run_gm_turn(gm_request)
         return response
     except HTTPException:
         raise
@@ -287,6 +289,8 @@ async def _with_authoritative_combat(
 ) -> GameMasterRequest:
     row = await fetch_combat_session(room_id=request.room_id)
     narrative = await fetch_room_narrative_context(room_id=request.room_id)
+    if str(narrative.get("status") or "") == "demo_finished":
+        raise RoomFinishedError("DEMO_EXPIRED")
     if str(narrative.get("status") or "") == "finished":
         raise RoomFinishedError("This game is finished.")
     world_state = dict(narrative.get("world_state") or {})
@@ -314,7 +318,40 @@ async def _with_authoritative_combat(
     }
     if drop_roll_result:
         updates["roll_result"] = None
+    updates["demo_end_required"] = False
     return request.model_copy(update=updates)
+
+
+async def _apply_demo_gate(
+    *,
+    user_id: str,
+    request: GameMasterRequest,
+) -> GameMasterRequest:
+    status = await sync_demo_play(user_id=user_id, room_id=request.room_id)
+    if status == "closed":
+        raise RoomFinishedError("DEMO_EXPIRED")
+    if status == "forbidden":
+        raise HTTPException(status_code=403, detail="DEMO_FORBIDDEN")
+    if status == "expired":
+        return request.model_copy(update={"demo_end_required": True})
+    return request.model_copy(update={"demo_end_required": False})
+
+
+async def _run_gm_turn(request: GameMasterRequest) -> GameMasterResponse:
+    if request.demo_end_required:
+        try:
+            raw = await request_game_master_response(request)
+            payload = ensure_finish_action(raw.model_dump(), request.locale)
+            response = GameMasterResponse.model_validate(payload)
+        except GameMasterBackendError:
+            response = GameMasterResponse.model_validate(
+                canned_demo_ending(request.locale)
+            )
+        await _persist_gm_response(room_id=request.room_id, response=response)
+        return response
+    response = await request_game_master_response(request)
+    await _persist_gm_response(room_id=request.room_id, response=response)
+    return response
 
 
 @app.post("/v1/scenarios/generate", response_model=PublicScenarioResponse)
@@ -324,6 +361,9 @@ async def generate_scenario(
 ) -> PublicScenarioResponse:
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        entitlement = await fetch_user_entitlement(user_id=user_id)
+        if normalize_access_level(entitlement.get("access_level")) != "full":
+            raise HTTPException(status_code=403, detail="DEMO_FORBIDDEN")
         room = await assert_room_host(user_id=user_id, room_id=request.room_id)
         if str(room.get("scenario_id") or "") != "custom":
             raise HTTPException(

@@ -6,7 +6,10 @@ enum RoomStatus {
   waiting,
   playing,
   paused,
-  finished;
+  finished,
+  demoFinished;
+
+  bool get isClosed => this == finished || this == demoFinished;
 
   static RoomStatus fromJson(Object? value) {
     return switch (value) {
@@ -14,11 +17,15 @@ enum RoomStatus {
       'playing' => RoomStatus.playing,
       'paused' => RoomStatus.paused,
       'finished' => RoomStatus.finished,
+      'demo_finished' => RoomStatus.demoFinished,
       _ => throw ArgumentError('Unknown room status: $value'),
     };
   }
 
-  String toJson() => name;
+  String toJson() => switch (this) {
+        RoomStatus.demoFinished => 'demo_finished',
+        _ => name,
+      };
 }
 
 class Room {

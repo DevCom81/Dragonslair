@@ -57,11 +57,13 @@ class GameSummaryView extends StatelessWidget {
   const GameSummaryView({
     required this.recap,
     required this.onBackToTavern,
+    this.onUnlock,
     super.key,
   });
 
   final GameRecap recap;
   final VoidCallback onBackToTavern;
+  final VoidCallback? onUnlock;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +121,29 @@ class GameSummaryView extends StatelessWidget {
                     recap.criticalRolls,
                   ),
                   const SizedBox(height: 24),
+                  if (recap.isDemo) ...[
+                    Text(
+                      l10n.demoAdventureBegins,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('✓ ${l10n.unlockBenefitCustom}'),
+                    Text('✓ ${l10n.unlockBenefitSolo}'),
+                    Text('✓ ${l10n.unlockBenefitMultiplayer}'),
+                    Text('✓ ${l10n.unlockBenefitSave}'),
+                    Text('✓ ${l10n.unlockBenefitUnlimited}'),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: onUnlock ??
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.demoPurchaseLater)),
+                            );
+                          },
+                      child: Text(l10n.unlockDragonsLair),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   FilledButton(
                     onPressed: onBackToTavern,
                     child: Text(l10n.backToTavern),

@@ -45,6 +45,12 @@ void main() {
     expect(RoomStatus.fromJson('paused'), RoomStatus.paused);
   });
 
+  test('parses demo_finished as a closed status', () {
+    expect(RoomStatus.fromJson('demo_finished'), RoomStatus.demoFinished);
+    expect(RoomStatus.demoFinished.isClosed, isTrue);
+    expect(RoomStatus.demoFinished.toJson(), 'demo_finished');
+  });
+
   test('rejects unknown room status', () {
     expect(
       () => RoomStatus.fromJson('archived'),

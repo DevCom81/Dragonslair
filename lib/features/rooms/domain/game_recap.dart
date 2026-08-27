@@ -26,6 +26,7 @@ class GameRecap {
     required this.items,
     required this.criticalRolls,
     this.duration,
+    this.isDemo = false,
   });
 
   final String title;
@@ -38,6 +39,7 @@ class GameRecap {
   final List<String> defeatedEnemies;
   final List<String> items;
   final List<String> criticalRolls;
+  final bool isDemo;
 }
 
 GameRecap buildGameRecap({
@@ -98,6 +100,8 @@ GameRecap buildGameRecap({
             (roll.result == 1 || roll.result == 20))
           '${roll.abilityKey} ${roll.result}',
     ],
+    isDemo:
+        room.scenarioId == 'demo' || room.status == RoomStatus.demoFinished,
   );
 }
 

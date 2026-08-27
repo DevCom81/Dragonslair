@@ -132,6 +132,19 @@ def build_user_prompt(request: GameMasterRequest) -> str:
             ensure_ascii=False,
         ),
     ]
+    if request.demo_end_required:
+        sections.extend(
+            [
+                "DEMO END REQUIRED",
+                (
+                    "The 10-minute demo is over. Write a short cliffhanger "
+                    "(2-4 sentences) in the output language. Emit finish_game "
+                    "with result neutral, a brief summary, and an epilogue. "
+                    "Do not continue the adventure. Do not mention timers, "
+                    "purchases, or the word demo."
+                ),
+            ]
+        )
     if request.roll_result is not None:
         sections.extend(
             [

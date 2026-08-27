@@ -38,6 +38,7 @@ from supabase_admin import (
     fetch_combat_session,
     fetch_room_enemy,
     fetch_room_enemy_by_name,
+    fetch_room_narrative_context,
     fetch_room_player,
     fetch_room_players,
     finish_room,
@@ -369,7 +370,13 @@ async def _apply_combat(*, room_id: str, action: GameMasterAction) -> str | None
 
 async def _apply_finish(*, room_id: str, action: GameMasterAction) -> str | None:
     ending = parse_finish_game(action.payload)
-    changed = await finish_room(room_id=room_id, ending=ending)
+    context = await fetch_room_narrative_context(room_id=room_id)
+    status = (
+        "demo_finished"
+        if str(context.get("scenario_id") or "") == "demo"
+        else "finished"
+    )
+    changed = await finish_room(room_id=room_id, ending=ending, status=status)
     if not changed:
         return None
     return f"Fin de partie ({ending['result']})."

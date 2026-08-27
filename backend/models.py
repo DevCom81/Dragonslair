@@ -130,6 +130,7 @@ class GameMasterRequest(BaseModel):
     campaign_summary: str = Field(default="", max_length=1800)
     locale: str = Field(default="en", max_length=8)
     roll_result: RollResult | None = None
+    demo_end_required: bool = False
 
     @field_validator("locale", mode="before")
     @classmethod

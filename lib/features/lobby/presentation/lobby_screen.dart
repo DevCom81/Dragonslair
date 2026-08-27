@@ -39,7 +39,7 @@ class LobbyScreen extends ConsumerWidget {
           pathParameters: {'roomId': roomId},
         );
       }
-      if (room?.status == RoomStatus.finished && isOnLobby && context.mounted) {
+      if (room?.status.isClosed == true && isOnLobby && context.mounted) {
         context.pushReplacementNamed(
           'summary',
           pathParameters: {'roomId': roomId},

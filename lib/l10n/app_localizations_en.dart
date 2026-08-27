@@ -560,6 +560,60 @@ class AppLocalizationsEn extends AppLocalizations {
       'Defense of a stronghold. Fighter and cleric are required.';
 
   @override
+  String get scenarioDemoName => 'The Wyrm Gate';
+
+  @override
+  String get scenarioDemoDescription =>
+      'Solo, 10 minutes. Something stirs beneath the tavern.';
+
+  @override
+  String get startDemo => 'Start the demo';
+
+  @override
+  String get resumeDemo => 'Resume the demo';
+
+  @override
+  String get demoSeeEnding => 'See the demo ending';
+
+  @override
+  String get demoHubHint =>
+      'The demo is solo, 10 minutes of play, one dedicated scenario. No multiplayer or custom adventures.';
+
+  @override
+  String get demoAlreadyUsed => 'This account has already used the demo.';
+
+  @override
+  String get demoCannotCreateRoom => 'The demo cannot create a free adventure.';
+
+  @override
+  String get demoCannotJoin =>
+      'The demo is solo. Joining a game is not available.';
+
+  @override
+  String get demoAdventureBegins => 'The adventure is only beginning.';
+
+  @override
+  String get unlockDragonsLair => 'Unlock DragonsLair';
+
+  @override
+  String get unlockBenefitCustom => 'Unlimited custom scenarios';
+
+  @override
+  String get unlockBenefitSolo => 'Full solo play';
+
+  @override
+  String get unlockBenefitMultiplayer => 'Multiplayer';
+
+  @override
+  String get unlockBenefitSave => 'Saved games';
+
+  @override
+  String get unlockBenefitUnlimited => 'Adventures with no 10-minute limit';
+
+  @override
+  String get demoPurchaseLater => 'Purchasing is not available yet.';
+
+  @override
   String get boardTitle => 'Board';
 
   @override

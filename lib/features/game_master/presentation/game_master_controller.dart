@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../access/domain/demo_ending.dart';
+import '../../access/domain/entitlement_repository.dart';
+import '../../access/domain/game_access.dart';
 import '../domain/game_master_repository.dart';
 import '../domain/game_master_response.dart';
 import 'game_master_providers.dart';
@@ -27,7 +31,11 @@ class GameMasterController extends AsyncNotifier<GameMasterResponse?> {
     }
 
     state = const AsyncLoading();
-    final response = await AsyncValue.guard(() {
+    final response = await AsyncValue.guard(() async {
+      final ended = await _mockDemoEnding(input.roomId, input.locale);
+      if (ended != null) {
+        return ended;
+      }
       return ref.read(gameMasterRepositoryProvider).respond(input);
     });
     state = response;
@@ -41,5 +49,24 @@ class GameMasterController extends AsyncNotifier<GameMasterResponse?> {
     });
     state = response;
     return response.requireValue;
+  }
+
+  Future<GameMasterResponse?> _mockDemoEnding(
+    String? roomId,
+    String locale,
+  ) async {
+    if (AppConfig.isGameMasterRemote || roomId == null || roomId.isEmpty) {
+      return null;
+    }
+    final result = await ref
+        .read(entitlementRepositoryProvider)
+        .ensureDemoPlay(roomId);
+    if (result == DemoPlayResult.forbidden) {
+      throw const GameException('DEMO_FORBIDDEN');
+    }
+    if (result == DemoPlayResult.expired || result == DemoPlayResult.closed) {
+      return cannedDemoEnding(locale);
+    }
+    return null;
   }
 }

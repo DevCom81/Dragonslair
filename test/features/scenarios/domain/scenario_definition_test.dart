@@ -22,4 +22,12 @@ void main() {
     expect(custom.requiredClassIds, isEmpty);
     expect(ScenarioCatalog.all, isNot(contains(custom)));
   });
+
+  test('demo scenario is solo and not in the catalog picker', () {
+    final demo = ScenarioCatalog.byId('demo');
+    expect(demo.id, 'demo');
+    expect(demo.minPlayers, 1);
+    expect(demo.requiredClassIds, isEmpty);
+    expect(ScenarioCatalog.all, isNot(contains(demo)));
+  });
 }

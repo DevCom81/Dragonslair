@@ -9,6 +9,7 @@ import '../../../core/l10n/locale_controller.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/access_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../scenarios/domain/custom_scenario_draft.dart';
 import '../../scenarios/domain/scenario_definition.dart';
@@ -398,6 +399,11 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
     final l10n = AppLocalizations.of(context);
     if (user == null) {
       _showError(l10n.authRequired);
+      return;
+    }
+    final entitlement = await ref.read(currentEntitlementProvider.future);
+    if (entitlement?.level.isDemo == true) {
+      _showError(l10n.demoCannotCreateRoom);
       return;
     }
 

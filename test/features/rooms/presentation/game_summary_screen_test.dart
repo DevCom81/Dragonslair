@@ -36,4 +36,32 @@ void main() {
     expect(find.text('Retour a la taverne'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('demo summary shows unlock benefits', (tester) async {
+    const recap = GameRecap(
+      title: 'La porte du wyrm',
+      result: GameEndingResult.neutral,
+      summary: 'Le secret reste ferme.',
+      epilogue: 'L aventure ne fait que commencer.',
+      characters: [RecapCharacter(name: 'Aldric', classId: 'fighter')],
+      notableEvents: [],
+      defeatedEnemies: [],
+      items: [],
+      criticalRolls: [],
+      isDemo: true,
+    );
+
+    await pumpAtSize(
+      tester,
+      size: const Size(390, 844),
+      child: GameSummaryView(
+        recap: recap,
+        onBackToTavern: () {},
+      ),
+    );
+
+    expect(find.text('L aventure ne fait que commencer.'), findsWidgets);
+    expect(find.text('Debloquer DragonsLair'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
