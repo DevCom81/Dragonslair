@@ -364,6 +364,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roomName => 'Game name';
 
   @override
+  String get adventureLanguage => 'Adventure language';
+
+  @override
   String get fieldRequired => 'Required field.';
 
   @override

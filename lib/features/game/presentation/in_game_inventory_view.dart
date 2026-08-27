@@ -192,6 +192,7 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
                 combat: toGameMasterCombat(
                   readActiveCombat(ref, widget.roomId),
                 ),
+                locale: localeForRoom(ref, widget.roomId),
               ),
             );
     if (!AppConfig.isGameMasterRemote) {

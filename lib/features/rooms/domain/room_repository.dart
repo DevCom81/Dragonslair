@@ -12,6 +12,7 @@ abstract interface class RoomRepository {
     required List<String> requiredClassIds,
     String scenarioPrompt = '',
     Map<String, dynamic> worldState = const {},
+    String locale = 'en',
   });
   Future<Room> fetchRoom(String roomId);
   Future<Room?> fetchRoomByJoinCode(String joinCode);

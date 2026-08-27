@@ -737,6 +737,12 @@ abstract class AppLocalizations {
   /// **'Game name'**
   String get roomName;
 
+  /// No description provided for @adventureLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Adventure language'**
+  String get adventureLanguage;
+
   /// No description provided for @fieldRequired.
   ///
   /// In en, this message translates to:

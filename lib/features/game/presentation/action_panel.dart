@@ -185,6 +185,7 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
                   combat: toGameMasterCombat(
                     readActiveCombat(ref, widget.roomId),
                   ),
+                  locale: localeForRoom(ref, widget.roomId),
                 ),
               );
       if (!AppConfig.isGameMasterRemote) {

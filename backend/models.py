@@ -1,6 +1,8 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from gm_locale import normalize_locale
 
 
 GameMasterActionType = Literal[
@@ -119,7 +121,13 @@ class GameMasterRequest(BaseModel):
     world_state: dict[str, Any] = Field(default_factory=dict)
     gm_secrets: list[str] = Field(default_factory=list, max_length=12)
     campaign_summary: str = Field(default="", max_length=1800)
+    locale: str = Field(default="en", max_length=8)
     roll_result: RollResult | None = None
+
+    @field_validator("locale", mode="before")
+    @classmethod
+    def _normalize_locale(cls, value: object) -> str:
+        return normalize_locale(value)
 
 
 class ResolveRollRequest(BaseModel):
@@ -186,6 +194,12 @@ class GenerateScenarioRequest(BaseModel):
     permadeath: bool = False
     pvp: bool = False
     betrayals: bool = False
+    locale: str = Field(default="en", max_length=8)
+
+    @field_validator("locale", mode="before")
+    @classmethod
+    def _normalize_locale(cls, value: object) -> str:
+        return normalize_locale(value)
 
 
 class GeneratedScenario(BaseModel):

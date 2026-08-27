@@ -1,5 +1,15 @@
 import '../../l10n/app_localizations.dart';
 
+String localizedLanguageName(AppLocalizations l10n, String code) {
+  return switch (code) {
+    'fr' => l10n.languageFrench,
+    'en' => l10n.languageEnglish,
+    'es' => l10n.languageSpanish,
+    'de' => l10n.languageGerman,
+    _ => code,
+  };
+}
+
 String localizedClassLabel(AppLocalizations l10n, String id) {
   return switch (id) {
     'barbarian' => l10n.classBarbarian,

@@ -4,6 +4,7 @@ import os
 import httpx
 from pydantic import ValidationError
 
+from gm_locale import locale_language_name
 from models import GeneratedScenario, GenerateScenarioRequest
 from openrouter_client import (
     DEFAULT_MODEL,
@@ -13,24 +14,25 @@ from openrouter_client import (
 )
 
 
-def _build_scenario_system_prompt() -> str:
-    return """
+def build_scenario_system_prompt(locale: str = "en") -> str:
+    language = locale_language_name(locale)
+    return f"""
 Tu generes le cadre INITIAL d'une aventure de JDR, pas toute l'histoire.
 Tu ne produis jamais de markdown, jamais de texte hors JSON.
 Retourne uniquement un objet JSON:
-{
-  "title": "titre court",
-  "setting": "lieu et epoque, 2-4 phrases",
-  "tone": "ambiance",
-  "public_objective": "objectif connu des joueurs",
-  "starting_location": {"name": "lieu", "description": "une phrase"},
-  "initial_situation": "ce qui se passe maintenant",
-  "known_facts": ["fait public"],
-  "starting_npcs": [{"name": "Nom", "role": "role visible"}],
-  "initial_threats": [{"name": "Menace", "hint": "indice public, pas le secret"}],
-  "opening_narration": "narration d'ouverture en francais, jouable, 1-3 phrases",
-  "gm_secrets": ["secret reserve au MJ, jamais dit aux joueurs"]
-}
+{{
+  "title": "short title in {language}",
+  "setting": "place and period, 2-4 sentences in {language}",
+  "tone": "mood in {language}",
+  "public_objective": "objective known to players, in {language}",
+  "starting_location": {{"name": "place", "description": "one sentence in {language}"}},
+  "initial_situation": "what is happening now, in {language}",
+  "known_facts": ["public fact in {language}"],
+  "starting_npcs": [{{"name": "Name", "role": "visible role in {language}"}}],
+  "initial_threats": [{{"name": "Threat", "hint": "public hint in {language}, not the secret"}}],
+  "opening_narration": "playable opening narration in {language}, 1-3 sentences",
+  "gm_secrets": ["GM-only secret, never told to players"]
+}}
 
 Contraintes:
 - n'ecris pas la campagne complete ni une succession de chapitres;
@@ -38,7 +40,8 @@ Contraintes:
 - known_facts et opening_narration ne doivent contenir AUCUN secret;
 - gm_secrets reste uniquement dans gm_secrets (3 a 6 elements courts);
 - initial_threats.hint est un indice public, pas la verite cachee;
-- langue francaise.
+- write all player-facing strings in {language};
+- JSON keys stay in English.
 """.strip()
 
 
@@ -88,7 +91,7 @@ async def request_generated_scenario(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _build_scenario_system_prompt()},
+            {"role": "system", "content": build_scenario_system_prompt(request.locale)},
             {"role": "user", "content": _build_scenario_user_prompt(request)},
         ],
         "temperature": 0.8,

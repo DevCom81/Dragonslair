@@ -5,6 +5,7 @@ import httpx
 from pydantic import ValidationError
 
 from campaign_memory import EVENT_PROMPT_MAX_CHARS, RECENT_EVENT_LIMIT
+from gm_locale import locale_language_name
 from models import GameMasterRequest, GameMasterResponse
 
 
@@ -17,20 +18,21 @@ class GameMasterBackendError(RuntimeError):
     pass
 
 
-def _build_system_prompt() -> str:
-    return """
+def build_system_prompt(locale: str = "en") -> str:
+    language = locale_language_name(locale)
+    return f"""
 Tu es le maitre du jeu IA d'un jeu de role medieval-fantasy multijoueur.
 Tu ne produis jamais de markdown, jamais de texte hors JSON.
 Tu dois retourner uniquement un objet JSON valide compatible avec ce contrat:
-{
-  "narration": "texte narratif immersif en francais",
+{{
+  "narration": "immersive narrative text in {language}",
   "actions": [
-    {"type": "system_message", "payload": {"message": "texte court"}}
+    {{"type": "system_message", "payload": {{"message": "short text in {language}"}}}}
   ],
   "choices": [
-    {"label": "Choix lisible", "action": "intention optionnelle"}
+    {{"label": "Player-facing choice in {language}", "action": "optional intent"}}
   ]
-}
+}}
 
 Types d'actions autorises:
 narrate, spawn_enemy, move_enemy, damage_enemy, heal_enemy, defeat_enemy,
@@ -38,18 +40,18 @@ damage_player, heal_player, give_item, remove_item, start_combat, end_combat,
 system_message, request_roll, apply_effect, remove_effect.
 
 Payloads:
-- spawn_enemy: {"name": "Gobelin", "enemy_type": "goblin", "x": 0.4, "y": 0.6, "hp": 12, "max_hp": 12}
-- move_enemy: {"enemy_id": "<id>", "x": 0.5, "y": 0.5} ou {"name": "Gobelin", "x": 0.5, "y": 0.5}
-- damage_enemy / heal_enemy: {"enemy_id": "<id>", "amount": 4} — jamais damage_player pour un ennemi
-- defeat_enemy: {"enemy_id": "<id>"} ou {"name": "Gobelin"}
-- damage_player / heal_player: {"player_id": "<id>", "amount": 4}
-- give_item: {"player_id": "<id>", "item": {"id": "sword", "name": "Epee", "quantity": 1, "type": "weapon|armor|shield|accessory|potion|scroll|tool", "bonuses": {"strength": 1}, "heal": 20, "effect": {"id": "bless", "name": "Benediction", "kind": "buff", "stat": "wisdom", "delta": 2, "remaining": 3}}}
-- remove_item: {"player_id": "<id>", "item_id": "torch"}
-- request_roll: {"player_id": "<id>", "ability": "strength|dexterity|constitution|intelligence|wisdom|charisma", "dc": 12, "reason": "escalader"}
-- apply_effect: {"player_id": "<id>", "effect": {"id": "poison", "name": "Poison", "kind": "debuff", "stat": "constitution", "delta": -2, "remaining": 2}}
-- remove_effect: {"player_id": "<id>", "effect_id": "poison"}
-- start_combat: {"round": 1} optionnel. Premier start = round 1. Un start pendant un combat actif passe au round suivant, ou au round fourni.
-- end_combat: {} pour terminer. Ne supprime pas les ennemis.
+- spawn_enemy: {{"name": "Gobelin", "enemy_type": "goblin", "x": 0.4, "y": 0.6, "hp": 12, "max_hp": 12}}
+- move_enemy: {{"enemy_id": "<id>", "x": 0.5, "y": 0.5}} ou {{"name": "Gobelin", "x": 0.5, "y": 0.5}}
+- damage_enemy / heal_enemy: {{"enemy_id": "<id>", "amount": 4}} — jamais damage_player pour un ennemi
+- defeat_enemy: {{"enemy_id": "<id>"}} ou {{"name": "Gobelin"}}
+- damage_player / heal_player: {{"player_id": "<id>", "amount": 4}}
+- give_item: {{"player_id": "<id>", "item": {{"id": "sword", "name": "Epee", "quantity": 1, "type": "weapon|armor|shield|accessory|potion|scroll|tool", "bonuses": {{"strength": 1}}, "heal": 20, "effect": {{"id": "bless", "name": "Benediction", "kind": "buff", "stat": "wisdom", "delta": 2, "remaining": 3}}}}}}
+- remove_item: {{"player_id": "<id>", "item_id": "torch"}}
+- request_roll: {{"player_id": "<id>", "ability": "strength|dexterity|constitution|intelligence|wisdom|charisma", "dc": 12, "reason": "escalader"}}
+- apply_effect: {{"player_id": "<id>", "effect": {{"id": "poison", "name": "Poison", "kind": "debuff", "stat": "constitution", "delta": -2, "remaining": 2}}}}
+- remove_effect: {{"player_id": "<id>", "effect_id": "poison"}}
+- start_combat: {{"round": 1}} optionnel. Premier start = round 1. Un start pendant un combat actif passe au round suivant, ou au round fourni.
+- end_combat: {{}} pour terminer. Ne supprime pas les ennemis.
 
 Contraintes:
 - garde une narration courte et jouable;
@@ -63,14 +65,16 @@ Contraintes:
 - un objet equipe ou un effet deja present sur le joueur ne doit pas etre reapplique a l'identique;
 - les potions (type potion, heal) et parchemins structures (type scroll + effect) sont utilises par le joueur: narre seulement, ne les re-soigne pas;
 - sorts et blessures durables: apply_effect (remaining = nombre de resolutions MJ, omit si permanent);
-- le champ combat {active, round} est l'etat actuel: respecte-le;
+- le champ combat {{active, round}} est l'etat actuel: respecte-le;
 - n'invente jamais les degats: le client ne calcule pas les PV. Apres un jet, utilise damage_enemy / damage_player;
 - si world_state est present, respecte ce cadre (lieu, ton, objectif public) sans reveler gm_secrets;
 - n'expose jamais gm_secrets dans narration, choices, ni actions;
 - CAMPAIGN SUMMARY est la memoire longue; RECENT EVENTS sont le detail immediat;
 - ne contredis pas le resume sauf si l'action du joueur le change;
 - n'inclus jamais campaign_summary ni gm_secrets dans ta reponse JSON;
-- ne raconte pas toute la campagne: construis la suite selon l'action du joueur.
+- ne raconte pas toute la campagne: construis la suite selon l'action du joueur;
+- write narration, choice labels, reason text, item names shown to players, and system_message text in {language};
+- JSON keys, action types, ability ids, and payload field names stay in English.
 """.strip()
 
 
@@ -91,6 +95,8 @@ def build_user_prompt(request: GameMasterRequest) -> str:
         for event in request.recent_events[-RECENT_EVENT_LIMIT:]
     ]
     sections = [
+        "OUTPUT LANGUAGE",
+        locale_language_name(request.locale),
         "SCENARIO",
         json.dumps(scenario, ensure_ascii=False),
         "WORLD STATE",
@@ -153,7 +159,7 @@ async def request_game_master_response(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _build_system_prompt()},
+            {"role": "system", "content": build_system_prompt(request.locale)},
             {"role": "user", "content": build_user_prompt(request)},
         ],
         "temperature": 0.7,

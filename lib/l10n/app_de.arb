@@ -173,6 +173,7 @@
   "scenarioCustomName": "Freies Abenteuer",
   "generatingAdventure": "Erstellen und erzeugen",
   "roomName": "Name der Partie",
+  "adventureLanguage": "Abenteuersprache",
   "fieldRequired": "Pflichtfeld.",
   "scenario": "Szenario",
   "scenarioMinPlayers": "{name} (min. {count})",

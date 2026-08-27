@@ -15,6 +15,8 @@ import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/domain/game_master_response.dart';
 import '../../game_master/presentation/game_master_controller.dart';
 import '../../players/domain/player.dart';
+import '../../rooms/domain/room_locale.dart';
+import '../../rooms/presentation/room_providers.dart';
 
 const abilityKeys = {
   'strength',
@@ -189,6 +191,10 @@ List<GameMasterEnemyContext> enemiesForRoom(WidgetRef ref, String roomId) {
   return enemies.map(toGameMasterEnemyContext).toList();
 }
 
+String localeForRoom(WidgetRef ref, String roomId) {
+  return normalizeRoomLocale(ref.read(roomProvider(roomId)).value?.locale);
+}
+
 Future<void> resolvePendingAbilityRoll({
   required WidgetRef ref,
   required String roomId,
@@ -247,6 +253,7 @@ Future<void> resolvePendingAbilityRoll({
             enemies: enemiesForRoom(ref, roomId),
             recentEvents: recentEventsForRoom(ref, roomId),
             combat: toGameMasterCombat(readActiveCombat(ref, roomId)),
+            locale: localeForRoom(ref, roomId),
           ),
         );
     ref.read(pendingAbilityRollProvider.notifier).setRoll(

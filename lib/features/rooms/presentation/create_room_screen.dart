@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
+import '../../../core/l10n/locale_controller.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../scenarios/domain/custom_scenario_draft.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../../scenarios/presentation/scenario_providers.dart';
+import '../domain/room_locale.dart';
 import 'room_providers.dart';
 
 enum _CreateMode { custom, catalog }
@@ -33,6 +35,15 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
   var _scenario = ScenarioCatalog.dungeon;
   var _draft = const CustomScenarioDraft();
   var _isSubmitting = false;
+  late String _locale;
+
+  @override
+  void initState() {
+    super.initState();
+    _locale = normalizeRoomLocale(
+      ref.read(localeControllerProvider).languageCode,
+    );
+  }
 
   @override
   void dispose() {
@@ -89,6 +100,8 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                     const SizedBox(height: 16),
                     _nameField(l10n),
                     const SizedBox(height: 16),
+                    _localePicker(l10n),
+                    const SizedBox(height: 16),
                     if (_mode == _CreateMode.catalog)
                       _scenarioPicker(context, l10n)
                     else
@@ -117,6 +130,28 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
           return l10n.fieldRequired;
         }
         return null;
+      },
+    );
+  }
+
+  Widget _localePicker(AppLocalizations l10n) {
+    return DropdownButtonFormField<String>(
+      initialValue: _locale,
+      decoration: InputDecoration(
+        labelText: l10n.adventureLanguage,
+        border: const OutlineInputBorder(),
+      ),
+      items: [
+        for (final code in supportedRoomLocales)
+          DropdownMenuItem(
+            value: code,
+            child: Text(localizedLanguageName(l10n, code)),
+          ),
+      ],
+      onChanged: (value) {
+        if (value != null) {
+          setState(() => _locale = normalizeRoomLocale(value));
+        }
       },
     );
   }
@@ -390,6 +425,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
             worldState: custom && !AppConfig.isGameMasterRemote
                 ? draft.mockWorldState()
                 : const {},
+            locale: _locale,
           );
       if (custom && AppConfig.isGameMasterRemote) {
         await ref.read(scenarioGeneratorProvider).generate(

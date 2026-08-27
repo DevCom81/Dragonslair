@@ -15,6 +15,7 @@ from campaign_memory import (
     should_summarize,
     summary_window,
 )
+from gm_locale import normalize_locale
 from models import (
     CombatContext,
     GameMasterRequest,
@@ -43,8 +44,8 @@ from supabase_admin import (
     fetch_recent_room_events,
     fetch_room_events_slice,
     fetch_room_gm_row,
+    fetch_room_narrative_context,
     fetch_room_player,
-    fetch_room_world_state,
     get_user_id_from_access_token,
     insert_game_event,
     mark_pending_roll_resolved,
@@ -279,7 +280,9 @@ async def _with_authoritative_combat(
     drop_roll_result: bool = False,
 ) -> GameMasterRequest:
     row = await fetch_combat_session(room_id=request.room_id)
-    world_state = await fetch_room_world_state(room_id=request.room_id)
+    narrative = await fetch_room_narrative_context(room_id=request.room_id)
+    world_state = dict(narrative.get("world_state") or {})
+    locale = normalize_locale(narrative.get("locale"))
     try:
         gm_row = await fetch_room_gm_row(room_id=request.room_id)
     except SupabaseAdminError:
@@ -299,6 +302,7 @@ async def _with_authoritative_combat(
         "gm_secrets": list(gm_row.get("gm_secrets") or []),
         "campaign_summary": str(memory.get("campaign_summary") or ""),
         "recent_events": recent_events,
+        "locale": locale,
     }
     if drop_roll_result:
         updates["roll_result"] = None
@@ -318,7 +322,11 @@ async def generate_scenario(
                 status_code=400,
                 detail="Scenario generation is only allowed for custom rooms.",
             )
-        generated = await request_generated_scenario(request)
+        generated = await request_generated_scenario(
+            request.model_copy(
+                update={"locale": normalize_locale(room.get("locale"))},
+            )
+        )
         world_state = public_world_state(generated.public_dict())
         secrets = [
             secret.strip()[:240]

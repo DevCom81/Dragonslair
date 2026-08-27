@@ -173,6 +173,7 @@
   "scenarioCustomName": "Aventure libre",
   "generatingAdventure": "Creer et generer",
   "roomName": "Nom de la partie",
+  "adventureLanguage": "Langue de l'aventure",
   "fieldRequired": "Champ obligatoire.",
   "scenario": "Scenario",
   "scenarioMinPlayers": "{name} (min {count})",

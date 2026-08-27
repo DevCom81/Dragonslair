@@ -4,6 +4,7 @@ import '../../../core/errors/app_exception.dart';
 import '../../scenarios/domain/world_state.dart';
 import '../domain/join_code.dart';
 import '../domain/room.dart';
+import '../domain/room_locale.dart';
 import '../domain/room_repository.dart';
 
 class SupabaseRoomRepository implements RoomRepository {
@@ -50,6 +51,7 @@ class SupabaseRoomRepository implements RoomRepository {
     required List<String> requiredClassIds,
     String scenarioPrompt = '',
     Map<String, dynamic> worldState = const {},
+    String locale = fallbackRoomLocale,
   }) async {
     Object? lastError;
     for (var attempt = 0; attempt < 3; attempt++) {
@@ -64,6 +66,7 @@ class SupabaseRoomRepository implements RoomRepository {
               'required_class_ids': requiredClassIds,
               'scenario_prompt': scenarioPrompt,
               'world_state': sanitizePublicWorldState(worldState),
+              'locale': normalizeRoomLocale(locale),
               'host_id': hostId,
               'status': RoomStatus.waiting.toJson(),
               'join_code': JoinCode.generate(),

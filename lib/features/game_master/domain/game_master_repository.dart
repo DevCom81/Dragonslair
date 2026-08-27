@@ -11,6 +11,7 @@ class GameMasterInput {
     this.recentEvents = const [],
     this.combat,
     this.rollResult,
+    this.locale = 'en',
   });
 
   final String? roomId;
@@ -22,6 +23,7 @@ class GameMasterInput {
   final List<GameMasterRecentEvent> recentEvents;
   final GameMasterCombatContext? combat;
   final GameMasterRollResult? rollResult;
+  final String locale;
 
   Map<String, dynamic> toJson() {
     return {
@@ -34,6 +36,7 @@ class GameMasterInput {
       'recent_events': recentEvents.map((event) => event.toJson()).toList(),
       if (combat != null) 'combat': combat!.toJson(),
       if (rollResult != null) 'roll_result': rollResult!.toJson(),
+      'locale': locale,
     };
   }
 }

@@ -1,4 +1,5 @@
 import '../../scenarios/domain/world_state.dart';
+import 'room_locale.dart';
 
 enum RoomStatus {
   waiting,
@@ -33,6 +34,7 @@ class Room {
     this.joinCode,
     this.scenarioPrompt = '',
     this.worldState = const {},
+    this.locale = fallbackRoomLocale,
   });
 
   final String id;
@@ -47,6 +49,7 @@ class Room {
   final List<String> requiredClassIds;
   final String scenarioPrompt;
   final Map<String, dynamic> worldState;
+  final String locale;
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
@@ -62,6 +65,7 @@ class Room {
       requiredClassIds: _stringList(json['required_class_ids']),
       scenarioPrompt: json['scenario_prompt'] as String? ?? '',
       worldState: sanitizePublicWorldState(json['world_state']),
+      locale: normalizeRoomLocale(json['locale']),
     );
   }
 
@@ -79,6 +83,7 @@ class Room {
       'required_class_ids': requiredClassIds,
       'scenario_prompt': scenarioPrompt,
       'world_state': worldState,
+      'locale': locale,
     };
   }
 

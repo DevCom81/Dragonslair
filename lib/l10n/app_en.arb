@@ -173,6 +173,7 @@
   "scenarioCustomName": "Custom adventure",
   "generatingAdventure": "Create and generate",
   "roomName": "Game name",
+  "adventureLanguage": "Adventure language",
   "fieldRequired": "Required field.",
   "scenario": "Scenario",
   "scenarioMinPlayers": "{name} (min {count})",

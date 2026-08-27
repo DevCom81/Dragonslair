@@ -363,6 +363,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get roomName => 'Nom de la partie';
 
   @override
+  String get adventureLanguage => 'Langue de l\'aventure';
+
+  @override
   String get fieldRequired => 'Champ obligatoire.';
 
   @override

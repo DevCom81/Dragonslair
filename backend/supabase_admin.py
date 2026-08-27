@@ -635,7 +635,7 @@ async def assert_room_host(*, user_id: str, room_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/rooms",
             params={
                 "id": f"eq.{room_id}",
-                "select": "id,host_id,scenario_id,scenario,scenario_prompt,world_state",
+                "select": "id,host_id,scenario_id,scenario,scenario_prompt,world_state,locale",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -653,7 +653,8 @@ async def assert_room_host(*, user_id: str, room_id: str) -> dict:
     return row
 
 
-async def fetch_room_world_state(*, room_id: str) -> dict:
+async def fetch_room_narrative_context(*, room_id: str) -> dict:
+    from gm_locale import normalize_locale
     from scenario_state import public_world_state
 
     async with httpx.AsyncClient(timeout=15) as client:
@@ -661,7 +662,7 @@ async def fetch_room_world_state(*, room_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/rooms",
             params={
                 "id": f"eq.{room_id}",
-                "select": "world_state,scenario_prompt,scenario_id,scenario",
+                "select": "world_state,scenario_prompt,scenario_id,scenario,locale",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -672,8 +673,17 @@ async def fetch_room_world_state(*, room_id: str) -> dict:
 
     rows = response.json()
     if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
-        return {}
-    return public_world_state(rows[0].get("world_state"))
+        return {"world_state": {}, "locale": "en"}
+    row = rows[0]
+    return {
+        "world_state": public_world_state(row.get("world_state")),
+        "locale": normalize_locale(row.get("locale")),
+    }
+
+
+async def fetch_room_world_state(*, room_id: str) -> dict:
+    context = await fetch_room_narrative_context(room_id=room_id)
+    return dict(context.get("world_state") or {})
 
 
 async def fetch_room_gm_row(*, room_id: str) -> dict:

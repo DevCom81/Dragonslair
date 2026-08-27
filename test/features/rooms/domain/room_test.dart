@@ -19,6 +19,7 @@ void main() {
     expect(room.createdAt.toUtc().year, 2026);
     expect(room.minPlayers, 1);
     expect(room.requiredClassIds, isEmpty);
+    expect(room.locale, 'en');
   });
 
   test('parses scenario constraints from Supabase row', () {
@@ -49,5 +50,26 @@ void main() {
       () => RoomStatus.fromJson('archived'),
       throwsA(isA<ArgumentError>()),
     );
+  });
+
+  test('normalizes room locale and falls back to english', () {
+    final german = Room.fromJson({
+      'id': 'room-id',
+      'name': 'Die Krypta',
+      'status': 'waiting',
+      'created_at': '2026-08-26T12:00:00Z',
+      'host_id': 'user-id',
+      'locale': 'de-DE',
+    });
+    final unknown = Room.fromJson({
+      'id': 'room-id',
+      'name': 'La Crypte',
+      'status': 'waiting',
+      'created_at': '2026-08-26T12:00:00Z',
+      'host_id': 'user-id',
+      'locale': 'pt',
+    });
+    expect(german.locale, 'de');
+    expect(unknown.locale, 'en');
   });
 }
