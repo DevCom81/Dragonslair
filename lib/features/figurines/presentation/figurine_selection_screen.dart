@@ -77,7 +77,7 @@ class FigurineSelectionScreen extends ConsumerWidget {
           );
 
       if (context.mounted) {
-        context.goNamed('lobby', pathParameters: {'roomId': roomId});
+        context.pushNamed('lobby', pathParameters: {'roomId': roomId});
       }
     } catch (error) {
       if (context.mounted) {

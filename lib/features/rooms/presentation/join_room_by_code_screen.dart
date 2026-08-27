@@ -93,7 +93,7 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
         return;
       }
       if (mounted) {
-        context.goNamed('figurines', pathParameters: {'roomId': room.id});
+        context.pushNamed('figurines', pathParameters: {'roomId': room.id});
       }
     } catch (error) {
       _showError(error.toString());

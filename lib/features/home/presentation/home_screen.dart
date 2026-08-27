@@ -64,9 +64,9 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: canPlay
-                      ? () => context.goNamed('create-room')
+                      ? () => context.pushNamed('create-room')
                       : isAuthenticated
-                          ? () => context.goNamed('display-name')
+                          ? () => context.pushNamed('display-name')
                           : null,
                   child: Text(
                     hasProfile || !isAuthenticated
@@ -76,17 +76,17 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: canPlay ? () => context.goNamed('rooms') : null,
+                  onPressed: canPlay ? () => context.pushNamed('rooms') : null,
                   child: const Text('Rejoindre une partie'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: canPlay ? () => context.goNamed('join-room') : null,
+                  onPressed: canPlay ? () => context.pushNamed('join-room') : null,
                   child: const Text('Rejoindre par code'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: () => context.goNamed('game-master'),
+                  onPressed: () => context.pushNamed('game-master'),
                   child: const Text('Tester le MJ IA'),
                 ),
                 const Spacer(),
@@ -107,7 +107,7 @@ Future<void> _enterTavern(BuildContext context, WidgetRef ref) async {
     return;
   }
   if (profile == null) {
-    context.goNamed('display-name');
+    context.pushNamed('display-name');
   }
 }
 

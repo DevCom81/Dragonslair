@@ -26,8 +26,12 @@ class LobbyScreen extends ConsumerWidget {
 
     ref.listen(roomProvider(roomId), (_, next) {
       final room = next.value;
-      if (room?.status == RoomStatus.playing && context.mounted) {
-        context.goNamed('board', pathParameters: {'roomId': roomId});
+      final isOnLobby = GoRouterState.of(context).name == 'lobby';
+      if (room?.status == RoomStatus.playing && isOnLobby && context.mounted) {
+        context.pushReplacementNamed(
+          'board',
+          pathParameters: {'roomId': roomId},
+        );
       }
     });
 
@@ -48,43 +52,58 @@ class LobbyScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(room.name, style: Theme.of(context).textTheme.titleLarge),
-                    if (room.joinCode != null && room.joinCode!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      SelectableText(
-                        'Code: ${room.joinCode}',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                    if (room.scenario != null && room.scenario!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(room.scenario!),
-                    ],
-                    const SizedBox(height: 16),
-                    Text('Joueurs', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
                     Expanded(
-                      child: ListView.separated(
-                        itemCount: players.length,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) {
-                          final player = players[index];
-                          return ListTile(
-                            leading: FigurineSprite(
-                              figurine: FigurineCatalog.byId(player.figurineId),
-                              size: 40,
+                      child: ListView(
+                        children: [
+                          Text(
+                            room.name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (room.joinCode != null &&
+                              room.joinCode!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            SelectableText(
+                              'Code: ${room.joinCode}',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            title: Text(player.figurineName),
-                            subtitle: Text('PV ${player.hp}'),
-                          );
-                        },
+                          ],
+                          if (room.scenario != null &&
+                              room.scenario!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(room.scenario!),
+                          ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Joueurs',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          if (players.isEmpty)
+                            const Text('En attente de joueurs.'),
+                          for (final player in players) ...[
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: FigurineSprite(
+                                figurine:
+                                    FigurineCatalog.byId(player.figurineId),
+                                size: 40,
+                              ),
+                              title: Text(player.figurineName),
+                              subtitle: Text('PV ${player.hp}'),
+                            ),
+                            const Divider(),
+                          ],
+                        ],
                       ),
                     ),
                     FilledButton(
                       onPressed: isHost && players.isNotEmpty
-                          ? () => ref.read(roomRepositoryProvider).startRoom(roomId)
+                          ? () =>
+                              ref.read(roomRepositoryProvider).startRoom(roomId)
                           : null,
-                      child: Text(isHost ? 'Demarrer la partie' : 'En attente du host'),
+                      child: Text(
+                        isHost ? 'Demarrer la partie' : 'En attente du host',
+                      ),
                     ),
                   ],
                 ),

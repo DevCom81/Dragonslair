@@ -101,7 +101,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
             hostId: user.id,
           );
       if (mounted) {
-        context.goNamed('figurines', pathParameters: {'roomId': room.id});
+        context.pushNamed('figurines', pathParameters: {'roomId': room.id});
       }
     } catch (error) {
       _showError(error.toString());

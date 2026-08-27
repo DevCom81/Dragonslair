@@ -20,14 +20,14 @@ class RoomListScreen extends ConsumerWidget {
         title: const Text('Parties ouvertes'),
         actions: [
           IconButton(
-            onPressed: user == null ? null : () => context.goNamed('join-room'),
+            onPressed: user == null ? null : () => context.pushNamed('join-room'),
             icon: const Icon(Icons.vpn_key),
             tooltip: 'Rejoindre par code',
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: user == null ? null : () => context.goNamed('create-room'),
+        onPressed: user == null ? null : () => context.pushNamed('create-room'),
         icon: const Icon(Icons.add),
         label: const Text('Creer'),
       ),
@@ -82,7 +82,7 @@ class _RoomCard extends StatelessWidget {
             ],
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: () => context.goNamed(
+              onPressed: () => context.pushNamed(
                 'figurines',
                 pathParameters: {'roomId': room.id},
               ),
