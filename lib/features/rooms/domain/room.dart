@@ -23,6 +23,7 @@ class Room {
     required this.createdAt,
     required this.hostId,
     this.scenario,
+    this.joinCode,
   });
 
   final String id;
@@ -31,6 +32,7 @@ class Room {
   final RoomStatus status;
   final DateTime createdAt;
   final String? hostId;
+  final String? joinCode;
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
@@ -40,6 +42,7 @@ class Room {
       status: RoomStatus.fromJson(json['status']),
       createdAt: DateTime.parse(json['created_at'] as String),
       hostId: json['host_id'] as String?,
+      joinCode: json['join_code'] as String?,
     );
   }
 
@@ -51,6 +54,7 @@ class Room {
       'status': status.toJson(),
       'created_at': createdAt.toIso8601String(),
       'host_id': hostId,
+      'join_code': joinCode,
     };
   }
 }

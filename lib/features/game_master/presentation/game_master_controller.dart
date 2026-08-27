@@ -17,16 +17,20 @@ class GameMasterController extends AsyncNotifier<GameMasterResponse?> {
   }
 
   Future<void> submitAction(String action) async {
-    final trimmedAction = action.trim();
+    await submit(GameMasterInput(action: action));
+  }
+
+  Future<GameMasterResponse> submit(GameMasterInput input) async {
+    final trimmedAction = input.action.trim();
     if (trimmedAction.isEmpty) {
       throw const GameException('Action vide.');
     }
 
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() {
-      return ref.read(gameMasterRepositoryProvider).respond(
-            GameMasterInput(action: trimmedAction),
-          );
+    final response = await AsyncValue.guard(() {
+      return ref.read(gameMasterRepositoryProvider).respond(input);
     });
+    state = response;
+    return response.requireValue;
   }
 }

@@ -37,8 +37,8 @@ class RecentGameEvent(BaseModel):
 
 
 class GameMasterRequest(BaseModel):
-    room_id: str | None = None
-    player_id: str | None = None
+    room_id: str = Field(min_length=1)
+    player_id: str = Field(min_length=1)
     player_name: str = Field(default="Aventurier", min_length=1, max_length=80)
     action: str = Field(min_length=1, max_length=1200)
     players: list[GamePlayer] = Field(default_factory=list)

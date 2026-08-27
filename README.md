@@ -4,7 +4,7 @@ Application mobile Flutter de jeu de role multijoueur medieval-fantasy avec mait
 
 ## Etat
 
-Phase 1 en cours : bootstrap Flutter, theme, configuration, modeles Supabase et auth anonyme MVP.
+Gameplay MVP : auth anonyme, pseudo joueur, rooms avec code, selection de figurine, lobby realtime, plateau, pions, des, journal et MJ IA Railway.
 
 ## Stack
 
@@ -38,16 +38,25 @@ Sans ces valeurs, l'application compile et affiche un etat local non connecte.
 Le backend est dans `backend/`. Il expose :
 
 - `GET /health`
-- `POST /v1/game-master/respond`
+- `POST /v1/game-master/respond` (JWT joueur obligatoire)
 
 Variables a configurer sur Railway :
 
 ```text
 OPENROUTER_API_KEY=...
 OPENROUTER_MODEL=google/gemini-3.1-flash-lite
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-La cle OpenRouter ne doit jamais etre ajoutee dans Flutter.
+La cle OpenRouter et la service role ne doivent jamais etre ajoutees dans Flutter.
+
+Apres OpenRouter, Railway verifie le JWT du joueur puis ecrit les evenements `narration` / `system` dans Supabase.
+
+## Migration identite joueur
+
+Executer manuellement `supabase/migrations/20260827_player_identity_and_room_code.sql` dans l'editeur SQL Supabase. Ne pas ecraser `supabase/schema.sql`.
 
 Pour connecter Flutter au backend Railway :
 
@@ -72,3 +81,19 @@ flutter test
 ```
 
 Les commandes `flutter build` Android sont lancees manuellement par le proprietaire du projet, pas par l'agent Cursor.
+
+## Flux Gameplay MVP
+
+Le flux actuel vise une partie simple :
+
+```text
+Home -> Pseudo -> Creer/Rejoindre/Code -> Figurine -> Lobby -> Plateau -> Actions/Des -> Journal
+```
+
+Les rooms, joueurs et evenements utilisent Supabase. Le plateau utilise `Assets/Plateau.png` et les pions utilisent `Assets/figurines.png`.
+
+Limites actuelles :
+
+- pas de moteur de regles JDR complet ;
+- auth anonyme + pseudo, pas encore d'email/mot de passe ;
+- Railway ecrit les narrations MJ, le client n'ecrit que les actions joueur.

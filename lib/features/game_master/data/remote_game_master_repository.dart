@@ -9,8 +9,12 @@ import '../domain/game_master_repository.dart';
 import '../domain/game_master_response.dart';
 
 class RemoteGameMasterRepository implements GameMasterRepository {
-  const RemoteGameMasterRepository({http.Client? client}) : _client = client;
+  const RemoteGameMasterRepository({
+    this.accessToken,
+    http.Client? client,
+  }) : _client = client;
 
+  final String? accessToken;
   final http.Client? _client;
 
   @override
@@ -25,10 +29,21 @@ class RemoteGameMasterRepository implements GameMasterRepository {
     final ownsClient = _client == null;
 
     try {
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      final token = accessToken;
+      if (token == null || token.isEmpty) {
+        throw const AppAuthException(
+          'Session absente. Reconnecte-toi avant d interroger le MJ.',
+        );
+      }
+      headers['Authorization'] = 'Bearer $token';
+
       final response = await client
           .post(
             AppConfig.gameMasterRespondUri,
-            headers: const {'Content-Type': 'application/json'},
+            headers: headers,
             body: jsonEncode(input.toJson()),
           )
           .timeout(const Duration(seconds: 35));

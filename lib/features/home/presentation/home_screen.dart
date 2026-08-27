@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/profile_providers.dart';
+import '../../auth/domain/profile_repository.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -12,6 +14,10 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
+    final profileState = ref.watch(currentProfileProvider);
+    final isAuthenticated = authState.value != null;
+    final hasProfile = profileState.value != null;
+    final canPlay = isAuthenticated && hasProfile;
 
     return Scaffold(
       body: SafeArea(
@@ -51,21 +57,32 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: AppConfig.isSupabaseConfigured
-                      ? () => ref
-                            .read(authControllerProvider.notifier)
-                            .signInAnonymously()
+                      ? () => _enterTavern(context, ref)
                       : null,
                   child: const Text('Entrer dans la taverne'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: null,
-                  child: const Text('Creer une partie'),
+                  onPressed: canPlay
+                      ? () => context.goNamed('create-room')
+                      : isAuthenticated
+                          ? () => context.goNamed('display-name')
+                          : null,
+                  child: Text(
+                    hasProfile || !isAuthenticated
+                        ? 'Creer une partie'
+                        : 'Choisir un pseudo',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: null,
+                  onPressed: canPlay ? () => context.goNamed('rooms') : null,
                   child: const Text('Rejoindre une partie'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: canPlay ? () => context.goNamed('join-room') : null,
+                  child: const Text('Rejoindre par code'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
@@ -79,6 +96,18 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+Future<void> _enterTavern(BuildContext context, WidgetRef ref) async {
+  await ref.read(authControllerProvider.notifier).signInAnonymously();
+  final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
+  ref.invalidate(currentProfileProvider);
+  if (!context.mounted) {
+    return;
+  }
+  if (profile == null) {
+    context.goNamed('display-name');
   }
 }
 

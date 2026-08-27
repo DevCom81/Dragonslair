@@ -10,10 +10,12 @@ void main() {
       'status': 'waiting',
       'created_at': '2026-08-26T12:00:00Z',
       'host_id': 'user-id',
+      'join_code': 'ABC234',
     });
 
     expect(room.id, 'room-id');
     expect(room.status, RoomStatus.waiting);
+    expect(room.joinCode, 'ABC234');
     expect(room.createdAt.toUtc().year, 2026);
   });
 
