@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/demo_start.dart';
+import '../../access/presentation/purchase_flow.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -29,63 +30,104 @@ class PlayHubScreen extends ConsumerWidget {
         ? null
         : localizedClassLabel(l10n, profile!.classId!);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.tavernTitle),
-        actions: const [LanguageButton()],
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: context.pagePadding,
-                  child: ContentConstraint(
-                    child: context.isExpanded
-                        ? _ExpandedHub(
-                            welcome: _welcomeText(l10n, profile, classLabel),
-                            subtitle: l10n.hubSubtitle,
-                            guestBanner: user is User && user.isAnonymous
-                                ? l10n.guestBanner
-                                : null,
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                _welcomeText(l10n, profile, classLabel),
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.hubSubtitle,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              if (user is User && user.isAnonymous) ...[
-                                const SizedBox(height: 12),
+    return _EntitlementResumeListener(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.tavernTitle),
+          actions: const [LanguageButton()],
+        ),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: context.pagePadding,
+                    child: ContentConstraint(
+                      child: context.isExpanded
+                          ? _ExpandedHub(
+                              welcome: _welcomeText(l10n, profile, classLabel),
+                              subtitle: l10n.hubSubtitle,
+                              guestBanner: user is User && user.isAnonymous
+                                  ? l10n.guestBanner
+                                  : null,
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                                 Text(
-                                  l10n.guestBanner,
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  _welcomeText(l10n, profile, classLabel),
+                                  style: Theme.of(context).textTheme.titleLarge,
                                 ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.hubSubtitle,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                if (user is User && user.isAnonymous) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.guestBanner,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                                const SizedBox(height: 32),
+                                const _ContinuableGames(),
+                                const SizedBox(height: 24),
+                                const _HubActions(),
                               ],
-                              const SizedBox(height: 32),
-                              const _ContinuableGames(),
-                              const SizedBox(height: 24),
-                              const _HubActions(),
-                            ],
-                          ),
+                            ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
   }
+}
+
+class _EntitlementResumeListener extends ConsumerStatefulWidget {
+  const _EntitlementResumeListener({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_EntitlementResumeListener> createState() =>
+      _EntitlementResumeListenerState();
+}
+
+class _EntitlementResumeListenerState
+    extends ConsumerState<_EntitlementResumeListener>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(currentEntitlementProvider);
+      ref.invalidate(currentDemoSessionProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 String _welcomeText(
@@ -111,9 +153,8 @@ class _HubActions extends ConsumerWidget {
     final entitlement = ref.watch(currentEntitlementProvider).value;
     final isDemo = entitlement?.level.isDemo ?? false;
     final session = ref.watch(currentDemoSessionProvider).value;
-    final demoLabel = session != null &&
-            session.roomId != null &&
-            session.roomId!.isNotEmpty
+    final demoLabel =
+        session != null && session.roomId != null && session.roomId!.isNotEmpty
         ? (session.isConsumed ? l10n.demoSeeEnding : l10n.resumeDemo)
         : l10n.startDemo;
 
@@ -126,9 +167,16 @@ class _HubActions extends ConsumerWidget {
             child: Text(demoLabel),
           ),
           const SizedBox(height: 12),
-          Text(
-            l10n.demoHubHint,
-            style: Theme.of(context).textTheme.bodySmall,
+          Text(l10n.demoHubHint, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: () => startUnlockCheckout(context: context, ref: ref),
+            child: Text(l10n.unlockDragonsLair),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () => restorePurchases(context: context, ref: ref),
+            child: Text(l10n.restorePurchase),
           ),
           const SizedBox(height: 16),
         ] else ...[
@@ -208,10 +256,7 @@ class _ExpandedHub extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 32),
-        const SizedBox(
-          width: 320,
-          child: _HubActions(),
-        ),
+        const SizedBox(width: 320, child: _HubActions()),
       ],
     );
   }
@@ -255,11 +300,7 @@ class _ContinuableGames extends ConsumerWidget {
     );
   }
 
-  Future<void> _open(
-    BuildContext context,
-    WidgetRef ref,
-    Room room,
-  ) async {
+  Future<void> _open(BuildContext context, WidgetRef ref, Room room) async {
     try {
       await openRoomForCurrentUser(context: context, ref: ref, room: room);
     } catch (error) {

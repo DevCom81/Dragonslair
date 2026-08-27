@@ -937,7 +937,7 @@ async def fetch_user_entitlement(*, user_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/user_entitlements",
             params={
                 "user_id": f"eq.{user_id}",
-                "select": "user_id,access_level,source,expires_at",
+                "select": "user_id,access_level,source,expires_at,metadata",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -1045,6 +1045,65 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
             expires_at=end,
         )
     return clock
+
+
+async def grant_full_entitlement(
+    *,
+    user_id: str,
+    source: str,
+    metadata: dict | None = None,
+) -> dict:
+    from demo_access import normalize_access_level
+    from purchases import normalize_purchase_source
+
+    current = await fetch_user_entitlement(user_id=user_id)
+    if normalize_access_level(current.get("access_level")) == "full":
+        return current
+    extra = metadata if isinstance(metadata, dict) else {}
+    previous = current.get("metadata")
+    merged = dict(previous) if isinstance(previous, dict) else {}
+    merged.update({key: str(value)[:240] for key, value in extra.items()})
+    payload = {
+        "user_id": user_id,
+        "access_level": "full",
+        "source": normalize_purchase_source(source),
+        "metadata": merged,
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/user_entitlements",
+            params={"user_id": f"eq.{user_id}"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json={
+                "access_level": payload["access_level"],
+                "source": payload["source"],
+                "metadata": payload["metadata"],
+            },
+        )
+        rows = response.json() if response.status_code < 400 else []
+        if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+            return rows[0]
+        insert = await client.post(
+            f"{_supabase_url()}/rest/v1/user_entitlements",
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json=payload,
+        )
+        if insert.status_code >= 400:
+            raise SupabaseAdminError(
+                f"Unable to grant entitlement ({insert.status_code})."
+            )
+        created = insert.json()
+        if isinstance(created, list) and created and isinstance(created[0], dict):
+            return created[0]
+        if isinstance(created, dict):
+            return created
+    return payload
 
 
 

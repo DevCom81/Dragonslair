@@ -1,7 +1,8 @@
+import json
 import logging
 import os
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from apply_actions import apply_game_master_actions
@@ -16,6 +17,19 @@ from campaign_memory import (
     summary_window,
 )
 from demo_access import canned_demo_ending, ensure_finish_action, normalize_access_level
+from purchases import (
+    PurchaseConfigError,
+    PurchaseSignatureError,
+    create_stripe_checkout_url,
+    fetch_stripe_offer,
+    grant_metadata,
+    is_checkout_configured,
+    is_webhook_configured,
+    parse_checkout_user_id,
+    session_id_from_event,
+    stripe_webhook_secret,
+    verify_stripe_signature,
+)
 from models import (
     CombatContext,
     GameMasterRequest,
@@ -49,6 +63,7 @@ from supabase_admin import (
     fetch_room_player,
     fetch_user_entitlement,
     get_user_id_from_access_token,
+    grant_full_entitlement,
     insert_game_event,
     mark_pending_roll_resolved,
     patch_room_world_state,
@@ -409,3 +424,87 @@ async def generate_scenario(
         raise HTTPException(status_code=403, detail=str(error)) from error
     except GameMasterBackendError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+def _public_entitlement(row: dict) -> dict[str, str]:
+    return {
+        "access_level": normalize_access_level(row.get("access_level")),
+        "source": str(row.get("source") or "default"),
+    }
+
+
+@app.get("/v1/purchases/offer")
+async def purchase_offer() -> dict:
+    try:
+        if not is_checkout_configured():
+            raise HTTPException(status_code=503, detail="PURCHASE_UNAVAILABLE")
+        return await fetch_stripe_offer()
+    except PurchaseConfigError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/v1/purchases/me")
+async def purchase_me(
+    authorization: str | None = Header(default=None),
+) -> dict:
+    try:
+        user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        row = await fetch_user_entitlement(user_id=user_id)
+        return _public_entitlement(row)
+    except HTTPException:
+        raise
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+
+
+@app.post("/v1/purchases/checkout")
+async def purchase_checkout(
+    authorization: str | None = Header(default=None),
+) -> dict:
+    try:
+        user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        url = await create_stripe_checkout_url(user_id=user_id)
+        return {"checkout_url": url}
+    except HTTPException:
+        raise
+    except PurchaseConfigError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+
+
+@app.post("/v1/purchases/stripe-webhook")
+async def purchase_stripe_webhook(
+    request: Request,
+    stripe_signature: str | None = Header(default=None, alias="Stripe-Signature"),
+) -> dict[str, str]:
+    if not is_webhook_configured():
+        raise HTTPException(status_code=503, detail="PURCHASE_UNAVAILABLE")
+    payload = await request.body()
+    try:
+        verify_stripe_signature(
+            payload=payload,
+            header=stripe_signature or "",
+            secret=stripe_webhook_secret(),
+        )
+        event = json.loads(payload.decode("utf-8"))
+    except PurchaseSignatureError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise HTTPException(
+            status_code=400, detail="Invalid webhook payload."
+        ) from error
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="Invalid webhook payload.")
+    user_id = parse_checkout_user_id(event)
+    if user_id is None:
+        return {"status": "ignored"}
+    try:
+        await grant_full_entitlement(
+            user_id=user_id,
+            source="purchase",
+            metadata=grant_metadata(session_id=session_id_from_event(event)),
+        )
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return {"status": "ok"}

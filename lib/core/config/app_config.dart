@@ -51,10 +51,22 @@ class AppConfig {
   }
 
   static Uri get scenarioGenerateUri {
+    return _backendUri('/v1/scenarios/generate');
+  }
+
+  static Uri get purchaseOfferUri {
+    return _backendUri('/v1/purchases/offer');
+  }
+
+  static Uri get purchaseCheckoutUri {
+    return _backendUri('/v1/purchases/checkout');
+  }
+
+  static Uri _backendUri(String path) {
     final baseUrl = gameMasterBackendUrl.endsWith('/')
         ? gameMasterBackendUrl.substring(0, gameMasterBackendUrl.length - 1)
         : gameMasterBackendUrl;
-    return Uri.parse('$baseUrl/v1/scenarios/generate');
+    return Uri.parse('$baseUrl$path');
   }
 
   static String _readConfig(

@@ -6,6 +6,7 @@ import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/purchase_flow.dart';
 import '../../enemies/presentation/enemy_providers.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game/presentation/pending_roll_providers.dart';
@@ -15,10 +16,7 @@ import '../domain/game_recap.dart';
 import 'room_providers.dart';
 
 class GameSummaryScreen extends ConsumerWidget {
-  const GameSummaryScreen({
-    required this.roomId,
-    super.key,
-  });
+  const GameSummaryScreen({required this.roomId, super.key});
 
   final String roomId;
 
@@ -49,6 +47,8 @@ class GameSummaryScreen extends ConsumerWidget {
     return GameSummaryView(
       recap: recap,
       onBackToTavern: () => context.goNamed('play-hub'),
+      onUnlock: () => startUnlockCheckout(context: context, ref: ref),
+      onRestore: () => restorePurchases(context: context, ref: ref),
     );
   }
 }
@@ -58,12 +58,14 @@ class GameSummaryView extends StatelessWidget {
     required this.recap,
     required this.onBackToTavern,
     this.onUnlock,
+    this.onRestore,
     super.key,
   });
 
   final GameRecap recap;
   final VoidCallback onBackToTavern;
   final VoidCallback? onUnlock;
+  final VoidCallback? onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -101,9 +103,13 @@ class GameSummaryView extends StatelessWidget {
                           : '${character.name} (${localizedClassLabel(l10n, character.classId!)})',
                   ]),
                   if (recap.summary.isNotEmpty)
-                    _section(context, l10n.gameSummaryNarrative, [recap.summary]),
+                    _section(context, l10n.gameSummaryNarrative, [
+                      recap.summary,
+                    ]),
                   if (recap.epilogue.isNotEmpty)
-                    _section(context, l10n.gameSummaryEpilogue, [recap.epilogue]),
+                    _section(context, l10n.gameSummaryEpilogue, [
+                      recap.epilogue,
+                    ]),
                   _section(
                     context,
                     l10n.gameSummaryEvents,
@@ -134,14 +140,22 @@ class GameSummaryView extends StatelessWidget {
                     Text('✓ ${l10n.unlockBenefitUnlimited}'),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: onUnlock ??
+                      onPressed:
+                          onUnlock ??
                           () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.demoPurchaseLater)),
+                              SnackBar(content: Text(l10n.purchaseUnavailable)),
                             );
                           },
                       child: Text(l10n.unlockDragonsLair),
                     ),
+                    if (onRestore != null) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: onRestore,
+                        child: Text(l10n.restorePurchase),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                   ],
                   FilledButton(

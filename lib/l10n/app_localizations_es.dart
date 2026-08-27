@@ -614,6 +614,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get demoPurchaseLater => 'La compra aun no esta disponible.';
 
   @override
+  String get purchaseUnavailable => 'La compra aun no esta disponible.';
+
+  @override
+  String get restorePurchase => 'Restaurar mi compra';
+
+  @override
+  String get purchaseRestored => 'Tu licencia esta activa en esta cuenta.';
+
+  @override
+  String get purchaseNotFound => 'No hay ninguna compra en esta cuenta.';
+
+  @override
   String get boardTitle => 'Tablero';
 
   @override

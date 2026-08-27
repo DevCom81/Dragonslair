@@ -614,6 +614,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demoPurchaseLater => 'Purchasing is not available yet.';
 
   @override
+  String get purchaseUnavailable => 'Purchasing is not available yet.';
+
+  @override
+  String get restorePurchase => 'Restore my purchase';
+
+  @override
+  String get purchaseRestored => 'Your license is active on this account.';
+
+  @override
+  String get purchaseNotFound => 'No purchase found for this account.';
+
+  @override
   String get boardTitle => 'Board';
 
   @override

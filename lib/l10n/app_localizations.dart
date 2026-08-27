@@ -1205,6 +1205,30 @@ abstract class AppLocalizations {
   /// **'Purchasing is not available yet.'**
   String get demoPurchaseLater;
 
+  /// No description provided for @purchaseUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchasing is not available yet.'**
+  String get purchaseUnavailable;
+
+  /// No description provided for @restorePurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore my purchase'**
+  String get restorePurchase;
+
+  /// No description provided for @purchaseRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Your license is active on this account.'**
+  String get purchaseRestored;
+
+  /// No description provided for @purchaseNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchase found for this account.'**
+  String get purchaseNotFound;
+
   /// No description provided for @boardTitle.
   ///
   /// In en, this message translates to:

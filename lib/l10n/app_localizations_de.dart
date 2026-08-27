@@ -618,6 +618,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get demoPurchaseLater => 'Der Kauf ist noch nicht verfuegbar.';
 
   @override
+  String get purchaseUnavailable => 'Der Kauf ist noch nicht verfuegbar.';
+
+  @override
+  String get restorePurchase => 'Kauf wiederherstellen';
+
+  @override
+  String get purchaseRestored => 'Deine Lizenz ist auf diesem Konto aktiv.';
+
+  @override
+  String get purchaseNotFound => 'Kein Kauf fuer dieses Konto gefunden.';
+
+  @override
   String get boardTitle => 'Spielfeld';
 
   @override
