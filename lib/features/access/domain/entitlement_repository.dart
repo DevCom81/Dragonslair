@@ -37,11 +37,7 @@ class SupabaseEntitlementRepository implements EntitlementRepository {
       }
       return UserEntitlement.fromJson(rows.first);
     } on PostgrestException {
-      return UserEntitlement(
-        userId: userId,
-        level: GameAccessLevel.full,
-        source: 'admin',
-      );
+      return UserEntitlement.demoFor(userId);
     }
   }
 

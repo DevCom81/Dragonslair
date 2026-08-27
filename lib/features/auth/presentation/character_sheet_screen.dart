@@ -30,6 +30,7 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(currentProfileProvider);
     final l10n = AppLocalizations.of(context);
     final selectedClass = _classId == null
         ? null
@@ -199,15 +200,24 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
   Future<void> _submit(CharacterStats stats) async {
     final l10n = AppLocalizations.of(context);
     final user = ref.read(authControllerProvider).value;
-    final profile = ref.read(currentProfileProvider).value;
     final classId = _classId;
-    if (user == null || profile == null || classId == null) {
-      _showError(l10n.sheetRequiresAccount);
+    if (user == null) {
+      _showError(l10n.authRequired);
+      return;
+    }
+    if (classId == null) {
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
+      final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
+      if (profile == null) {
+        if (mounted) {
+          await routeAfterSession(context, ref);
+        }
+        return;
+      }
       await ref.read(profileRepositoryProvider).upsertSheet(
             userId: user.id,
             displayName: profile.displayName,

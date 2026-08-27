@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/auth_repository.dart';
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, User?>(
@@ -9,8 +10,18 @@ final authControllerProvider = AsyncNotifierProvider<AuthController, User?>(
 
 class AuthController extends AsyncNotifier<User?> {
   @override
-  Future<User?> build() {
-    return ref.watch(authRepositoryProvider).restoreSession();
+  Future<User?> build() async {
+    final client = ref.watch(supabaseClientProvider);
+    if (client == null) {
+      return null;
+    }
+
+    final subscription = client.auth.onAuthStateChange.listen((data) {
+      state = AsyncData(data.session?.user);
+    });
+    ref.onDispose(subscription.cancel);
+
+    return client.auth.currentUser;
   }
 
   Future<void> signIn({

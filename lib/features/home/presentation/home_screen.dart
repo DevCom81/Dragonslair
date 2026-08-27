@@ -72,9 +72,22 @@ class HomeScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 32),
-                        _AuthStatus(authState: authState),
-                        const SizedBox(height: 16),
-                        if (user != null) ...[
+                        if (authState.isLoading)
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.gold,
+                            ),
+                          )
+                        else if (user != null) ...[
+                          Text(
+                            _signedInWelcome(
+                              l10n,
+                              profileState.value?.displayName,
+                            ),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 16),
                           FilledButton(
                             onPressed: configured
                                 ? () => canPlay
@@ -84,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
                             child: Text(l10n.continuePlay),
                           ),
                           const SizedBox(height: 8),
-                          TextButton(
+                          OutlinedButton(
                             onPressed: () async {
                               await ref
                                   .read(authControllerProvider.notifier)
@@ -93,31 +106,33 @@ class HomeScreen extends ConsumerWidget {
                             },
                             child: Text(l10n.signOut),
                           ),
-                          const SizedBox(height: 12),
+                        ] else ...[
+                          _AuthStatus(authState: authState),
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: configured
+                                ? () => _playAsGuest(context, ref)
+                                : null,
+                            child: Text(l10n.playAsGuest),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            onPressed: configured
+                                ? () => context.pushNamed(
+                                      'auth',
+                                      queryParameters: {'mode': 'login'},
+                                    )
+                                : null,
+                            child: Text(l10n.logIn),
+                          ),
+                          const SizedBox(height: 8),
+                          FilledButton.tonal(
+                            onPressed: configured
+                                ? () => context.pushNamed('auth')
+                                : null,
+                            child: Text(l10n.signUp),
+                          ),
                         ],
-                        OutlinedButton(
-                          onPressed: configured
-                              ? () => _playAsGuest(context, ref)
-                              : null,
-                          child: Text(l10n.playAsGuest),
-                        ),
-                        const SizedBox(height: 8),
-                        OutlinedButton(
-                          onPressed: configured
-                              ? () => context.pushNamed(
-                                    'auth',
-                                    queryParameters: {'mode': 'login'},
-                                  )
-                              : null,
-                          child: Text(l10n.logIn),
-                        ),
-                        const SizedBox(height: 8),
-                        FilledButton.tonal(
-                          onPressed: configured
-                              ? () => context.pushNamed('auth')
-                              : null,
-                          child: Text(l10n.signUp),
-                        ),
                       ],
                     ),
                     ),
@@ -177,9 +192,28 @@ Future<void> _playAsGuest(BuildContext context, WidgetRef ref) async {
     }
     return;
   }
+  if (authState.value == null) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.authRequired),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+    return;
+  }
   if (context.mounted) {
     await routeAfterSession(context, ref);
   }
+}
+
+String _signedInWelcome(AppLocalizations l10n, String? displayName) {
+  final name = displayName?.trim();
+  if (name != null && name.isNotEmpty) {
+    return l10n.welcomeNamed(name);
+  }
+  return l10n.welcome;
 }
 
 class _AuthStatus extends StatelessWidget {

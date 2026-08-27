@@ -42,10 +42,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   final _knownEventIds = <String>{};
   var _journalOpen = false;
   Timer? _openJournalDebounce;
+  final _shortcutManager = _TypingAwareShortcutManager();
 
   @override
   void dispose() {
     _openJournalDebounce?.cancel();
+    _shortcutManager.dispose();
     super.dispose();
   }
 
@@ -101,37 +103,44 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       }
     });
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): _unfocusIfIdle,
-        const SingleActivator(LogicalKeyboardKey.keyJ): () {
-          if (_isEditingText() || !context.isCompact) {
-            return;
-          }
-          _openJournal();
+    _shortcutManager.shortcuts = {
+      const SingleActivator(LogicalKeyboardKey.escape):
+          VoidCallbackIntent(_unfocusIfIdle),
+      const SingleActivator(LogicalKeyboardKey.keyJ): VoidCallbackIntent(() {
+        if (_isEditingText() || !context.isCompact) {
+          return;
+        }
+        _openJournal();
+      }),
+      const SingleActivator(LogicalKeyboardKey.keyC): VoidCallbackIntent(() {
+        if (_isEditingText() || context.isExpanded) {
+          return;
+        }
+        final player = _currentPlayer(playersState.value, currentUser?.id);
+        if (player != null) {
+          _openSheet(player);
+        }
+      }),
+      const SingleActivator(LogicalKeyboardKey.keyI): VoidCallbackIntent(() {
+        if (_isEditingText() || context.isExpanded) {
+          return;
+        }
+        final player = _currentPlayer(playersState.value, currentUser?.id);
+        if (player != null) {
+          _openInventory(player);
+        }
+      }),
+    };
+
+    return Shortcuts.manager(
+      manager: _shortcutManager,
+      child: Actions(
+        actions: {
+          VoidCallbackIntent: VoidCallbackAction(),
         },
-        const SingleActivator(LogicalKeyboardKey.keyC): () {
-          if (_isEditingText() || context.isExpanded) {
-            return;
-          }
-          final player = _currentPlayer(playersState.value, currentUser?.id);
-          if (player != null) {
-            _openSheet(player);
-          }
-        },
-        const SingleActivator(LogicalKeyboardKey.keyI): () {
-          if (_isEditingText() || context.isExpanded) {
-            return;
-          }
-          final player = _currentPlayer(playersState.value, currentUser?.id);
-          if (player != null) {
-            _openInventory(player);
-          }
-        },
-      },
-      child: Focus(
-        autofocus: true,
-        child: Scaffold(
+        child: Focus(
+          autofocus: true,
+          child: Scaffold(
           appBar: AppBar(
             title: Text(
               finished
@@ -247,6 +256,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -262,11 +272,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     return null;
   }
 
-  bool _isEditingText() {
-    final primary = FocusManager.instance.primaryFocus;
-    final widget = primary?.context?.widget;
-    return widget is EditableText;
-  }
+  bool _isEditingText() => _isBoardTextFieldFocused();
 
   void _unfocusIfIdle() {
     if (_isEditingText()) {
@@ -422,5 +428,25 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
         );
       }
     }
+  }
+}
+
+bool _isBoardTextFieldFocused() {
+  final focusContext = FocusManager.instance.primaryFocus?.context;
+  if (focusContext == null) {
+    return false;
+  }
+  return focusContext.widget is EditableText ||
+      focusContext.findAncestorWidgetOfExactType<EditableText>() != null;
+}
+
+class _TypingAwareShortcutManager extends ShortcutManager {
+  @override
+  KeyEventResult handleKeypress(BuildContext context, KeyEvent event) {
+    if (event.logicalKey != LogicalKeyboardKey.escape &&
+        _isBoardTextFieldFocused()) {
+      return KeyEventResult.ignored;
+    }
+    return super.handleKeypress(context, event);
   }
 }

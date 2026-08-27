@@ -4,10 +4,10 @@ import '../domain/player_profile.dart';
 import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
 
-final currentProfileProvider = FutureProvider.autoDispose<PlayerProfile?>((ref) {
+final currentProfileProvider = FutureProvider<PlayerProfile?>((ref) {
   final user = ref.watch(authControllerProvider).value;
   if (user == null) {
     return null;
   }
-  return ref.watch(profileRepositoryProvider).fetchCurrent();
+  return ref.read(profileRepositoryProvider).fetchCurrent();
 });
