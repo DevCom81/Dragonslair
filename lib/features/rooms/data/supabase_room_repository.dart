@@ -116,6 +116,25 @@ class SupabaseRoomRepository implements RoomRepository {
   }
 
   @override
+  Stream<List<Room>> watchMyContinuableRooms() {
+    return _requiredClient
+        .from('rooms')
+        .stream(primaryKey: ['id'])
+        .map((rows) {
+          final rooms = rows
+              .map((row) => Room.fromJson(row))
+              .where(
+                (room) =>
+                    room.status == RoomStatus.paused ||
+                    room.status == RoomStatus.playing,
+              )
+              .toList();
+          rooms.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return rooms;
+        });
+  }
+
+  @override
   Future<void> startRoom(String roomId) async {
     try {
       await _requiredClient.from('rooms').update({
@@ -128,6 +147,51 @@ class SupabaseRoomRepository implements RoomRepository {
         error.message.isEmpty
             ? 'Impossible de demarrer la partie.'
             : error.message,
+        cause: error,
+      );
+    }
+  }
+
+  @override
+  Future<void> pauseRoom(String roomId) async {
+    await _setStatus(
+      roomId: roomId,
+      from: RoomStatus.playing,
+      to: RoomStatus.paused,
+      fallback: 'Impossible de mettre la partie en pause.',
+    );
+  }
+
+  @override
+  Future<void> resumeRoom(String roomId) async {
+    await _setStatus(
+      roomId: roomId,
+      from: RoomStatus.paused,
+      to: RoomStatus.playing,
+      fallback: 'Impossible de reprendre la partie.',
+    );
+  }
+
+  Future<void> _setStatus({
+    required String roomId,
+    required RoomStatus from,
+    required RoomStatus to,
+    required String fallback,
+  }) async {
+    try {
+      final row = await _requiredClient
+          .from('rooms')
+          .update({'status': to.toJson()})
+          .eq('id', roomId)
+          .eq('status', from.toJson())
+          .select()
+          .maybeSingle();
+      if (row == null) {
+        throw GameException(fallback);
+      }
+    } on PostgrestException catch (error) {
+      throw GameException(
+        error.message.isEmpty ? fallback : error.message,
         cause: error,
       );
     }

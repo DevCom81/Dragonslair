@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/join_code.dart';
+import 'room_navigation.dart';
 import 'room_providers.dart';
 
 class JoinRoomByCodeScreen extends ConsumerStatefulWidget {
@@ -99,9 +99,14 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
         _showError(l10n.noRoomForCode);
         return;
       }
-      if (mounted) {
-        context.pushNamed('figurines', pathParameters: {'roomId': room.id});
+      if (!mounted) {
+        return;
       }
+      await openRoomForCurrentUser(
+        context: context,
+        ref: ref,
+        room: room,
+      );
     } catch (error) {
       _showError(error.toString());
     } finally {

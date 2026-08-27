@@ -19,3 +19,7 @@ final roomProvider = StreamProvider.autoDispose.family<Room?, String>((
 ) {
   return ref.watch(roomRepositoryProvider).watchRoom(roomId);
 });
+
+final myContinuableRoomsProvider = StreamProvider.autoDispose<List<Room>>((ref) {
+  return ref.watch(roomRepositoryProvider).watchMyContinuableRooms();
+});

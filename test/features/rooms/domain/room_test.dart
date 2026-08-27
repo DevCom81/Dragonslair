@@ -40,6 +40,10 @@ void main() {
     expect(room.requiredClassIds, ['healer']);
   });
 
+  test('parses paused status', () {
+    expect(RoomStatus.fromJson('paused'), RoomStatus.paused);
+  });
+
   test('rejects unknown room status', () {
     expect(
       () => RoomStatus.fromJson('archived'),

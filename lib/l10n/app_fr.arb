@@ -114,6 +114,15 @@
     }
   },
   "startGame": "Demarrer la partie",
+  "pauseGame": "Pause",
+  "resumeGame": "Reprendre",
+  "gamePaused": "Partie en pause",
+  "waitingForHostResume": "En attente de la reprise par le host",
+  "continueGames": "Continuer une partie",
+  "roomPausedBadge": "En pause",
+  "roomPlayingBadge": "En cours",
+  "cannotJoinInProgress": "Cette partie a deja commence. Pas de nouveaux joueurs.",
+  "cannotJoinFinished": "Cette partie est terminee.",
   "waitingForHost": "En attente du host",
   "notEnoughPlayers": "Joueurs insuffisants ({current} / {minimum}).",
   "@notEnoughPlayers": {

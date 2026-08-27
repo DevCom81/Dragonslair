@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../auth/domain/character_stats.dart';
+import '../../rooms/domain/room.dart';
 import '../domain/inventory_item.dart';
 import '../domain/player.dart';
 import '../domain/player_effect.dart';
@@ -68,6 +69,18 @@ class SupabasePlayerRepository implements PlayerRepository {
 
     if (existingUser != null) {
       return existingUser;
+    }
+
+    final roomRows = await _requiredClient
+        .from('rooms')
+        .select('status')
+        .eq('id', roomId)
+        .limit(1);
+    final roomStatus = roomRows.isEmpty ? null : roomRows.first['status'];
+    if (roomStatus != RoomStatus.waiting.toJson()) {
+      throw const GameException(
+        'Impossible de rejoindre une partie deja lancee.',
+      );
     }
 
     final figurineTaken = existingPlayers.any((player) {

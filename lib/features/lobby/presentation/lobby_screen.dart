@@ -64,7 +64,11 @@ class LobbyScreen extends ConsumerWidget {
                   requiredClassIds: room.requiredClassIds,
                   takenClassIds: players.map((player) => player.classId),
                 );
-                final canStart = isHost && startIssues.isEmpty;
+                final isPaused = room.status == RoomStatus.paused;
+                final canStart = isHost &&
+                    startIssues.isEmpty &&
+                    room.status == RoomStatus.waiting;
+                final canResume = isHost && isPaused;
                 final scenarioLabel = localizedScenarioName(
                   l10n,
                   room.scenarioId,
@@ -131,7 +135,15 @@ class LobbyScreen extends ConsumerWidget {
                               ),
                               const Divider(),
                             ],
-                            if (startIssues.isNotEmpty) ...[
+                            if (isPaused) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.gamePaused,
+                                style: const TextStyle(color: AppColors.gold),
+                              ),
+                            ],
+                            if (startIssues.isNotEmpty &&
+                                room.status == RoomStatus.waiting) ...[
                               const SizedBox(height: 8),
                               for (final issue in startIssues)
                                 Text(
@@ -153,11 +165,21 @@ class LobbyScreen extends ConsumerWidget {
                         ),
                       ),
                       FilledButton(
-                        onPressed: canStart
-                            ? () => _startRoom(context, ref)
-                            : null,
+                        onPressed: isPaused
+                            ? (canResume
+                                ? () => _resumeRoom(context, ref)
+                                : null)
+                            : (canStart
+                                ? () => _startRoom(context, ref)
+                                : null),
                         child: Text(
-                          isHost ? l10n.startGame : l10n.waitingForHost,
+                          isPaused
+                              ? (isHost
+                                  ? l10n.resumeGame
+                                  : l10n.waitingForHostResume)
+                              : (isHost
+                                  ? l10n.startGame
+                                  : l10n.waitingForHost),
                         ),
                       ),
                     ],
@@ -182,6 +204,21 @@ class LobbyScreen extends ConsumerWidget {
   Future<void> _startRoom(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(roomRepositoryProvider).startRoom(roomId);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resumeRoom(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(roomRepositoryProvider).resumeRoom(roomId);
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

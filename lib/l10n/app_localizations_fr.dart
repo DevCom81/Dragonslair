@@ -224,6 +224,34 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startGame => 'Demarrer la partie';
 
   @override
+  String get pauseGame => 'Pause';
+
+  @override
+  String get resumeGame => 'Reprendre';
+
+  @override
+  String get gamePaused => 'Partie en pause';
+
+  @override
+  String get waitingForHostResume => 'En attente de la reprise par le host';
+
+  @override
+  String get continueGames => 'Continuer une partie';
+
+  @override
+  String get roomPausedBadge => 'En pause';
+
+  @override
+  String get roomPlayingBadge => 'En cours';
+
+  @override
+  String get cannotJoinInProgress =>
+      'Cette partie a deja commence. Pas de nouveaux joueurs.';
+
+  @override
+  String get cannotJoinFinished => 'Cette partie est terminee.';
+
+  @override
   String get waitingForHost => 'En attente du host';
 
   @override

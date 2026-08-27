@@ -14,5 +14,8 @@ abstract interface class RoomRepository {
   Future<Room> fetchRoom(String roomId);
   Future<Room?> fetchRoomByJoinCode(String joinCode);
   Stream<Room?> watchRoom(String roomId);
+  Stream<List<Room>> watchMyContinuableRooms();
   Future<void> startRoom(String roomId);
+  Future<void> pauseRoom(String roomId);
+  Future<void> resumeRoom(String roomId);
 }

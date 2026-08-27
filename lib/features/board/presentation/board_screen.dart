@@ -16,6 +16,8 @@ import '../../game/presentation/in_game_inventory_view.dart';
 import '../../game/presentation/in_game_sheet_view.dart';
 import '../../players/domain/player.dart';
 import '../../players/presentation/player_providers.dart';
+import '../../rooms/domain/room.dart';
+import '../../rooms/presentation/room_providers.dart';
 import 'game_board.dart';
 
 class BoardScreen extends ConsumerStatefulWidget {
@@ -47,6 +49,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final l10n = AppLocalizations.of(context);
     final playersState = ref.watch(roomPlayersProvider(widget.roomId));
     final currentUser = ref.watch(authControllerProvider).value;
+    final room = ref.watch(roomProvider(widget.roomId)).value;
+    final paused = room?.status == RoomStatus.paused;
+    final isHost =
+        currentUser != null && room != null && currentUser.id == room.hostId;
 
     ref.listen(roomEventsProvider(widget.roomId), (previous, next) {
       final events = next.value;
@@ -79,8 +85,22 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.boardTitle),
-        actions: const [LanguageButton()],
+        title: Text(paused ? l10n.gamePaused : l10n.boardTitle),
+        actions: [
+          if (isHost && !paused)
+            IconButton(
+              onPressed: _pauseRoom,
+              icon: const Icon(Icons.pause_circle_outline),
+              tooltip: l10n.pauseGame,
+            ),
+          if (isHost && paused)
+            IconButton(
+              onPressed: _resumeRoom,
+              icon: const Icon(Icons.play_circle_outline),
+              tooltip: l10n.resumeGame,
+            ),
+          const LanguageButton(),
+        ],
       ),
       body: SafeArea(
         child: playersState.when(
@@ -94,6 +114,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                     players: players,
                     currentUserId: currentUser?.id,
                     onMovePlayer: (player, x, y) {
+                      if (paused) {
+                        return Future.value();
+                      }
                       return ref.read(playerRepositoryProvider).updatePosition(
                             playerId: player.id,
                             x: x,
@@ -144,6 +167,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   roomId: widget.roomId,
                   currentPlayer: currentPlayer,
                   players: players,
+                  paused: paused,
                 ),
               ],
             );
@@ -190,6 +214,41 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     );
     if (mounted) {
       _journalOpen = false;
+    }
+  }
+
+  Future<void> _pauseRoom() async {
+    final l10n = AppLocalizations.of(context);
+    try {
+      await ref.read(roomRepositoryProvider).pauseRoom(widget.roomId);
+      await ref.read(gameEventRepositoryProvider).createSystem(
+            roomId: widget.roomId,
+            content: l10n.gamePaused,
+          );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resumeRoom() async {
+    try {
+      await ref.read(roomRepositoryProvider).resumeRoom(widget.roomId);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 }

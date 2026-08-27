@@ -479,6 +479,60 @@ abstract class AppLocalizations {
   /// **'Start the game'**
   String get startGame;
 
+  /// No description provided for @pauseGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pauseGame;
+
+  /// No description provided for @resumeGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resumeGame;
+
+  /// No description provided for @gamePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Game paused'**
+  String get gamePaused;
+
+  /// No description provided for @waitingForHostResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to resume'**
+  String get waitingForHostResume;
+
+  /// No description provided for @continueGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue a game'**
+  String get continueGames;
+
+  /// No description provided for @roomPausedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get roomPausedBadge;
+
+  /// No description provided for @roomPlayingBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get roomPlayingBadge;
+
+  /// No description provided for @cannotJoinInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'This game already started. New players cannot join.'**
+  String get cannotJoinInProgress;
+
+  /// No description provided for @cannotJoinFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is finished.'**
+  String get cannotJoinFinished;
+
   /// No description provided for @waitingForHost.
   ///
   /// In en, this message translates to:

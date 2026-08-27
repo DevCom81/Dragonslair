@@ -16,12 +16,14 @@ class ActionPanel extends ConsumerStatefulWidget {
     required this.roomId,
     required this.currentPlayer,
     required this.players,
+    this.paused = false,
     super.key,
   });
 
   final String roomId;
   final Player? currentPlayer;
   final List<Player> players;
+  final bool paused;
 
   @override
   ConsumerState<ActionPanel> createState() => _ActionPanelState();
@@ -58,7 +60,10 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
         widget.currentPlayer != null &&
         pending.playerId == widget.currentPlayer!.id;
     final canAct =
-        widget.currentPlayer != null && !_isSubmitting && !isMyRoll;
+        widget.currentPlayer != null &&
+        !_isSubmitting &&
+        !isMyRoll &&
+        !widget.paused;
 
     return Material(
       color: AppColors.surface,
@@ -68,6 +73,16 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.paused)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  l10n.gamePaused,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.gold,
+                      ),
+                ),
+              ),
             PendingAbilityRollBar(
               roomId: widget.roomId,
               currentPlayer: widget.currentPlayer,

@@ -114,6 +114,15 @@
     }
   },
   "startGame": "Partie starten",
+  "pauseGame": "Pause",
+  "resumeGame": "Fortsetzen",
+  "gamePaused": "Spiel pausiert",
+  "waitingForHostResume": "Warte, bis der Host fortsetzt",
+  "continueGames": "Spiel fortsetzen",
+  "roomPausedBadge": "Pausiert",
+  "roomPlayingBadge": "Laeuft",
+  "cannotJoinInProgress": "Dieses Spiel laeuft bereits. Keine neuen Spieler.",
+  "cannotJoinFinished": "Dieses Spiel ist beendet.",
   "waitingForHost": "Warte auf den Host",
   "notEnoughPlayers": "Nicht genug Spieler ({current} / {minimum}).",
   "@notEnoughPlayers": {

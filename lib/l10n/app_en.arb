@@ -114,6 +114,15 @@
     }
   },
   "startGame": "Start the game",
+  "pauseGame": "Pause",
+  "resumeGame": "Resume",
+  "gamePaused": "Game paused",
+  "waitingForHostResume": "Waiting for the host to resume",
+  "continueGames": "Continue a game",
+  "roomPausedBadge": "Paused",
+  "roomPlayingBadge": "In progress",
+  "cannotJoinInProgress": "This game already started. New players cannot join.",
+  "cannotJoinFinished": "This game is finished.",
   "waitingForHost": "Waiting for the host",
   "notEnoughPlayers": "Not enough players ({current} / {minimum}).",
   "@notEnoughPlayers": {

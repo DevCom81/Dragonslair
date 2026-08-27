@@ -9,6 +9,8 @@ import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
 import '../../players/presentation/player_providers.dart';
+import '../../rooms/domain/room.dart';
+import '../../rooms/domain/room_entry.dart';
 import '../../rooms/presentation/room_providers.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/figurine_definition.dart';
@@ -31,6 +33,7 @@ class _FigurineSelectionScreenState
     extends ConsumerState<FigurineSelectionScreen> {
   int? _figurineId;
   var _isSubmitting = false;
+  var _didRedirect = false;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +57,17 @@ class _FigurineSelectionScreenState
 
             return playersState.when(
               data: (players) {
+                final alreadyJoined = user != null &&
+                    players.any((player) => player.userId == user.id);
+                if (room.status != RoomStatus.waiting) {
+                  if (alreadyJoined || user?.id == room.hostId) {
+                    _redirectMember(room, alreadyJoined, user?.id == room.hostId);
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.gold),
+                    );
+                  }
+                  return Center(child: Text(l10n.cannotJoinInProgress));
+                }
                 final takenFigurines =
                     players.map((player) => player.figurineId).toSet();
                 final takenClasses = players
@@ -158,6 +172,28 @@ class _FigurineSelectionScreenState
         ),
       ),
     );
+  }
+
+  void _redirectMember(Room room, bool alreadyJoined, bool isHost) {
+    if (_didRedirect) {
+      return;
+    }
+    _didRedirect = true;
+    final action = resolveRoomEntry(
+      status: room.status,
+      alreadyJoined: alreadyJoined,
+      isHost: isHost,
+    );
+    final routeName = routeNameFor(action);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || routeName == null) {
+        return;
+      }
+      context.pushReplacementNamed(
+        routeName,
+        pathParameters: {'roomId': widget.roomId},
+      );
+    });
   }
 
   Future<void> _join(

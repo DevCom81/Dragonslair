@@ -1,12 +1,14 @@
 enum RoomStatus {
   waiting,
   playing,
+  paused,
   finished;
 
   static RoomStatus fromJson(Object? value) {
     return switch (value) {
       'waiting' => RoomStatus.waiting,
       'playing' => RoomStatus.playing,
+      'paused' => RoomStatus.paused,
       'finished' => RoomStatus.finished,
       _ => throw ArgumentError('Unknown room status: $value'),
     };
