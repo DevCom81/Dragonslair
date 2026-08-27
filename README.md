@@ -1,99 +1,55 @@
 # DragonsLair
 
-Application mobile Flutter de jeu de role multijoueur medieval-fantasy avec maitre du jeu IA.
+Un jeu de rôle médiéval-fantasy, à vivre seul ou entre amis, avec un maître du jeu qui invente la suite à chaque décision.
 
-## Etat
+Pas de gemmes, pas d’énergie, pas de boutique de crédits. Une aventure à essayer, puis le jeu complet à débloquer.
 
-Gameplay MVP : auth anonyme, pseudo joueur, rooms avec code, selection de figurine, lobby realtime, plateau, pions, des, journal et MJ IA Railway.
+---
 
-## Stack
+## Le but du jeu
 
-- Flutter / Dart
-- Riverpod
-- go_router
-- Supabase Auth, PostgreSQL et Realtime
-- Backend MJ IA FastAPI sur Railway
-- OpenRouter avec `google/gemini-3.1-flash-lite`
+Incarne un héros. Choisis ta classe, tes traits, ta figurine. Puis pars en quête : escortes, donjons, forêts, sièges, ou une histoire que tu as toi-même imaginée.
 
-## Assets
+Le maître du jeu raconte, pose des choix, fait parler le monde. Toi, tu agis. Tu peux examiner, parler, attaquer, défendre, utiliser un objet, ou décrire n’importe quelle action libre. Quand le sort d’une scène est incertain, tu lances les dés. Le combat, les blessures, les objets trouvés et la fin de l’histoire découlent de la partie, pas d’un script figé.
 
-Les assets reels sont conserves dans `Assets/`.
+L’objectif : mener l’aventure à son terme — victoire, défaite, ou une issue plus trouble — et en garder le récit.
 
-Ne pas renommer ce dossier et ne pas remplacer les images existantes par des placeholders.
+---
 
-## Configuration
+## Comment on joue
 
-Les valeurs de configuration attendues sont documentees dans `.env.example`.
+1. **Crée ton personnage**  
+   Un pseudo, six caractéristiques, une classe. Ta fiche t’accompagne en jeu, avec l’inventaire et le journal de l’histoire.
 
-Pour lancer avec Supabase :
+2. **Essaie DragonsLair gratuitement**  
+   Une démo solo, courte, avec maître du jeu, dés et combat. Le temps d’une poignée de minutes, l’aventure s’ouvre… et s’arrête au seuil du secret.
 
-```powershell
-flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=GAME_MASTER_MODE=mock
-```
+3. **Débloque le jeu**  
+   Aventures sans limite de temps, parties avec tes amis, histoires que tu crées toi-même, parties sauvegardées et reprises.
 
-Sans ces valeurs, l'application compile et affiche un etat local non connecte.
+4. **Autour de la table**  
+   En version complète, tu crées une partie ou tu rejoins des compagnons. Chacun choisit sa figurine. L’hôte lance la séance. Sur le plateau, vous agissez à tour de rôle. L’hôte peut mettre en pause : la même table vous attend plus tard.
 
-## Backend MJ IA Railway
+5. **La fin**  
+   Quand l’aventure se clôt, un résumé rassemble le destin des héros, les moments forts, les ennemis vaincus. Puis retour à la taverne, pour une nouvelle quête.
 
-Le backend est dans `backend/`. Il expose :
+---
 
-- `GET /health`
-- `POST /v1/game-master/respond` (JWT joueur obligatoire)
+## Ce que tu y trouves
 
-Variables a configurer sur Railway :
+- Un maître du jeu qui s’adapte à tes actions, pas un scénario unique à dérouler.
+- Des choix libres, pas seulement des boutons.
+- Des jets de dés partagés à la table.
+- Du combat, des ennemis sur le plateau, des objets à ramasser, équiper ou boire.
+- Solo ou à plusieurs.
+- Quatre langues : français, anglais, espagnol, allemand.
 
-```text
-OPENROUTER_API_KEY=...
-OPENROUTER_MODEL=google/gemini-3.1-flash-lite
-SUPABASE_URL=...
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-```
+---
 
-La cle OpenRouter et la service role ne doivent jamais etre ajoutees dans Flutter.
+## Démo et jeu complet
 
-Apres OpenRouter, Railway verifie le JWT du joueur puis ecrit les evenements `narration` / `system` dans Supabase.
+**La démo** te laisse créer un personnage et vivre une première scène, seul, le temps d’une courte séance.
 
-## Migration identite joueur
+**Le jeu complet** lève la limite de temps, ouvre le multijoueur, la création d’aventures et la sauvegarde de tes parties.
 
-Executer manuellement `supabase/migrations/20260827_player_identity_and_room_code.sql` dans l'editeur SQL Supabase. Ne pas ecraser `supabase/schema.sql`.
-
-Pour connecter Flutter au backend Railway :
-
-```powershell
-flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=GAME_MASTER_MODE=remote --dart-define=GAME_MASTER_BACKEND_URL=https://ton-backend.up.railway.app
-```
-
-Pour rester en developpement local sans appel IA distant :
-
-```powershell
-flutter run --dart-define=GAME_MASTER_MODE=mock
-```
-
-## Validation
-
-Commandes de base :
-
-```powershell
-flutter pub get
-flutter analyze
-flutter test
-```
-
-Les commandes `flutter build` Android sont lancees manuellement par le proprietaire du projet, pas par l'agent Cursor.
-
-## Flux Gameplay MVP
-
-Le flux actuel vise une partie simple :
-
-```text
-Home -> Pseudo -> Creer/Rejoindre/Code -> Figurine -> Lobby -> Plateau -> Actions/Des -> Journal
-```
-
-Les rooms, joueurs et evenements utilisent Supabase. Le plateau utilise `Assets/Plateau.png` et les pions utilisent `Assets/figurines.png`.
-
-Limites actuelles :
-
-- pas de moteur de regles JDR complet ;
-- auth anonyme + pseudo, pas encore d'email/mot de passe ;
-- Railway ecrit les narrations MJ, le client n'ecrit que les actions joueur.
+La licence est liée à ton compte : tu la retrouves en te reconnectant, sur le même appareil ou un autre.

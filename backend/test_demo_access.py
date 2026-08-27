@@ -103,6 +103,75 @@ class DemoAccessTest(unittest.TestCase):
         self.assertIn("DEMO END REQUIRED", prompt)
         self.assertIn("finish_game", prompt)
 
+    def test_demo_scenario_is_allowed_for_the_host(self) -> None:
+        now = datetime(2026, 8, 27, 10, 5, tzinfo=timezone.utc)
+        status = evaluate_demo_play(
+            access_level="demo",
+            room_status="playing",
+            room_scenario_id="demo",
+            room_host_id="user",
+            user_id="user",
+            started_at=datetime(2026, 8, 27, 10, 0, tzinfo=timezone.utc),
+            expires_at=datetime(2026, 8, 27, 10, 10, tzinfo=timezone.utc),
+            completed_at=None,
+            now=now,
+        )
+        self.assertEqual(status, "ok")
+
+    def test_custom_and_multiplayer_are_forbidden_in_demo(self) -> None:
+        self.assertEqual(
+            evaluate_demo_play(
+                access_level="demo",
+                room_status="playing",
+                room_scenario_id="custom",
+                room_host_id="user",
+                user_id="user",
+                started_at=None,
+                expires_at=None,
+                completed_at=None,
+            ),
+            "forbidden",
+        )
+        self.assertEqual(
+            evaluate_demo_play(
+                access_level="demo",
+                room_status="playing",
+                room_scenario_id="demo",
+                room_host_id="host",
+                user_id="other",
+                started_at=None,
+                expires_at=None,
+                completed_at=None,
+            ),
+            "forbidden",
+        )
+
+    def test_clock_does_not_depend_on_character_sheet_fields(self) -> None:
+        now = datetime(2026, 8, 27, 10, 0, tzinfo=timezone.utc)
+        start, end, status = next_demo_clock(
+            now=now,
+            started_at=None,
+            expires_at=None,
+            completed_at=None,
+        )
+        self.assertEqual(status, "ok")
+        self.assertEqual(end - start, timedelta(minutes=10))
+
+    def test_expired_clock_is_expired_not_ok(self) -> None:
+        start = datetime(2026, 8, 27, 10, 0, tzinfo=timezone.utc)
+        status = evaluate_demo_play(
+            access_level="demo",
+            room_status="playing",
+            room_scenario_id="demo",
+            room_host_id="user",
+            user_id="user",
+            started_at=start,
+            expires_at=start + timedelta(minutes=10),
+            completed_at=None,
+            now=start + timedelta(minutes=10),
+        )
+        self.assertEqual(status, "expired")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -47,6 +47,14 @@ def is_webhook_configured() -> bool:
     return bool(stripe_webhook_secret())
 
 
+def already_has_full_access(entitlement: object) -> bool:
+    from demo_access import normalize_access_level
+
+    if not isinstance(entitlement, dict):
+        return False
+    return normalize_access_level(entitlement.get("access_level")) == "full"
+
+
 def normalize_purchase_source(value: object) -> str:
     raw = str(value or "").strip().lower()
     if raw in PURCHASE_SOURCES:

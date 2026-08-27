@@ -37,6 +37,28 @@ class EnemyPayloadTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             EnemyHpPayload.model_validate({"name": "Gobelin", "amount": -1})
 
+    def test_move_payload_clamps_to_the_board(self) -> None:
+        from models import MoveEnemyPayload
+
+        payload = MoveEnemyPayload.model_validate(
+            flatten_position_payload(
+                {"enemy_id": "e1", "position": {"x": 0.1, "y": 0.9}}
+            )
+        )
+        self.assertEqual(payload.enemy_id, "e1")
+        self.assertEqual(payload.x, 0.1)
+        self.assertEqual(payload.y, 0.9)
+        with self.assertRaises(ValidationError):
+            MoveEnemyPayload.model_validate({"name": "Gobelin", "x": -0.1, "y": 0.5})
+
+    def test_defeat_payload_needs_id_or_name(self) -> None:
+        from models import DefeatEnemyPayload
+
+        by_id = DefeatEnemyPayload.model_validate({"enemy_id": "e1"})
+        self.assertEqual(by_id.enemy_id, "e1")
+        by_name = DefeatEnemyPayload.model_validate({"name": "Gobelin"})
+        self.assertEqual(by_name.name, "Gobelin")
+
 
 if __name__ == "__main__":
     unittest.main()

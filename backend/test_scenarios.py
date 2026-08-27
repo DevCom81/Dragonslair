@@ -43,6 +43,28 @@ class CustomScenarioTest(unittest.TestCase):
         self.assertNotIn("gm_secrets", public)
         self.assertEqual(generated.gm_secrets, ["Un assassin est deja a table"])
 
+    def test_public_world_state_is_what_gets_persisted_on_the_room(self) -> None:
+        generated = GeneratedScenario.model_validate(
+            {
+                "title": "Escorte",
+                "setting": "Royaume fracture",
+                "tone": "sombre",
+                "public_objective": "Conduire le prince a la capitale",
+                "starting_location": {
+                    "name": "Auberge",
+                    "description": "Une salle enfumee",
+                },
+                "initial_situation": "La pluie tombe.",
+                "known_facts": ["Le prince voyage incognito"],
+                "gm_secrets": ["Un assassin est deja a table"],
+                "opening_narration": "La porte claque.",
+            }
+        )
+        persisted = public_world_state(generated.public_dict())
+        self.assertEqual(persisted["title"], "Escorte")
+        self.assertEqual(persisted["setting"], "Royaume fracture")
+        self.assertNotIn("gm_secrets", persisted)
+
     def test_generate_request_requires_a_real_prompt(self) -> None:
         with self.assertRaises(Exception):
             GenerateScenarioRequest.model_validate(

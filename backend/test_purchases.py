@@ -4,6 +4,7 @@ import json
 import unittest
 
 from purchases import (
+    already_has_full_access,
     grant_metadata,
     is_checkout_configured,
     normalize_purchase_source,
@@ -121,6 +122,13 @@ class PurchasesTest(unittest.TestCase):
         self.assertEqual(meta["provider"], "stripe")
         self.assertNotIn("access_level", meta)
         self.assertNotIn("full", meta.values())
+
+    def test_full_grant_is_idempotent(self) -> None:
+        self.assertTrue(
+            already_has_full_access({"access_level": "full", "source": "purchase"})
+        )
+        self.assertFalse(already_has_full_access({"access_level": "demo"}))
+        self.assertFalse(already_has_full_access({"access_level": "full_access"}))
 
 
 if __name__ == "__main__":

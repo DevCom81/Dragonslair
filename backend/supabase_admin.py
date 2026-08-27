@@ -1093,11 +1093,10 @@ async def grant_full_entitlement(
     source: str,
     metadata: dict | None = None,
 ) -> dict:
-    from demo_access import normalize_access_level
-    from purchases import normalize_purchase_source
+    from purchases import already_has_full_access, normalize_purchase_source
 
     current = await fetch_user_entitlement(user_id=user_id)
-    if normalize_access_level(current.get("access_level")) == "full":
+    if already_has_full_access(current):
         return current
     extra = metadata if isinstance(metadata, dict) else {}
     previous = current.get("metadata")
