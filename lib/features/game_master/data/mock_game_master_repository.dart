@@ -53,4 +53,19 @@ class MockGameMasterRepository implements GameMasterRepository {
       ],
     );
   }
+
+  @override
+  Future<GameMasterResponse> resolveRoll(ResolveRollInput input) {
+    return respond(
+      GameMasterInput(
+        action:
+            'roll_result raw=${input.raw} pending_roll_id=${input.pendingRollId}',
+        playerName: input.playerName,
+        players: input.players,
+        enemies: input.enemies,
+        recentEvents: input.recentEvents,
+        combat: input.combat,
+      ),
+    );
+  }
 }

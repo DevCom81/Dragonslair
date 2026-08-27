@@ -33,4 +33,13 @@ class GameMasterController extends AsyncNotifier<GameMasterResponse?> {
     state = response;
     return response.requireValue;
   }
+
+  Future<GameMasterResponse> resolveRoll(ResolveRollInput input) async {
+    state = const AsyncLoading();
+    final response = await AsyncValue.guard(() {
+      return ref.read(gameMasterRepositoryProvider).resolveRoll(input);
+    });
+    state = response;
+    return response.requireValue;
+  }
 }

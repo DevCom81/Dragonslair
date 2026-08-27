@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n_labels.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/player_profile.dart';
@@ -107,8 +108,12 @@ class _FigurineSelectionScreenState
                       child: GridView.builder(
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: context.responsiveValue(
+                            compact: 3,
+                            medium: 4,
+                            expanded: 6,
+                          ),
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                           childAspectRatio: 0.75,

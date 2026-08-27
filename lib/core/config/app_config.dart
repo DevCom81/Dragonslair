@@ -43,6 +43,20 @@ class AppConfig {
     return Uri.parse('$baseUrl/v1/game-master/respond');
   }
 
+  static Uri get gameMasterResolveRollUri {
+    final baseUrl = gameMasterBackendUrl.endsWith('/')
+        ? gameMasterBackendUrl.substring(0, gameMasterBackendUrl.length - 1)
+        : gameMasterBackendUrl;
+    return Uri.parse('$baseUrl/v1/game-master/resolve-roll');
+  }
+
+  static Uri get scenarioGenerateUri {
+    final baseUrl = gameMasterBackendUrl.endsWith('/')
+        ? gameMasterBackendUrl.substring(0, gameMasterBackendUrl.length - 1)
+        : gameMasterBackendUrl;
+    return Uri.parse('$baseUrl/v1/scenarios/generate');
+  }
+
   static String _readConfig(
     String key,
     String dartDefineValue, {

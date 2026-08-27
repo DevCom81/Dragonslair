@@ -14,4 +14,12 @@ void main() {
     expect(ScenarioCatalog.forest.requiredClassIds, ['cleric']);
     expect(ScenarioCatalog.siege.requiredClassIds, ['fighter', 'cleric']);
   });
+
+  test('custom scenario is not a dungeon fallback and has no required class', () {
+    final custom = ScenarioCatalog.byId('custom');
+    expect(custom.id, 'custom');
+    expect(custom.minPlayers, 1);
+    expect(custom.requiredClassIds, isEmpty);
+    expect(ScenarioCatalog.all, isNot(contains(custom)));
+  });
 }

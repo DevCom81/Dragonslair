@@ -70,4 +70,57 @@ class RemoteGameMasterRepository implements GameMasterRepository {
       }
     }
   }
+
+  @override
+  Future<GameMasterResponse> resolveRoll(ResolveRollInput input) async {
+    if (!AppConfig.isGameMasterBackendConfigured) {
+      throw const NetworkException(
+        'Backend MJ IA non configure. Fournis GAME_MASTER_BACKEND_URL.',
+      );
+    }
+
+    final client = _client ?? http.Client();
+    final ownsClient = _client == null;
+
+    try {
+      final token = accessToken;
+      if (token == null || token.isEmpty) {
+        throw const AppAuthException(
+          'Session absente. Reconnecte-toi avant d interroger le MJ.',
+        );
+      }
+
+      final response = await client
+          .post(
+            AppConfig.gameMasterResolveRollUri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(input.toJson()),
+          )
+          .timeout(const Duration(seconds: 35));
+
+      if (response.statusCode >= 400) {
+        throw NetworkException(
+          'Le backend MJ IA a refuse le jet (${response.statusCode}).',
+        );
+      }
+
+      return GameMasterResponse.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    } on TimeoutException catch (error) {
+      throw NetworkException('Le backend MJ IA ne repond pas.', cause: error);
+    } on FormatException catch (error) {
+      throw NetworkException(
+        'Le backend MJ IA a renvoye une reponse invalide.',
+        cause: error,
+      );
+    } finally {
+      if (ownsClient) {
+        client.close();
+      }
+    }
+  }
 }

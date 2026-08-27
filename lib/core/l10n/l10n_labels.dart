@@ -30,7 +30,18 @@ String localizedStatLabel(AppLocalizations l10n, String key) {
   };
 }
 
-String localizedScenarioName(AppLocalizations l10n, String? id) {
+String localizedScenarioName(
+  AppLocalizations l10n,
+  String? id, {
+  String? customTitle,
+}) {
+  if (id == 'custom') {
+    final title = customTitle?.trim();
+    if (title != null && title.isNotEmpty) {
+      return title;
+    }
+    return l10n.scenarioCustomName;
+  }
   return switch (id) {
     'forest' => l10n.scenarioForestName,
     'siege' => l10n.scenarioSiegeName,

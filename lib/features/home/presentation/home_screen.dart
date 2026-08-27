@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -43,16 +44,21 @@ class HomeScreen extends ConsumerWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Image.asset(
-                          'Assets/splash-icon.png',
-                          height: 120,
-                          semanticLabel: l10n.emblemSemantic,
-                        ),
+                    padding: context.pagePadding,
+                    child: ContentConstraint(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Image.asset(
+                            'Assets/splash-icon.png',
+                            height: context.responsiveValue(
+                              compact: 120,
+                              medium: 140,
+                              expanded: 160,
+                            ),
+                            semanticLabel: l10n.emblemSemantic,
+                          ),
                         const SizedBox(height: 24),
                         Text(
                           l10n.appTitle,
@@ -113,6 +119,7 @@ class HomeScreen extends ConsumerWidget {
                           child: Text(l10n.signUp),
                         ),
                       ],
+                    ),
                     ),
                   ),
                 ),

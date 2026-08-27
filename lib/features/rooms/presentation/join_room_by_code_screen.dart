@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -38,8 +39,9 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
+          padding: context.pagePadding,
+          child: ContentConstraint(
+            child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,6 +73,7 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
                       : Text(l10n.join),
                 ),
               ],
+            ),
             ),
           ),
         ),

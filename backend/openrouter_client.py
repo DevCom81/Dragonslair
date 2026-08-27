@@ -32,28 +32,41 @@ Tu dois retourner uniquement un objet JSON valide compatible avec ce contrat:
 }
 
 Types d'actions autorises:
-narrate, spawn_enemy, move_enemy, damage_player, heal_player, give_item,
-remove_item, start_combat, end_combat, system_message, request_roll,
-apply_effect, remove_effect.
+narrate, spawn_enemy, move_enemy, damage_enemy, heal_enemy, defeat_enemy,
+damage_player, heal_player, give_item, remove_item, start_combat, end_combat,
+system_message, request_roll, apply_effect, remove_effect.
 
 Payloads:
+- spawn_enemy: {"name": "Gobelin", "enemy_type": "goblin", "x": 0.4, "y": 0.6, "hp": 12, "max_hp": 12}
+- move_enemy: {"enemy_id": "<id>", "x": 0.5, "y": 0.5} ou {"name": "Gobelin", "x": 0.5, "y": 0.5}
+- damage_enemy / heal_enemy: {"enemy_id": "<id>", "amount": 4} — jamais damage_player pour un ennemi
+- defeat_enemy: {"enemy_id": "<id>"} ou {"name": "Gobelin"}
 - damage_player / heal_player: {"player_id": "<id>", "amount": 4}
 - give_item: {"player_id": "<id>", "item": {"id": "sword", "name": "Epee", "quantity": 1, "type": "weapon|armor|shield|accessory|potion|scroll|tool", "bonuses": {"strength": 1}, "heal": 20, "effect": {"id": "bless", "name": "Benediction", "kind": "buff", "stat": "wisdom", "delta": 2, "remaining": 3}}}
 - remove_item: {"player_id": "<id>", "item_id": "torch"}
 - request_roll: {"player_id": "<id>", "ability": "strength|dexterity|constitution|intelligence|wisdom|charisma", "dc": 12, "reason": "escalader"}
 - apply_effect: {"player_id": "<id>", "effect": {"id": "poison", "name": "Poison", "kind": "debuff", "stat": "constitution", "delta": -2, "remaining": 2}}
 - remove_effect: {"player_id": "<id>", "effect_id": "poison"}
+- start_combat: {"round": 1} optionnel. Premier start = round 1. Un start pendant un combat actif passe au round suivant, ou au round fourni.
+- end_combat: {} pour terminer. Ne supprime pas les ennemis.
 
 Contraintes:
 - garde une narration courte et jouable;
 - ne demande jamais de secret;
 - n'invente pas de regle complexe inutile;
-- pour une action incertaine, utilise request_roll et n'applique PAS encore damage/heal/give/remove/apply_effect;
-- si le message joueur contient deja un resultat de jet, resous la scene (succes/echec) et applique les effets;
+- pour une action incertaine, utilise request_roll et n'applique PAS encore damage/heal/give/remove/apply_effect/spawn_enemy/damage_enemy;
+- tu PEUX emettre start_combat en meme temps qu'un request_roll (cadrage de scene, pas une consequence);
+- si le message joueur contient deja un resultat de jet, ou si roll_result est present, resous la scene (succes/echec) et applique les effets;
+- n'emets pas request_roll une seconde fois pour le meme jet deja resolu;
 - si une action structuree n'est pas certaine, utilise system_message ou request_roll;
 - un objet equipe ou un effet deja present sur le joueur ne doit pas etre reapplique a l'identique;
 - les potions (type potion, heal) et parchemins structures (type scroll + effect) sont utilises par le joueur: narre seulement, ne les re-soigne pas;
-- sorts et blessures durables: apply_effect (remaining = nombre de resolutions MJ, omit si permanent).
+- sorts et blessures durables: apply_effect (remaining = nombre de resolutions MJ, omit si permanent);
+- le champ combat {active, round} est l'etat actuel: respecte-le;
+- n'invente jamais les degats: le client ne calcule pas les PV. Apres un jet, utilise damage_enemy / damage_player;
+- si world_state est present, respecte ce cadre (lieu, ton, objectif public) sans reveler gm_secrets;
+- n'expose jamais gm_secrets dans narration, choices, ni actions;
+- ne raconte pas toute la campagne: construis la suite selon l'action du joueur.
 """.strip()
 
 
@@ -65,9 +78,18 @@ def _build_user_prompt(request: GameMasterRequest) -> str:
             "player_name": request.player_name,
             "action": request.action,
             "players": [player.model_dump() for player in request.players],
+            "enemies": [enemy.model_dump() for enemy in request.enemies],
             "recent_events": [
                 event.model_dump() for event in request.recent_events
             ],
+            "combat": (
+                request.combat.model_dump() if request.combat else None
+            ),
+            "world_state": request.world_state,
+            "gm_secrets": request.gm_secrets,
+            "roll_result": (
+                request.roll_result.model_dump() if request.roll_result else None
+            ),
         },
         ensure_ascii=False,
     )

@@ -1,3 +1,5 @@
+import '../../scenarios/domain/world_state.dart';
+
 enum RoomStatus {
   waiting,
   playing,
@@ -29,6 +31,8 @@ class Room {
     this.scenario,
     this.scenarioId,
     this.joinCode,
+    this.scenarioPrompt = '',
+    this.worldState = const {},
   });
 
   final String id;
@@ -41,6 +45,8 @@ class Room {
   final String? joinCode;
   final int minPlayers;
   final List<String> requiredClassIds;
+  final String scenarioPrompt;
+  final Map<String, dynamic> worldState;
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
@@ -54,6 +60,8 @@ class Room {
       joinCode: json['join_code'] as String?,
       minPlayers: (json['min_players'] as num?)?.toInt() ?? 1,
       requiredClassIds: _stringList(json['required_class_ids']),
+      scenarioPrompt: json['scenario_prompt'] as String? ?? '',
+      worldState: sanitizePublicWorldState(json['world_state']),
     );
   }
 
@@ -69,6 +77,8 @@ class Room {
       'join_code': joinCode,
       'min_players': minPlayers,
       'required_class_ids': requiredClassIds,
+      'scenario_prompt': scenarioPrompt,
+      'world_state': worldState,
     };
   }
 

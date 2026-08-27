@@ -1,6 +1,16 @@
 import unittest
 
-from state_effects import apply_damage, apply_heal, give_item, remove_item, tick_effects
+from state_effects import (
+    apply_damage,
+    apply_enemy_damage,
+    apply_enemy_heal,
+    apply_heal,
+    enemy_status_for_hp,
+    flatten_position_payload,
+    give_item,
+    remove_item,
+    tick_effects,
+)
 
 
 class StateEffectsTest(unittest.TestCase):
@@ -44,6 +54,25 @@ class StateEffectsTest(unittest.TestCase):
         self.assertEqual(len(expired), 1)
         self.assertEqual(expired[0]["id"], "bless")
         self.assertEqual(kept[0]["id"], "mark")
+
+    def test_enemy_damage_clamps_and_defeats_at_zero(self) -> None:
+        self.assertEqual(apply_enemy_damage(12, 4, 12), 8)
+        self.assertEqual(apply_enemy_damage(3, 10, 12), 0)
+        self.assertEqual(enemy_status_for_hp(0), "defeated")
+        self.assertEqual(enemy_status_for_hp(8), "active")
+
+    def test_enemy_heal_clamps_to_max_hp_and_revives(self) -> None:
+        self.assertEqual(apply_enemy_heal(0, 5, 12), 5)
+        self.assertEqual(apply_enemy_heal(10, 20, 12), 12)
+        self.assertEqual(enemy_status_for_hp(5, "defeated"), "active")
+
+    def test_flatten_position_payload_accepts_nested_position(self) -> None:
+        data = flatten_position_payload(
+            {"name": "Orc", "position": {"x": 0.2, "y": 0.8}, "type": "orc"}
+        )
+        self.assertEqual(data["x"], 0.2)
+        self.assertEqual(data["y"], 0.8)
+        self.assertEqual(data["enemy_type"], "orc")
 
 
 if __name__ == "__main__":

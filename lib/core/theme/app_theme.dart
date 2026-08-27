@@ -40,8 +40,20 @@ class AppTheme {
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.background,
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          minimumSize: const Size(48, 48),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(48, 48),
+        ),
+      ),
+      focusColor: AppColors.gold.withValues(alpha: 0.28),
     );
   }
 }

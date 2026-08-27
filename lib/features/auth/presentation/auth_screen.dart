@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import 'auth_controller.dart';
@@ -46,8 +47,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: context.pagePadding,
             children: [
+              ContentConstraint(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               Text(
                 l10n.authAccountHint,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -101,6 +106,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     : () => setState(() => _isSignUp = !_isSignUp),
                 child: Text(
                   _isSignUp ? l10n.alreadyHaveAccount : l10n.newPlayerSignUp,
+                ),
+              ),
+            ],
                 ),
               ),
             ],

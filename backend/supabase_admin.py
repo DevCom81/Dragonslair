@@ -91,7 +91,10 @@ async def fetch_room_player(*, room_id: str, player_id: str) -> dict | None:
             params={
                 "id": f"eq.{player_id}",
                 "room_id": f"eq.{room_id}",
-                "select": "id,hp,inventory,figurine_name,effects",
+                "select": (
+                    "id,hp,inventory,figurine_name,effects,"
+                    "strength,dexterity,constitution,intelligence,wisdom,charisma"
+                ),
             },
             headers=_admin_headers(),
         )
@@ -180,3 +183,573 @@ async def insert_game_event(
         raise SupabaseAdminError(
             f"Unable to persist {event_type} event ({response.status_code})."
         )
+
+
+async def create_enemy(
+    *,
+    room_id: str,
+    name: str,
+    enemy_type: str,
+    position_x: float,
+    position_y: float,
+    hp: int,
+    max_hp: int,
+    metadata: dict | None = None,
+) -> dict:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.post(
+            f"{_supabase_url()}/rest/v1/enemies",
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json={
+                "room_id": room_id,
+                "name": name,
+                "enemy_type": enemy_type,
+                "position_x": position_x,
+                "position_y": position_y,
+                "hp": hp,
+                "max_hp": max_hp,
+                "status": "active",
+                "metadata": metadata or {},
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to create enemy ({response.status_code})."
+        )
+
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        return rows[0]
+    if isinstance(rows, dict):
+        return rows
+    raise SupabaseAdminError("Enemy create returned an invalid payload.")
+
+
+async def fetch_room_enemies(*, room_id: str) -> list[dict]:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/enemies",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": (
+                    "id,name,enemy_type,position_x,position_y,"
+                    "hp,max_hp,status,metadata"
+                ),
+                "order": "created_at.asc",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load room enemies.")
+
+    rows = response.json()
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+async def fetch_room_enemy(*, room_id: str, enemy_id: str) -> dict | None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/enemies",
+            params={
+                "id": f"eq.{enemy_id}",
+                "room_id": f"eq.{room_id}",
+                "select": (
+                    "id,name,enemy_type,position_x,position_y,"
+                    "hp,max_hp,status"
+                ),
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load enemy.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+async def fetch_room_enemy_by_name(*, room_id: str, name: str) -> dict | None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/enemies",
+            params={
+                "room_id": f"eq.{room_id}",
+                "name": f"eq.{name}",
+                "select": (
+                    "id,name,enemy_type,position_x,position_y,"
+                    "hp,max_hp,status,created_at"
+                ),
+                "order": "created_at.desc",
+                "limit": "5",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load enemy by name.")
+
+    rows = response.json()
+    if not isinstance(rows, list):
+        return None
+    active = [
+        row
+        for row in rows
+        if isinstance(row, dict) and row.get("status") == "active"
+    ]
+    if active:
+        return active[0]
+    first = rows[0] if rows else None
+    return first if isinstance(first, dict) else None
+
+
+async def patch_room_enemy(
+    *,
+    room_id: str,
+    enemy_id: str,
+    fields: dict,
+) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/enemies",
+            params={
+                "id": f"eq.{enemy_id}",
+                "room_id": f"eq.{room_id}",
+            },
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=minimal",
+            },
+            json=fields,
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to update enemy ({response.status_code})."
+        )
+
+
+async def move_enemy(
+    *,
+    room_id: str,
+    enemy_id: str,
+    x: float,
+    y: float,
+) -> None:
+    await patch_room_enemy(
+        room_id=room_id,
+        enemy_id=enemy_id,
+        fields={"position_x": x, "position_y": y},
+    )
+
+
+async def damage_enemy(
+    *,
+    room_id: str,
+    enemy_id: str,
+    amount: int,
+) -> dict | None:
+    from state_effects import apply_enemy_damage, as_int, enemy_status_for_hp
+
+    row = await fetch_room_enemy(room_id=room_id, enemy_id=enemy_id)
+    if row is None:
+        return None
+    max_hp = max(1, as_int(row.get("max_hp"), 20))
+    hp = as_int(row.get("hp"), 0)
+    next_hp = apply_enemy_damage(hp, amount, max_hp)
+    status = enemy_status_for_hp(next_hp, str(row.get("status") or "active"))
+    await patch_room_enemy(
+        room_id=room_id,
+        enemy_id=enemy_id,
+        fields={"hp": next_hp, "status": status},
+    )
+    return {
+        "id": row.get("id"),
+        "name": row.get("name"),
+        "hp": hp,
+        "next_hp": next_hp,
+        "status": status,
+    }
+
+
+async def heal_enemy(
+    *,
+    room_id: str,
+    enemy_id: str,
+    amount: int,
+) -> dict | None:
+    from state_effects import apply_enemy_heal, as_int, enemy_status_for_hp
+
+    row = await fetch_room_enemy(room_id=room_id, enemy_id=enemy_id)
+    if row is None:
+        return None
+    max_hp = max(1, as_int(row.get("max_hp"), 20))
+    hp = as_int(row.get("hp"), 0)
+    next_hp = apply_enemy_heal(hp, amount, max_hp)
+    status = enemy_status_for_hp(next_hp, str(row.get("status") or "active"))
+    await patch_room_enemy(
+        room_id=room_id,
+        enemy_id=enemy_id,
+        fields={"hp": next_hp, "status": status},
+    )
+    return {
+        "id": row.get("id"),
+        "name": row.get("name"),
+        "hp": hp,
+        "next_hp": next_hp,
+        "status": status,
+    }
+
+
+async def set_enemy_status(
+    *,
+    room_id: str,
+    enemy_id: str,
+    status: str,
+    hp: int | None = None,
+) -> None:
+    fields: dict = {"status": status}
+    if hp is not None:
+        fields["hp"] = hp
+    await patch_room_enemy(room_id=room_id, enemy_id=enemy_id, fields=fields)
+
+
+async def cancel_open_pending_rolls(*, room_id: str, player_id: str) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/pending_rolls",
+            params={
+                "room_id": f"eq.{room_id}",
+                "player_id": f"eq.{player_id}",
+                "status": "eq.pending",
+            },
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=minimal",
+            },
+            json={"status": "cancelled"},
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to cancel pending rolls ({response.status_code})."
+        )
+
+
+async def create_pending_roll(
+    *,
+    room_id: str,
+    player_id: str,
+    ability: str,
+    dc: int,
+    reason: str,
+) -> dict:
+    await cancel_open_pending_rolls(room_id=room_id, player_id=player_id)
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.post(
+            f"{_supabase_url()}/rest/v1/pending_rolls",
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json={
+                "room_id": room_id,
+                "player_id": player_id,
+                "ability": ability,
+                "dc": dc,
+                "reason": reason,
+                "status": "pending",
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to create pending roll ({response.status_code})."
+        )
+
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        return rows[0]
+    if isinstance(rows, dict):
+        return rows
+    raise SupabaseAdminError("Pending roll create returned an invalid payload.")
+
+
+async def fetch_pending_roll(*, pending_roll_id: str) -> dict | None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/pending_rolls",
+            params={
+                "id": f"eq.{pending_roll_id}",
+                "select": (
+                    "id,room_id,player_id,ability,dc,reason,status,"
+                    "result,modifier,total,success"
+                ),
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load pending roll.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+async def mark_pending_roll_resolved(
+    *,
+    pending_roll_id: str,
+    raw: int,
+    modifier: int,
+    total: int,
+    success: bool,
+) -> None:
+    from datetime import datetime, timezone
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/pending_rolls",
+            params={
+                "id": f"eq.{pending_roll_id}",
+                "status": "eq.pending",
+            },
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json={
+                "status": "resolved",
+                "result": raw,
+                "modifier": modifier,
+                "total": total,
+                "success": success,
+                "resolved_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to resolve pending roll ({response.status_code})."
+        )
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        raise SupabaseAdminError("Pending roll was already resolved.")
+
+
+async def fetch_combat_session(*, room_id: str) -> dict | None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/combat_sessions",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": "id,room_id,active,round,started_at,ended_at",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load combat session.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+async def upsert_combat_session(
+    *,
+    room_id: str,
+    active: bool,
+    round: int,
+) -> dict:
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await fetch_combat_session(room_id=room_id)
+    fields: dict = {
+        "active": active,
+        "round": round,
+    }
+    if active:
+        if existing is None or not existing.get("active"):
+            fields["started_at"] = now
+            fields["ended_at"] = None
+    else:
+        fields["ended_at"] = now
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        if existing is None:
+            response = await client.post(
+                f"{_supabase_url()}/rest/v1/combat_sessions",
+                headers={
+                    **_admin_headers(),
+                    "Prefer": "return=representation",
+                },
+                json={
+                    "room_id": room_id,
+                    **fields,
+                },
+            )
+        else:
+            response = await client.patch(
+                f"{_supabase_url()}/rest/v1/combat_sessions",
+                params={"id": f"eq.{existing['id']}"},
+                headers={
+                    **_admin_headers(),
+                    "Prefer": "return=representation",
+                },
+                json=fields,
+            )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to upsert combat session ({response.status_code})."
+        )
+
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        return rows[0]
+    if isinstance(rows, dict):
+        return rows
+    raise SupabaseAdminError("Combat session upsert returned an invalid payload.")
+
+
+async def assert_room_host(*, user_id: str, room_id: str) -> dict:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/rooms",
+            params={
+                "id": f"eq.{room_id}",
+                "select": "id,host_id,scenario_id,scenario,scenario_prompt,world_state",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to verify room host.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        raise SupabaseAdminError("Room not found.")
+    row = rows[0]
+    if str(row.get("host_id") or "") != user_id:
+        raise SupabaseAdminError("Only the room host can generate a scenario.")
+    return row
+
+
+async def fetch_room_world_state(*, room_id: str) -> dict:
+    from scenario_state import public_world_state
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/rooms",
+            params={
+                "id": f"eq.{room_id}",
+                "select": "world_state,scenario_prompt,scenario_id,scenario",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load room scenario.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return {}
+    return public_world_state(rows[0].get("world_state"))
+
+
+async def fetch_room_gm_secrets(*, room_id: str) -> list[str]:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/room_gm_state",
+            params={
+                "room_id": f"eq.{room_id}",
+                "select": "gm_secrets",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load GM secrets.")
+
+    rows = response.json()
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return []
+    secrets = rows[0].get("gm_secrets")
+    if not isinstance(secrets, list):
+        return []
+    return [str(item).strip()[:240] for item in secrets if str(item).strip()][:12]
+
+
+async def patch_room_world_state(
+    *,
+    room_id: str,
+    world_state: dict,
+    scenario_title: str,
+    scenario_prompt: str,
+) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/rooms",
+            params={"id": f"eq.{room_id}"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=minimal",
+            },
+            json={
+                "world_state": world_state,
+                "scenario": scenario_title,
+                "scenario_prompt": scenario_prompt,
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to save world state ({response.status_code})."
+        )
+
+
+async def upsert_room_gm_state(
+    *,
+    room_id: str,
+    gm_secrets: list[str],
+) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.post(
+            f"{_supabase_url()}/rest/v1/room_gm_state",
+            params={"on_conflict": "room_id"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+            },
+            json={
+                "room_id": room_id,
+                "gm_secrets": gm_secrets,
+            },
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to save GM secrets ({response.status_code})."
+        )
+
+

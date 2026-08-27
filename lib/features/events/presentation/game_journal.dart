@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../game/presentation/pending_ability_roll.dart';
+import '../../game/presentation/pending_roll_providers.dart';
 import '../../game_master/presentation/game_master_controller.dart';
 import '../../players/presentation/player_providers.dart';
 import '../domain/game_event.dart';
@@ -25,16 +26,33 @@ class GameJournal extends ConsumerStatefulWidget {
 class _GameJournalState extends ConsumerState<GameJournal> {
   final _scroll = ScrollController();
   var _lastEventCount = -1;
+  var _followJournal = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
-    _scroll.dispose();
+    _scroll
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
-  void _scrollToEnd() {
+  void _onScroll() {
+    if (!_scroll.hasClients) {
+      return;
+    }
+    final position = _scroll.position;
+    _followJournal = position.maxScrollExtent - position.pixels < 96;
+  }
+
+  void _scrollToEndIfFollowing() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scroll.hasClients) {
+      if (!_scroll.hasClients || !_followJournal) {
         return;
       }
       _scroll.jumpTo(_scroll.position.maxScrollExtent);
@@ -53,7 +71,7 @@ class _GameJournalState extends ConsumerState<GameJournal> {
     final currentPlayer = currentUserId == null
         ? null
         : players.where((player) => player.userId == currentUserId).firstOrNull;
-    final pending = ref.watch(pendingAbilityRollProvider);
+    final pending = activePendingRoll(ref, widget.roomId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -74,8 +92,11 @@ class _GameJournalState extends ConsumerState<GameJournal> {
                 return Center(child: Text(l10n.journalEmpty));
               }
               if (events.length != _lastEventCount) {
+                final previousCount = _lastEventCount;
                 _lastEventCount = events.length;
-                _scrollToEnd();
+                if (previousCount == -1 || events.length > previousCount) {
+                  _scrollToEndIfFollowing();
+                }
               }
               return ListView.separated(
                 controller: _scroll,
@@ -98,6 +119,7 @@ class _GameJournalState extends ConsumerState<GameJournal> {
               roomId: widget.roomId,
               currentPlayer: currentPlayer,
               players: players,
+              pending: pending,
             ),
           ),
         if (choices.isNotEmpty)

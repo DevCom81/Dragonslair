@@ -235,6 +235,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gamePaused => 'Spiel pausiert';
 
   @override
+  String combatRoundBanner(int round) {
+    return 'Kampf — Runde $round';
+  }
+
+  @override
   String get waitingForHostResume => 'Warte, bis der Host fortsetzt';
 
   @override
@@ -268,6 +273,93 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get createRoomTitle => 'Partie erstellen';
+
+  @override
+  String get newAdventureTitle => 'Neues Abenteuer';
+
+  @override
+  String get createMyAdventure => 'Eigenes Abenteuer';
+
+  @override
+  String get readyAdventures => 'Fertige Abenteuer';
+
+  @override
+  String get adventurePromptLabel =>
+      'Beschreibe das Abenteuer, das du erleben willst';
+
+  @override
+  String get adventurePromptHint =>
+      'Vier Soeldner eskortieren einen Prinzen durch ein Reich im Krieg.';
+
+  @override
+  String get adventurePromptTooShort =>
+      'Schreib ein paar Saetze zum Abenteuer.';
+
+  @override
+  String get adventureTitleOptional => 'Titel (optional)';
+
+  @override
+  String get adventureToneOptional => 'Stimmung (optional)';
+
+  @override
+  String get adventureDifficulty => 'Schwierigkeit';
+
+  @override
+  String get difficultyEasy => 'Leicht';
+
+  @override
+  String get difficultyStandard => 'Standard';
+
+  @override
+  String get difficultyHard => 'Schwer';
+
+  @override
+  String get adventureDuration => 'Geschaetzte Dauer';
+
+  @override
+  String get durationShort => 'Kurz';
+
+  @override
+  String get durationMedium => 'Mittel';
+
+  @override
+  String get durationLong => 'Lang';
+
+  @override
+  String get adventureOrientation => 'Schwerpunkt';
+
+  @override
+  String get orientationCombat => 'Kampf';
+
+  @override
+  String get orientationExploration => 'Erkundung';
+
+  @override
+  String get orientationInvestigation => 'Ermittlungen';
+
+  @override
+  String get orientationRoleplay => 'Rollenspiel';
+
+  @override
+  String get orientationSurvival => 'Ueberleben';
+
+  @override
+  String get optionImprovise => 'SL darf frei improvisieren';
+
+  @override
+  String get optionPermadeath => 'Permadeath';
+
+  @override
+  String get optionPvp => 'PvP erlaubt';
+
+  @override
+  String get optionBetrayals => 'Verrat moeglich';
+
+  @override
+  String get scenarioCustomName => 'Freies Abenteuer';
+
+  @override
+  String get generatingAdventure => 'Erstellen und erzeugen';
 
   @override
   String get roomName => 'Name der Partie';
@@ -553,6 +645,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get itemTypeTool => 'Werkzeug';
+
+  @override
+  String get enemyDefeated => 'Besiegt';
 
   @override
   String get languageFrench => 'Français';

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../combat/presentation/combat_providers.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/presentation/game_master_controller.dart';
@@ -185,12 +187,19 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
                 playerName: player.figurineName,
                 action: content,
                 players: players.map(toGameMasterPlayerContext).toList(),
+                enemies: enemiesForRoom(ref, widget.roomId),
                 recentEvents: recentEventsForRoom(ref, widget.roomId),
+                combat: toGameMasterCombat(
+                  readActiveCombat(ref, widget.roomId),
+                ),
               ),
             );
-    ref.read(pendingAbilityRollProvider.notifier).setRoll(
-          pendingRollFromResponse(response),
-        );
+    if (!AppConfig.isGameMasterRemote) {
+      ref.read(pendingAbilityRollProvider.notifier).setRoll(
+            pendingRollFromResponse(response),
+          );
+    }
+    applyLocalCombatFromResponse(ref: ref, response: response);
   }
 
   void _showError(Object error) {

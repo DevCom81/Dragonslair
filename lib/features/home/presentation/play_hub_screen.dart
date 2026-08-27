@@ -5,8 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
 import '../../rooms/domain/room.dart';
@@ -37,57 +39,42 @@ class PlayHubScreen extends ConsumerWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        profile == null
-                            ? l10n.welcome
-                            : classLabel == null
-                                ? l10n.welcomeNamed(profile.displayName)
-                                : l10n.welcomeNamedClass(
-                                    profile.displayName,
-                                    classLabel,
-                                  ),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.hubSubtitle,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      if (user is User && user.isAnonymous) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n.guestBanner,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      const SizedBox(height: 32),
-                      const _ContinuableGames(),
-                      const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: () => context.pushNamed('create-room'),
-                        child: Text(l10n.createGame),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => context.pushNamed('rooms'),
-                        child: Text(l10n.joinGame),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: () => context.pushNamed('join-room'),
-                        child: Text(l10n.joinByCode),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: () => context.pushNamed('character-sheet'),
-                        child: Text(l10n.mySheet),
-                      ),
-                    ],
+                  padding: context.pagePadding,
+                  child: ContentConstraint(
+                    child: context.isExpanded
+                        ? _ExpandedHub(
+                            welcome: _welcomeText(l10n, profile, classLabel),
+                            subtitle: l10n.hubSubtitle,
+                            guestBanner: user is User && user.isAnonymous
+                                ? l10n.guestBanner
+                                : null,
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                _welcomeText(l10n, profile, classLabel),
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.hubSubtitle,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              if (user is User && user.isAnonymous) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  l10n.guestBanner,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                              const SizedBox(height: 32),
+                              const _ContinuableGames(),
+                              const SizedBox(height: 24),
+                              const _HubActions(),
+                            ],
+                          ),
                   ),
                 ),
               ),
@@ -95,6 +82,98 @@ class PlayHubScreen extends ConsumerWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+String _welcomeText(
+  AppLocalizations l10n,
+  PlayerProfile? profile,
+  String? classLabel,
+) {
+  if (profile == null) {
+    return l10n.welcome;
+  }
+  if (classLabel == null) {
+    return l10n.welcomeNamed(profile.displayName);
+  }
+  return l10n.welcomeNamedClass(profile.displayName, classLabel);
+}
+
+class _HubActions extends StatelessWidget {
+  const _HubActions();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton(
+          onPressed: () => context.pushNamed('create-room'),
+          child: Text(l10n.createGame),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('rooms'),
+          child: Text(l10n.joinGame),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('join-room'),
+          child: Text(l10n.joinByCode),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('character-sheet'),
+          child: Text(l10n.mySheet),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpandedHub extends StatelessWidget {
+  const _ExpandedHub({
+    required this.welcome,
+    required this.subtitle,
+    this.guestBanner,
+  });
+
+  final String welcome;
+  final String subtitle;
+  final String? guestBanner;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(welcome, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+              if (guestBanner != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  guestBanner!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 24),
+              const _ContinuableGames(),
+            ],
+          ),
+        ),
+        const SizedBox(width: 32),
+        const SizedBox(
+          width: 320,
+          child: _HubActions(),
+        ),
+      ],
     );
   }
 }

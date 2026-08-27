@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/l10n/locale_controller.dart';
+import '../core/responsive/responsive.dart';
 import '../core/theme/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import 'router.dart';
@@ -28,6 +29,18 @@ class DragonsLairApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: router,
+      builder: (context, child) {
+        final size = MediaQuery.sizeOf(context);
+        final layout = AppBreakpoints.sizeFor(size.width, size.height);
+        return Theme(
+          data: Theme.of(context).copyWith(
+            visualDensity: layout == AppLayoutSize.compact
+                ? VisualDensity.standard
+                : VisualDensity.compact,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

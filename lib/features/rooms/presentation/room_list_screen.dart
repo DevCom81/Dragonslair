@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -46,10 +47,19 @@ class RoomListScreen extends ConsumerWidget {
 
             return RefreshIndicator(
               onRefresh: () => ref.refresh(waitingRoomsProvider.future),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
+              child: GridView.builder(
+                padding: context.pagePadding,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: context.responsiveValue(
+                    compact: 1,
+                    medium: 2,
+                    expanded: 3,
+                  ),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: 220,
+                ),
                 itemCount: rooms.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => _RoomCard(room: rooms[index]),
               ),
             );
@@ -78,7 +88,12 @@ class _RoomCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(room.name, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              room.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (room.joinCode != null && room.joinCode!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(l10n.codeLabel(room.joinCode!)),
@@ -86,9 +101,17 @@ class _RoomCard extends StatelessWidget {
             if (room.scenarioId != null ||
                 (room.scenario != null && room.scenario!.isNotEmpty)) ...[
               const SizedBox(height: 8),
-              Text(localizedScenarioName(l10n, room.scenarioId)),
+              Text(
+                localizedScenarioName(
+                  l10n,
+                  room.scenarioId,
+                  customTitle: room.scenario,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
-            const SizedBox(height: 12),
+            const Spacer(),
             FilledButton(
               onPressed: () => context.pushNamed(
                 'figurines',

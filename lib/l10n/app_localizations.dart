@@ -497,6 +497,12 @@ abstract class AppLocalizations {
   /// **'Game paused'**
   String get gamePaused;
 
+  /// No description provided for @combatRoundBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Combat — round {round}'**
+  String combatRoundBanner(int round);
+
   /// No description provided for @waitingForHostResume.
   ///
   /// In en, this message translates to:
@@ -556,6 +562,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a game'**
   String get createRoomTitle;
+
+  /// No description provided for @newAdventureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New adventure'**
+  String get newAdventureTitle;
+
+  /// No description provided for @createMyAdventure.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my adventure'**
+  String get createMyAdventure;
+
+  /// No description provided for @readyAdventures.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to play'**
+  String get readyAdventures;
+
+  /// No description provided for @adventurePromptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the adventure you want to live'**
+  String get adventurePromptLabel;
+
+  /// No description provided for @adventurePromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Four mercenaries escort a prince through a kingdom at war. Dark tone, moral choices.'**
+  String get adventurePromptHint;
+
+  /// No description provided for @adventurePromptTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a few sentences about the adventure.'**
+  String get adventurePromptTooShort;
+
+  /// No description provided for @adventureTitleOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get adventureTitleOptional;
+
+  /// No description provided for @adventureToneOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Tone (optional)'**
+  String get adventureToneOptional;
+
+  /// No description provided for @adventureDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get adventureDifficulty;
+
+  /// No description provided for @difficultyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get difficultyEasy;
+
+  /// No description provided for @difficultyStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get difficultyStandard;
+
+  /// No description provided for @difficultyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get difficultyHard;
+
+  /// No description provided for @adventureDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated length'**
+  String get adventureDuration;
+
+  /// No description provided for @durationShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Short'**
+  String get durationShort;
+
+  /// No description provided for @durationMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get durationMedium;
+
+  /// No description provided for @durationLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Long'**
+  String get durationLong;
+
+  /// No description provided for @adventureOrientation.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get adventureOrientation;
+
+  /// No description provided for @orientationCombat.
+  ///
+  /// In en, this message translates to:
+  /// **'Combat'**
+  String get orientationCombat;
+
+  /// No description provided for @orientationExploration.
+  ///
+  /// In en, this message translates to:
+  /// **'Exploration'**
+  String get orientationExploration;
+
+  /// No description provided for @orientationInvestigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Investigation'**
+  String get orientationInvestigation;
+
+  /// No description provided for @orientationRoleplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Roleplay'**
+  String get orientationRoleplay;
+
+  /// No description provided for @orientationSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival'**
+  String get orientationSurvival;
+
+  /// No description provided for @optionImprovise.
+  ///
+  /// In en, this message translates to:
+  /// **'GM may improvise freely'**
+  String get optionImprovise;
+
+  /// No description provided for @optionPermadeath.
+  ///
+  /// In en, this message translates to:
+  /// **'Permadeath'**
+  String get optionPermadeath;
+
+  /// No description provided for @optionPvp.
+  ///
+  /// In en, this message translates to:
+  /// **'PvP allowed'**
+  String get optionPvp;
+
+  /// No description provided for @optionBetrayals.
+  ///
+  /// In en, this message translates to:
+  /// **'Betrayals possible'**
+  String get optionBetrayals;
+
+  /// No description provided for @scenarioCustomName.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom adventure'**
+  String get scenarioCustomName;
+
+  /// No description provided for @generatingAdventure.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and generate'**
+  String get generatingAdventure;
 
   /// No description provided for @roomName.
   ///
@@ -1084,6 +1258,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tool'**
   String get itemTypeTool;
+
+  /// No description provided for @enemyDefeated.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeated'**
+  String get enemyDefeated;
 
   /// No description provided for @languageFrench.
   ///

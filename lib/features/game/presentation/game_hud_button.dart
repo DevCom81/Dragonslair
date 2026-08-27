@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/responsive/responsive.dart';
 
 class GameHudButton extends StatelessWidget {
   const GameHudButton({
@@ -64,8 +65,13 @@ Future<T?> showGameBook<T>({
     backgroundColor: AppColors.parchment,
     showDragHandle: true,
     builder: (context) {
+      final factor = context.responsiveValue(
+        compact: 0.72,
+        medium: 0.68,
+        expanded: 0.6,
+      );
       return SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.72,
+        height: MediaQuery.sizeOf(context).height * factor,
         child: child,
       );
     },

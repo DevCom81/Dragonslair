@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
+import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../figurines/domain/figurine_definition.dart';
 import '../../figurines/presentation/figurine_sprite.dart';
+import '../../players/domain/player.dart';
 import '../../players/presentation/player_providers.dart';
 import '../../rooms/domain/room.dart';
 import '../../rooms/presentation/room_providers.dart';
@@ -72,117 +74,64 @@ class LobbyScreen extends ConsumerWidget {
                 final scenarioLabel = localizedScenarioName(
                   l10n,
                   room.scenarioId,
+                  customTitle: room.scenario,
+                );
+
+                final info = _LobbyInfo(
+                  name: room.name,
+                  joinCode: room.joinCode,
+                  scenarioLine: room.scenarioId != null ||
+                          (room.scenario != null && room.scenario!.isNotEmpty)
+                      ? l10n.scenarioMinPlayersLine(
+                          scenarioLabel,
+                          room.minPlayers,
+                        )
+                      : null,
+                  paused: isPaused,
+                  pausedLabel: l10n.gamePaused,
+                );
+                final playerTiles = _LobbyPlayers(
+                  playersTitle: l10n.players,
+                  emptyLabel: l10n.waitingForPlayers,
+                  players: players,
+                );
+                final issues = _LobbyIssues(
+                  issues: room.status == RoomStatus.waiting
+                      ? startIssues
+                      : const [],
+                );
+                final startButton = FilledButton(
+                  onPressed: isPaused
+                      ? (canResume ? () => _resumeRoom(context, ref) : null)
+                      : (canStart ? () => _startRoom(context, ref) : null),
+                  child: Text(
+                    isPaused
+                        ? (isHost ? l10n.resumeGame : l10n.waitingForHostResume)
+                        : (isHost ? l10n.startGame : l10n.waitingForHost),
+                  ),
                 );
 
                 return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            Text(
-                              room.name,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            if (room.joinCode != null &&
-                                room.joinCode!.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              SelectableText(
-                                l10n.codeLabel(room.joinCode!),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ],
-                            if (room.scenarioId != null ||
-                                (room.scenario != null &&
-                                    room.scenario!.isNotEmpty)) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.scenarioMinPlayersLine(
-                                  scenarioLabel,
-                                  room.minPlayers,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            Text(
-                              l10n.players,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            if (players.isEmpty)
-                              Text(l10n.waitingForPlayers),
-                            for (final player in players) ...[
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: FigurineSprite(
-                                  figurine:
-                                      FigurineCatalog.byId(player.figurineId),
-                                  size: 40,
-                                ),
-                                title: Text(player.figurineName),
-                                subtitle: Text(
-                                  [
-                                    if (player.classId != null)
-                                      localizedClassLabel(
-                                        l10n,
-                                        player.classId!,
-                                      ),
-                                    l10n.hpLabel(player.hp),
-                                  ].join(' · '),
-                                ),
-                              ),
-                              const Divider(),
-                            ],
-                            if (isPaused) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.gamePaused,
-                                style: const TextStyle(color: AppColors.gold),
-                              ),
-                            ],
-                            if (startIssues.isNotEmpty &&
-                                room.status == RoomStatus.waiting) ...[
-                              const SizedBox(height: 8),
-                              for (final issue in startIssues)
-                                Text(
-                                  issue.missingClassId != null
-                                      ? l10n.missingRequiredClass(
-                                          localizedClassLabel(
-                                            l10n,
-                                            issue.missingClassId!,
-                                          ),
-                                        )
-                                      : l10n.notEnoughPlayers(
-                                          issue.current,
-                                          issue.minimum,
-                                        ),
-                                  style: const TextStyle(color: AppColors.danger),
-                                ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      FilledButton(
-                        onPressed: isPaused
-                            ? (canResume
-                                ? () => _resumeRoom(context, ref)
-                                : null)
-                            : (canStart
-                                ? () => _startRoom(context, ref)
-                                : null),
-                        child: Text(
-                          isPaused
-                              ? (isHost
-                                  ? l10n.resumeGame
-                                  : l10n.waitingForHostResume)
-                              : (isHost
-                                  ? l10n.startGame
-                                  : l10n.waitingForHost),
-                        ),
-                      ),
-                    ],
+                  padding: context.pagePadding,
+                  child: ResponsiveLayout(
+                    compact: _CompactLobby(
+                      info: info,
+                      players: playerTiles,
+                      footer: issues,
+                      startButton: startButton,
+                    ),
+                    medium: _MediumLobby(
+                      info: info,
+                      players: playerTiles,
+                      footer: issues,
+                      startButton: startButton,
+                    ),
+                    expanded: _ExpandedLobby(
+                      info: info,
+                      players: playerTiles,
+                      footer: issues,
+                      startButton: startButton,
+                    ),
                   ),
                 );
               },
@@ -229,5 +178,241 @@ class LobbyScreen extends ConsumerWidget {
         );
       }
     }
+  }
+}
+
+class _LobbyInfo extends StatelessWidget {
+  const _LobbyInfo({
+    required this.name,
+    required this.joinCode,
+    required this.scenarioLine,
+    required this.paused,
+    required this.pausedLabel,
+  });
+
+  final String name;
+  final String? joinCode;
+  final String? scenarioLine;
+  final bool paused;
+  final String pausedLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(name, style: Theme.of(context).textTheme.titleLarge),
+        if (joinCode != null && joinCode!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          SelectableText(
+            l10n.codeLabel(joinCode!),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
+        if (scenarioLine != null) ...[
+          const SizedBox(height: 8),
+          Text(scenarioLine!),
+        ],
+        if (paused) ...[
+          const SizedBox(height: 8),
+          Text(pausedLabel, style: const TextStyle(color: AppColors.gold)),
+        ],
+      ],
+    );
+  }
+}
+
+class _LobbyPlayers extends StatelessWidget {
+  const _LobbyPlayers({
+    required this.playersTitle,
+    required this.emptyLabel,
+    required this.players,
+  });
+
+  final String playersTitle;
+  final String emptyLabel;
+  final List<Player> players;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(playersTitle, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        if (players.isEmpty) Text(emptyLabel),
+        for (final player in players) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: FigurineSprite(
+              figurine: FigurineCatalog.byId(player.figurineId),
+              size: 40,
+            ),
+            title: Text(player.figurineName),
+            subtitle: Text(
+              [
+                if (player.classId != null)
+                  localizedClassLabel(l10n, player.classId!),
+                l10n.hpLabel(player.hp),
+              ].join(' · '),
+            ),
+          ),
+          const Divider(),
+        ],
+      ],
+    );
+  }
+}
+
+class _LobbyIssues extends StatelessWidget {
+  const _LobbyIssues({required this.issues});
+
+  final List<RoomStartIssue> issues;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (issues.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final issue in issues)
+          Text(
+            issue.missingClassId != null
+                ? l10n.missingRequiredClass(
+                    localizedClassLabel(l10n, issue.missingClassId!),
+                  )
+                : l10n.notEnoughPlayers(issue.current, issue.minimum),
+            style: const TextStyle(color: AppColors.danger),
+          ),
+      ],
+    );
+  }
+}
+
+class _CompactLobby extends StatelessWidget {
+  const _CompactLobby({
+    required this.info,
+    required this.players,
+    required this.footer,
+    required this.startButton,
+  });
+
+  final Widget info;
+  final Widget players;
+  final Widget footer;
+  final Widget startButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            children: [
+              info,
+              const SizedBox(height: 16),
+              players,
+              footer,
+            ],
+          ),
+        ),
+        startButton,
+      ],
+    );
+  }
+}
+
+class _MediumLobby extends StatelessWidget {
+  const _MediumLobby({
+    required this.info,
+    required this.players,
+    required this.footer,
+    required this.startButton,
+  });
+
+  final Widget info;
+  final Widget players;
+  final Widget footer;
+  final Widget startButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 3,
+          child: ListView(children: [players]),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              info,
+              const SizedBox(height: 16),
+              footer,
+              const Spacer(),
+              startButton,
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpandedLobby extends StatelessWidget {
+  const _ExpandedLobby({
+    required this.info,
+    required this.players,
+    required this.footer,
+    required this.startButton,
+  });
+
+  final Widget info;
+  final Widget players;
+  final Widget footer;
+  final Widget startButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            children: [
+              info,
+              const SizedBox(height: 16),
+              footer,
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 2,
+          child: ListView(children: [players]),
+        ),
+        const SizedBox(width: 24),
+        SizedBox(
+          width: 280,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              startButton,
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -181,9 +181,21 @@ class ScenarioCatalog {
     requiredClassIds: ['fighter', 'cleric'],
   );
 
+  static const custom = ScenarioDefinition(
+    id: 'custom',
+    name: 'Aventure',
+    description: '',
+    minPlayers: 1,
+    allowedClassIds: CharacterClassCatalog.allIds,
+    requiredClassIds: [],
+  );
+
   static const all = [dungeon, forest, siege];
 
   static ScenarioDefinition byId(String? id) {
+    if (id == custom.id) {
+      return custom;
+    }
     return all.firstWhere(
       (item) => item.id == id,
       orElse: () => dungeon,
