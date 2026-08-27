@@ -138,10 +138,15 @@ class SupabasePlayerRepository implements PlayerRepository {
     required double x,
     required double y,
   }) async {
+    final userId = _requiredClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw const GameException('Session expiree.');
+    }
+
     await _requiredClient.from('players').update({
       'position_x': x.clamp(0, 1),
       'position_y': y.clamp(0, 1),
-    }).eq('id', playerId);
+    }).eq('id', playerId).eq('user_id', userId);
   }
 
   @override

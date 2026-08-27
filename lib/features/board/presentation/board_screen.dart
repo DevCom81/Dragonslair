@@ -180,6 +180,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       if (paused || finished) {
                         return Future.value();
                       }
+                      if (player.userId != currentUser?.id) {
+                        return Future.value();
+                      }
                       return ref.read(playerRepositoryProvider).updatePosition(
                             playerId: player.id,
                             x: x,
