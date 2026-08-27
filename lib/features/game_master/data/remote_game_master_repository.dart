@@ -9,10 +9,8 @@ import '../domain/game_master_repository.dart';
 import '../domain/game_master_response.dart';
 
 class RemoteGameMasterRepository implements GameMasterRepository {
-  const RemoteGameMasterRepository({
-    this.accessToken,
-    http.Client? client,
-  }) : _client = client;
+  const RemoteGameMasterRepository({this.accessToken, http.Client? client})
+    : _client = client;
 
   final String? accessToken;
   final http.Client? _client;
@@ -29,9 +27,7 @@ class RemoteGameMasterRepository implements GameMasterRepository {
     final ownsClient = _client == null;
 
     try {
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-      };
+      final headers = <String, String>{'Content-Type': 'application/json'};
       final token = accessToken;
       if (token == null || token.isEmpty) {
         throw const AppAuthException(
@@ -50,7 +46,10 @@ class RemoteGameMasterRepository implements GameMasterRepository {
 
       if (response.statusCode >= 400) {
         throw NetworkException(
-          'Le backend MJ IA a refuse la requete (${response.statusCode}).',
+          refusalMessageForStatus(
+            response.statusCode,
+            'Le backend MJ IA a refuse la requete (${response.statusCode}).',
+          ),
         );
       }
 
@@ -103,7 +102,10 @@ class RemoteGameMasterRepository implements GameMasterRepository {
 
       if (response.statusCode >= 400) {
         throw NetworkException(
-          'Le backend MJ IA a refuse le jet (${response.statusCode}).',
+          refusalMessageForStatus(
+            response.statusCode,
+            'Le backend MJ IA a refuse le jet (${response.statusCode}).',
+          ),
         );
       }
 

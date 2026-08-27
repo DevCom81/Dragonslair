@@ -17,6 +17,7 @@ from campaign_memory import (
     summary_window,
 )
 from demo_access import canned_demo_ending, ensure_finish_action, normalize_access_level
+from gm_locale import normalize_locale
 from purchases import (
     PurchaseConfigError,
     PurchaseSignatureError,
@@ -40,6 +41,13 @@ from models import (
     RollResult,
 )
 from openrouter_client import GameMasterBackendError, request_game_master_response
+from rate_limit import (
+    DEMO_EXPIRED,
+    NOT_ENTITLED,
+    RATE_LIMITED,
+    RateLimitedError,
+    enforce_ai_rate_limit,
+)
 from scenario_generator import request_generated_scenario
 from scenario_state import public_world_state
 from state_effects import (
@@ -110,6 +118,14 @@ def _bearer_token(authorization: str | None) -> str:
     return token.strip()
 
 
+def _enforce_ai_rate_limit(user_id: str) -> None:
+    try:
+        enforce_ai_rate_limit(user_id)
+    except RateLimitedError as error:
+        logger.warning("RATE_LIMITED user_id=%s", user_id)
+        raise HTTPException(status_code=429, detail=RATE_LIMITED) from error
+
+
 @app.post("/v1/game-master/respond", response_model=GameMasterResponse)
 async def respond(
     request: GameMasterRequest,
@@ -117,6 +133,7 @@ async def respond(
 ) -> GameMasterResponse:
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        _enforce_ai_rate_limit(user_id)
         await assert_player_belongs_to_user(
             user_id=user_id,
             player_id=request.player_id,
@@ -126,7 +143,7 @@ async def respond(
             request, drop_roll_result=True
         )
         gm_request = await _apply_demo_gate(user_id=user_id, request=gm_request)
-        response = await _run_gm_turn(gm_request)
+        response = await _run_gm_turn(gm_request, user_id=user_id)
         return response
     except HTTPException:
         raise
@@ -176,6 +193,7 @@ async def resolve_roll(
 ) -> GameMasterResponse:
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        _enforce_ai_rate_limit(user_id)
         roll = await fetch_pending_roll(pending_roll_id=request.pending_roll_id)
         if roll is None:
             raise HTTPException(status_code=404, detail="Pending roll not found.")
@@ -253,7 +271,7 @@ async def resolve_roll(
             )
         )
         gm_request = await _apply_demo_gate(user_id=user_id, request=gm_request)
-        response = await _run_gm_turn(gm_request)
+        response = await _run_gm_turn(gm_request, user_id=user_id)
         return response
     except HTTPException:
         raise
@@ -305,7 +323,7 @@ async def _with_authoritative_combat(
     row = await fetch_combat_session(room_id=request.room_id)
     narrative = await fetch_room_narrative_context(room_id=request.room_id)
     if str(narrative.get("status") or "") == "demo_finished":
-        raise RoomFinishedError("DEMO_EXPIRED")
+        raise RoomFinishedError(DEMO_EXPIRED)
     if str(narrative.get("status") or "") == "finished":
         raise RoomFinishedError("This game is finished.")
     world_state = dict(narrative.get("world_state") or {})
@@ -344,18 +362,22 @@ async def _apply_demo_gate(
 ) -> GameMasterRequest:
     status = await sync_demo_play(user_id=user_id, room_id=request.room_id)
     if status == "closed":
-        raise RoomFinishedError("DEMO_EXPIRED")
+        raise RoomFinishedError(DEMO_EXPIRED)
     if status == "forbidden":
-        raise HTTPException(status_code=403, detail="DEMO_FORBIDDEN")
+        raise HTTPException(status_code=403, detail=NOT_ENTITLED)
     if status == "expired":
         return request.model_copy(update={"demo_end_required": True})
     return request.model_copy(update={"demo_end_required": False})
 
 
-async def _run_gm_turn(request: GameMasterRequest) -> GameMasterResponse:
+async def _run_gm_turn(
+    request: GameMasterRequest,
+    *,
+    user_id: str,
+) -> GameMasterResponse:
     if request.demo_end_required:
         try:
-            raw = await request_game_master_response(request)
+            raw = await request_game_master_response(request, user_id=user_id)
             payload = ensure_finish_action(raw.model_dump(), request.locale)
             response = GameMasterResponse.model_validate(payload)
         except GameMasterBackendError:
@@ -364,7 +386,7 @@ async def _run_gm_turn(request: GameMasterRequest) -> GameMasterResponse:
             )
         await _persist_gm_response(room_id=request.room_id, response=response)
         return response
-    response = await request_game_master_response(request)
+    response = await request_game_master_response(request, user_id=user_id)
     await _persist_gm_response(room_id=request.room_id, response=response)
     return response
 
@@ -378,7 +400,8 @@ async def generate_scenario(
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
         entitlement = await fetch_user_entitlement(user_id=user_id)
         if normalize_access_level(entitlement.get("access_level")) != "full":
-            raise HTTPException(status_code=403, detail="DEMO_FORBIDDEN")
+            raise HTTPException(status_code=403, detail=NOT_ENTITLED)
+        _enforce_ai_rate_limit(user_id)
         room = await assert_room_host(user_id=user_id, room_id=request.room_id)
         if str(room.get("scenario_id") or "") != "custom":
             raise HTTPException(
@@ -388,7 +411,8 @@ async def generate_scenario(
         generated = await request_generated_scenario(
             request.model_copy(
                 update={"locale": normalize_locale(room.get("locale"))},
-            )
+            ),
+            user_id=user_id,
         )
         world_state = public_world_state(generated.public_dict())
         secrets = [

@@ -189,6 +189,46 @@ async def insert_game_event(
         )
 
 
+async def insert_ai_usage_event(
+    *,
+    user_id: str | None,
+    room_id: str | None,
+    model: str,
+    kind: str,
+    input_tokens: int | None,
+    output_tokens: int | None,
+    latency_ms: int | None,
+    cost: float | None,
+    cost_source: str,
+) -> None:
+    payload = {
+        "user_id": user_id or None,
+        "room_id": room_id or None,
+        "model": model,
+        "kind": kind,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "latency_ms": latency_ms,
+        "cost": cost,
+        "cost_source": cost_source,
+    }
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            f"{_supabase_url()}/rest/v1/ai_usage_events",
+            headers={
+                "apikey": _service_role_key(),
+                "Authorization": f"Bearer {_service_role_key()}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            json=payload,
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to persist ai usage ({response.status_code})."
+        )
+
+
 async def create_enemy(
     *,
     room_id: str,

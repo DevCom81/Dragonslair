@@ -1,9 +1,11 @@
 import json
 import os
+import time
 
 import httpx
 from pydantic import ValidationError
 
+from ai_usage import parse_openrouter_usage, record_ai_usage
 from campaign_memory import EVENT_PROMPT_MAX_CHARS, RECENT_EVENT_LIMIT
 from gm_locale import locale_language_name
 from models import GameMasterRequest, GameMasterResponse
@@ -162,56 +164,90 @@ def build_user_prompt(request: GameMasterRequest) -> str:
     return "\n".join(sections)
 
 
-async def request_game_master_response(
-    request: GameMasterRequest,
-) -> GameMasterResponse:
+async def complete_openrouter_json(
+    *,
+    messages: list[dict[str, str]],
+    temperature: float,
+    max_tokens: int,
+    title: str,
+    user_id: str = "",
+    room_id: str = "",
+    kind: str = "game_master",
+) -> dict:
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise GameMasterBackendError("OPENROUTER_API_KEY is not configured.")
 
     model = os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL)
-
     payload = {
         "model": model,
-        "messages": [
-            {"role": "system", "content": build_system_prompt(request.locale)},
-            {"role": "user", "content": build_user_prompt(request)},
-        ],
-        "temperature": 0.7,
-        "max_tokens": 900,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
         "response_format": {"type": "json_object"},
     }
-
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "X-Title": "DragonsLair Game Master",
+        "X-Title": title,
     }
-
+    started = time.perf_counter()
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
         response = await client.post(
             OPENROUTER_URL,
             json=payload,
             headers=headers,
         )
-
+    latency_ms = int((time.perf_counter() - started) * 1000)
     if response.status_code >= 400:
         raise GameMasterBackendError(
             f"OpenRouter request failed with status {response.status_code}."
         )
-
     data = response.json()
+    stats = parse_openrouter_usage(data, model=model, latency_ms=latency_ms)
+    await record_ai_usage(
+        user_id=user_id,
+        room_id=room_id,
+        kind=kind,
+        stats=stats,
+    )
     try:
         content = data["choices"][0]["message"]["content"]
         decoded = json.loads(content)
-        return GameMasterResponse.model_validate(decoded)
+        if not isinstance(decoded, dict):
+            raise TypeError("OpenRouter JSON content is not an object.")
+        return decoded
     except (
         KeyError,
         IndexError,
         TypeError,
         json.JSONDecodeError,
-        ValidationError,
     ) as error:
+        raise GameMasterBackendError(
+            "OpenRouter returned an invalid JSON payload."
+        ) from error
+
+
+async def request_game_master_response(
+    request: GameMasterRequest,
+    *,
+    user_id: str = "",
+) -> GameMasterResponse:
+    decoded = await complete_openrouter_json(
+        messages=[
+            {"role": "system", "content": build_system_prompt(request.locale)},
+            {"role": "user", "content": build_user_prompt(request)},
+        ],
+        temperature=0.7,
+        max_tokens=900,
+        title="DragonsLair Game Master",
+        user_id=user_id,
+        room_id=request.room_id,
+        kind="game_master",
+    )
+    try:
+        return GameMasterResponse.model_validate(decoded)
+    except ValidationError as error:
         raise GameMasterBackendError(
             "OpenRouter returned an invalid game master payload."
         ) from error

@@ -1,17 +1,10 @@
 import json
-import os
 
-import httpx
 from pydantic import ValidationError
 
 from gm_locale import locale_language_name
 from models import GeneratedScenario, GenerateScenarioRequest
-from openrouter_client import (
-    DEFAULT_MODEL,
-    OPENROUTER_URL,
-    REQUEST_TIMEOUT_SECONDS,
-    GameMasterBackendError,
-)
+from openrouter_client import GameMasterBackendError, complete_openrouter_json
 
 
 def build_scenario_system_prompt(locale: str = "en") -> str:
@@ -82,52 +75,24 @@ def _build_scenario_user_prompt(request: GenerateScenarioRequest) -> str:
 
 async def request_generated_scenario(
     request: GenerateScenarioRequest,
+    *,
+    user_id: str = "",
 ) -> GeneratedScenario:
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise GameMasterBackendError("OPENROUTER_API_KEY is not configured.")
-
-    model = os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL)
-    payload = {
-        "model": model,
-        "messages": [
+    decoded = await complete_openrouter_json(
+        messages=[
             {"role": "system", "content": build_scenario_system_prompt(request.locale)},
             {"role": "user", "content": _build_scenario_user_prompt(request)},
         ],
-        "temperature": 0.8,
-        "max_tokens": 1200,
-        "response_format": {"type": "json_object"},
-    }
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "X-Title": "DragonsLair Scenario",
-    }
-
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
-        response = await client.post(
-            OPENROUTER_URL,
-            json=payload,
-            headers=headers,
-        )
-
-    if response.status_code >= 400:
-        raise GameMasterBackendError(
-            f"OpenRouter request failed with status {response.status_code}."
-        )
-
-    data = response.json()
+        temperature=0.8,
+        max_tokens=1200,
+        title="DragonsLair Scenario",
+        user_id=user_id,
+        room_id=request.room_id,
+        kind="scenario",
+    )
     try:
-        content = data["choices"][0]["message"]["content"]
-        decoded = json.loads(content)
         return GeneratedScenario.model_validate(decoded)
-    except (
-        KeyError,
-        IndexError,
-        TypeError,
-        json.JSONDecodeError,
-        ValidationError,
-    ) as error:
+    except ValidationError as error:
         raise GameMasterBackendError(
             "OpenRouter returned an invalid scenario payload."
         ) from error

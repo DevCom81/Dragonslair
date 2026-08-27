@@ -9,10 +9,8 @@ import '../domain/custom_scenario_draft.dart';
 import '../domain/world_state.dart';
 
 class RemoteScenarioGenerator {
-  const RemoteScenarioGenerator({
-    this.accessToken,
-    http.Client? client,
-  }) : _client = client;
+  const RemoteScenarioGenerator({this.accessToken, http.Client? client})
+    : _client = client;
 
   final String? accessToken;
   final http.Client? _client;
@@ -50,7 +48,10 @@ class RemoteScenarioGenerator {
 
       if (response.statusCode >= 400) {
         throw NetworkException(
-          'La generation du scenario a ete refusee (${response.statusCode}).',
+          refusalMessageForStatus(
+            response.statusCode,
+            'La generation du scenario a ete refusee (${response.statusCode}).',
+          ),
         );
       }
 
@@ -67,7 +68,10 @@ class RemoteScenarioGenerator {
       }
       return worldState;
     } on TimeoutException catch (error) {
-      throw NetworkException('La generation du scenario ne repond pas.', cause: error);
+      throw NetworkException(
+        'La generation du scenario ne repond pas.',
+        cause: error,
+      );
     } on FormatException catch (error) {
       throw NetworkException(
         'Le backend a renvoye un scenario invalide.',
