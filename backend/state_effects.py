@@ -27,6 +27,7 @@ MUTATING_TYPES = {
     "defeat_enemy",
     "start_combat",
     "end_combat",
+    "finish_game",
 }
 
 ENEMY_MUTATING_TYPES = {
@@ -35,6 +36,10 @@ ENEMY_MUTATING_TYPES = {
     "damage_enemy",
     "heal_enemy",
     "defeat_enemy",
+}
+
+FINALE_TYPES = {
+    "finish_game",
 }
 
 COMBAT_MUTATING_TYPES = {

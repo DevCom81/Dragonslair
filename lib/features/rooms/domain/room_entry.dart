@@ -6,6 +6,7 @@ enum RoomEntryAction {
   board,
   rejectNewPlayers,
   rejectFinished,
+  summary,
 }
 
 RoomEntryAction resolveRoomEntry({
@@ -21,7 +22,8 @@ RoomEntryAction resolveRoomEntry({
       canContinue ? RoomEntryAction.board : RoomEntryAction.rejectNewPlayers,
     RoomStatus.paused =>
       canContinue ? RoomEntryAction.lobby : RoomEntryAction.rejectNewPlayers,
-    RoomStatus.finished => RoomEntryAction.rejectFinished,
+    RoomStatus.finished =>
+      canContinue ? RoomEntryAction.summary : RoomEntryAction.rejectFinished,
   };
 }
 
@@ -30,6 +32,7 @@ String? routeNameFor(RoomEntryAction action) {
     RoomEntryAction.figurines => 'figurines',
     RoomEntryAction.lobby => 'lobby',
     RoomEntryAction.board => 'board',
+    RoomEntryAction.summary => 'summary',
     RoomEntryAction.rejectNewPlayers => null,
     RoomEntryAction.rejectFinished => null,
   };

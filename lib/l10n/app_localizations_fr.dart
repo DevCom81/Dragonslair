@@ -257,6 +257,64 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cannotJoinFinished => 'Cette partie est terminee.';
 
   @override
+  String get finishGame => 'Terminer';
+
+  @override
+  String get finishGameTitle => 'Terminer la partie ?';
+
+  @override
+  String get finishGameBody => 'Tous les joueurs verront l ecran de resume.';
+
+  @override
+  String get gameSummaryTitle => 'Fin de l aventure';
+
+  @override
+  String get gameResultVictory => 'Victoire';
+
+  @override
+  String get gameResultDefeat => 'Defaite';
+
+  @override
+  String get gameResultNeutral => 'Conclusion';
+
+  @override
+  String get gameSummaryCharacters => 'Personnages';
+
+  @override
+  String get gameSummaryNarrative => 'Resume';
+
+  @override
+  String get gameSummaryEpilogue => 'Epilogue';
+
+  @override
+  String get gameSummaryEvents => 'Evenements marquants';
+
+  @override
+  String get gameSummaryEnemies => 'Ennemis vaincus';
+
+  @override
+  String get gameSummaryItems => 'Objets obtenus';
+
+  @override
+  String get gameSummaryCriticals => 'Jets critiques';
+
+  @override
+  String get gameSummaryEmpty => 'Aucun';
+
+  @override
+  String gameDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String gameDurationHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get backToTavern => 'Retour a la taverne';
+
+  @override
   String get waitingForHost => 'En attente du host';
 
   @override

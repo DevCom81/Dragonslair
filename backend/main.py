@@ -35,6 +35,7 @@ from state_effects import (
     resolve_roll_total,
 )
 from supabase_admin import (
+    RoomFinishedError,
     SupabaseAdminError,
     assert_player_belongs_to_user,
     assert_room_host,
@@ -104,13 +105,16 @@ async def respond(
             player_id=request.player_id,
             room_id=request.room_id,
         )
-        response = await request_game_master_response(
-            await _with_authoritative_combat(request, drop_roll_result=True)
+        gm_request = await _with_authoritative_combat(
+            request, drop_roll_result=True
         )
+        response = await request_game_master_response(gm_request)
         await _persist_gm_response(room_id=request.room_id, response=response)
         return response
     except HTTPException:
         raise
+    except RoomFinishedError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except SupabaseAdminError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
     except GameMasterBackendError as error:
@@ -236,6 +240,8 @@ async def resolve_roll(
         return response
     except HTTPException:
         raise
+    except RoomFinishedError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except SupabaseAdminError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
     except GameMasterBackendError as error:
@@ -281,6 +287,8 @@ async def _with_authoritative_combat(
 ) -> GameMasterRequest:
     row = await fetch_combat_session(room_id=request.room_id)
     narrative = await fetch_room_narrative_context(room_id=request.room_id)
+    if str(narrative.get("status") or "") == "finished":
+        raise RoomFinishedError("This game is finished.")
     world_state = dict(narrative.get("world_state") or {})
     locale = normalize_locale(narrative.get("locale"))
     try:

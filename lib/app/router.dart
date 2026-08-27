@@ -11,6 +11,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/home/presentation/play_hub_screen.dart';
 import '../features/lobby/presentation/lobby_screen.dart';
 import '../features/rooms/presentation/create_room_screen.dart';
+import '../features/rooms/presentation/game_summary_screen.dart';
 import '../features/rooms/presentation/join_room_by_code_screen.dart';
 import '../features/rooms/presentation/room_list_screen.dart';
 
@@ -83,6 +84,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/rooms/:roomId/board',
         name: 'board',
         builder: (context, state) => BoardScreen(
+          roomId: state.pathParameters['roomId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/rooms/:roomId/summary',
+        name: 'summary',
+        builder: (context, state) => GameSummaryScreen(
           roomId: state.pathParameters['roomId']!,
         ),
       ),

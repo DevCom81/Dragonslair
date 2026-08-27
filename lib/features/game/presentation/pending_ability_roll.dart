@@ -16,6 +16,7 @@ import '../../game_master/domain/game_master_response.dart';
 import '../../game_master/presentation/game_master_controller.dart';
 import '../../players/domain/player.dart';
 import '../../rooms/domain/room_locale.dart';
+import '../../rooms/presentation/room_finish.dart';
 import '../../rooms/presentation/room_providers.dart';
 
 const abilityKeys = {
@@ -260,6 +261,11 @@ Future<void> resolvePendingAbilityRoll({
           pendingRollFromResponse(response),
         );
     applyLocalCombatFromResponse(ref: ref, response: response);
+    await applyLocalFinishFromResponse(
+      ref: ref,
+      roomId: roomId,
+      response: response,
+    );
   } catch (_) {
     ref.read(pendingAbilityRollProvider.notifier).clear();
     rethrow;

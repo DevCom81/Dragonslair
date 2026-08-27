@@ -14,7 +14,8 @@ enum GameMasterActionType {
   systemMessage('system_message'),
   requestRoll('request_roll'),
   applyEffect('apply_effect'),
-  removeEffect('remove_effect');
+  removeEffect('remove_effect'),
+  finishGame('finish_game');
 
   const GameMasterActionType(this.value);
 

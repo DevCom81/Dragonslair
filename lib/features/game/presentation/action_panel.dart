@@ -11,6 +11,7 @@ import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/presentation/game_master_controller.dart';
 import '../../players/domain/player.dart';
+import '../../rooms/presentation/room_finish.dart';
 import '../domain/player_action.dart';
 import 'pending_ability_roll.dart';
 import 'pending_roll_providers.dart';
@@ -194,6 +195,11 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
             );
       }
       applyLocalCombatFromResponse(ref: ref, response: response);
+      await applyLocalFinishFromResponse(
+        ref: ref,
+        roomId: widget.roomId,
+        response: response,
+      );
 
       _actionController.clear();
     } catch (error) {

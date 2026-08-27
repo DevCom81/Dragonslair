@@ -259,6 +259,64 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cannotJoinFinished => 'Esta partida ha terminado.';
 
   @override
+  String get finishGame => 'Terminar';
+
+  @override
+  String get finishGameTitle => 'Terminar la aventura?';
+
+  @override
+  String get finishGameBody => 'Todos los jugadores veran el resumen.';
+
+  @override
+  String get gameSummaryTitle => 'Fin de la aventura';
+
+  @override
+  String get gameResultVictory => 'Victoria';
+
+  @override
+  String get gameResultDefeat => 'Derrota';
+
+  @override
+  String get gameResultNeutral => 'Conclusion';
+
+  @override
+  String get gameSummaryCharacters => 'Personajes';
+
+  @override
+  String get gameSummaryNarrative => 'Resumen';
+
+  @override
+  String get gameSummaryEpilogue => 'Epilogo';
+
+  @override
+  String get gameSummaryEvents => 'Hechos destacados';
+
+  @override
+  String get gameSummaryEnemies => 'Enemigos derrotados';
+
+  @override
+  String get gameSummaryItems => 'Objetos obtenidos';
+
+  @override
+  String get gameSummaryCriticals => 'Tiradas criticas';
+
+  @override
+  String get gameSummaryEmpty => 'Ninguno';
+
+  @override
+  String gameDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String gameDurationHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get backToTavern => 'Volver a la taberna';
+
+  @override
   String get waitingForHost => 'Esperando al anfitrion';
 
   @override

@@ -37,7 +37,7 @@ Tu dois retourner uniquement un objet JSON valide compatible avec ce contrat:
 Types d'actions autorises:
 narrate, spawn_enemy, move_enemy, damage_enemy, heal_enemy, defeat_enemy,
 damage_player, heal_player, give_item, remove_item, start_combat, end_combat,
-system_message, request_roll, apply_effect, remove_effect.
+system_message, request_roll, apply_effect, remove_effect, finish_game.
 
 Payloads:
 - spawn_enemy: {{"name": "Gobelin", "enemy_type": "goblin", "x": 0.4, "y": 0.6, "hp": 12, "max_hp": 12}}
@@ -52,6 +52,7 @@ Payloads:
 - remove_effect: {{"player_id": "<id>", "effect_id": "poison"}}
 - start_combat: {{"round": 1}} optionnel. Premier start = round 1. Un start pendant un combat actif passe au round suivant, ou au round fourni.
 - end_combat: {{}} pour terminer. Ne supprime pas les ennemis.
+- finish_game: {{"result": "victory|defeat|neutral", "summary": "short recap in {language}", "epilogue": "closing narration in {language}"}} when the adventure is over.
 
 Contraintes:
 - garde une narration courte et jouable;
@@ -74,7 +75,8 @@ Contraintes:
 - n'inclus jamais campaign_summary ni gm_secrets dans ta reponse JSON;
 - ne raconte pas toute la campagne: construis la suite selon l'action du joueur;
 - write narration, choice labels, reason text, item names shown to players, and system_message text in {language};
-- JSON keys, action types, ability ids, and payload field names stay in English.
+- JSON keys, action types, ability ids, and payload field names stay in English;
+- emets finish_game seulement quand l'aventure est vraiment terminee (objectif atteint, echec irreversible, ou conclusion narrative).
 """.strip()
 
 

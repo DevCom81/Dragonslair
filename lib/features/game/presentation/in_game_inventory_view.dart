@@ -13,6 +13,7 @@ import '../../players/domain/inventory_item.dart';
 import '../../players/domain/inventory_rules.dart';
 import '../../players/domain/player.dart';
 import '../../players/presentation/player_providers.dart';
+import '../../rooms/presentation/room_finish.dart';
 import 'pending_ability_roll.dart';
 
 class InGameInventoryView extends ConsumerStatefulWidget {
@@ -201,6 +202,11 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
           );
     }
     applyLocalCombatFromResponse(ref: ref, response: response);
+    await applyLocalFinishFromResponse(
+      ref: ref,
+      roomId: widget.roomId,
+      response: response,
+    );
   }
 
   void _showError(Object error) {

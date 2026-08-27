@@ -39,6 +39,12 @@ class LobbyScreen extends ConsumerWidget {
           pathParameters: {'roomId': roomId},
         );
       }
+      if (room?.status == RoomStatus.finished && isOnLobby && context.mounted) {
+        context.pushReplacementNamed(
+          'summary',
+          pathParameters: {'roomId': roomId},
+        );
+      }
     });
 
     return Scaffold(

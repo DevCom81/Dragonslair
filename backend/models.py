@@ -22,6 +22,7 @@ GameMasterActionType = Literal[
     "request_roll",
     "apply_effect",
     "remove_effect",
+    "finish_game",
 ]
 
 
@@ -85,6 +86,12 @@ class DefeatEnemyPayload(BaseModel):
 
 class StartCombatPayload(BaseModel):
     round: int | None = Field(default=None, ge=1, le=999)
+
+
+class FinishGamePayload(BaseModel):
+    result: Literal["victory", "defeat", "neutral"] = "neutral"
+    summary: str = Field(default="", max_length=2000)
+    epilogue: str = Field(default="", max_length=4000)
 
 
 class CombatContext(BaseModel):

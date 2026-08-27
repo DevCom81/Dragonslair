@@ -43,4 +43,31 @@ void main() {
       RoomEntryAction.lobby,
     );
   });
+
+  test('sends members of a finished room to the summary', () {
+    expect(
+      resolveRoomEntry(
+        status: RoomStatus.finished,
+        alreadyJoined: true,
+        isHost: false,
+      ),
+      RoomEntryAction.summary,
+    );
+    expect(
+      resolveRoomEntry(
+        status: RoomStatus.finished,
+        alreadyJoined: false,
+        isHost: true,
+      ),
+      RoomEntryAction.summary,
+    );
+    expect(
+      resolveRoomEntry(
+        status: RoomStatus.finished,
+        alreadyJoined: false,
+        isHost: false,
+      ),
+      RoomEntryAction.rejectFinished,
+    );
+  });
 }

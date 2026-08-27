@@ -7,6 +7,10 @@ class SupabaseAdminError(RuntimeError):
     pass
 
 
+class RoomFinishedError(RuntimeError):
+    pass
+
+
 def _supabase_url() -> str:
     url = os.getenv("SUPABASE_URL", "").rstrip("/")
     if not url:
@@ -662,7 +666,7 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/rooms",
             params={
                 "id": f"eq.{room_id}",
-                "select": "world_state,scenario_prompt,scenario_id,scenario,locale",
+                "select": "world_state,scenario_prompt,scenario_id,scenario,locale,status",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -673,11 +677,12 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
 
     rows = response.json()
     if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
-        return {"world_state": {}, "locale": "en"}
+        return {"world_state": {}, "locale": "en", "status": "waiting"}
     row = rows[0]
     return {
         "world_state": public_world_state(row.get("world_state")),
         "locale": normalize_locale(row.get("locale")),
+        "status": str(row.get("status") or "waiting"),
     }
 
 
@@ -866,5 +871,46 @@ async def upsert_room_gm_state(
         raise SupabaseAdminError(
             f"Unable to save GM state ({response.status_code})."
         )
+
+
+async def finish_room(*, room_id: str, ending: dict) -> bool:
+    from datetime import datetime, timezone
+
+    finished_at = datetime.now(timezone.utc).isoformat()
+    payload = {
+        "status": "finished",
+        "finished_at": finished_at,
+        "ending": {
+            "result": ending.get("result") or "neutral",
+            "summary": ending.get("summary") or "",
+            "epilogue": ending.get("epilogue") or "",
+        },
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/rooms",
+            params={
+                "id": f"eq.{room_id}",
+                "status": "in.(playing,paused)",
+            },
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json=payload,
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to finish room ({response.status_code})."
+        )
+
+    rows = response.json()
+    if isinstance(rows, list):
+        return bool(rows)
+    if isinstance(rows, dict) and rows:
+        return True
+    return False
+
 
 

@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../scenarios/domain/world_state.dart';
+import '../domain/game_ending.dart';
 import '../domain/join_code.dart';
 import '../domain/room.dart';
 import '../domain/room_locale.dart';
@@ -178,6 +179,50 @@ class SupabaseRoomRepository implements RoomRepository {
       to: RoomStatus.playing,
       fallback: 'Impossible de reprendre la partie.',
     );
+  }
+
+  @override
+  Future<void> finishRoom({
+    required String roomId,
+    String result = 'neutral',
+    String summary = '',
+    String epilogue = '',
+  }) async {
+    final current = await fetchRoom(roomId);
+    if (current.status == RoomStatus.finished) {
+      return;
+    }
+    if (current.status != RoomStatus.playing &&
+        current.status != RoomStatus.paused) {
+      throw const GameException('Impossible de terminer la partie.');
+    }
+    final ending = GameEnding(
+      result: GameEndingResult.fromJson(result),
+      summary: summary,
+      epilogue: epilogue,
+    );
+    try {
+      final row = await _requiredClient
+          .from('rooms')
+          .update({
+            'status': RoomStatus.finished.toJson(),
+            'finished_at': DateTime.now().toUtc().toIso8601String(),
+            'ending': ending.toJson(),
+          })
+          .eq('id', roomId)
+          .select()
+          .maybeSingle();
+      if (row == null) {
+        throw const GameException('Impossible de terminer la partie.');
+      }
+    } on PostgrestException catch (error) {
+      throw GameException(
+        error.message.isEmpty
+            ? 'Impossible de terminer la partie.'
+            : error.message,
+        cause: error,
+      );
+    }
   }
 
   Future<void> _setStatus({

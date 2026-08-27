@@ -259,6 +259,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cannotJoinFinished => 'This game is finished.';
 
   @override
+  String get finishGame => 'End game';
+
+  @override
+  String get finishGameTitle => 'End this adventure?';
+
+  @override
+  String get finishGameBody => 'Every player will see the recap screen.';
+
+  @override
+  String get gameSummaryTitle => 'Adventure over';
+
+  @override
+  String get gameResultVictory => 'Victory';
+
+  @override
+  String get gameResultDefeat => 'Defeat';
+
+  @override
+  String get gameResultNeutral => 'Closing';
+
+  @override
+  String get gameSummaryCharacters => 'Characters';
+
+  @override
+  String get gameSummaryNarrative => 'Summary';
+
+  @override
+  String get gameSummaryEpilogue => 'Epilogue';
+
+  @override
+  String get gameSummaryEvents => 'Notable events';
+
+  @override
+  String get gameSummaryEnemies => 'Defeated enemies';
+
+  @override
+  String get gameSummaryItems => 'Items found';
+
+  @override
+  String get gameSummaryCriticals => 'Critical rolls';
+
+  @override
+  String get gameSummaryEmpty => 'None';
+
+  @override
+  String gameDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String gameDurationHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get backToTavern => 'Back to the tavern';
+
+  @override
   String get waitingForHost => 'Waiting for the host';
 
   @override

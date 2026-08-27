@@ -539,6 +539,114 @@ abstract class AppLocalizations {
   /// **'This game is finished.'**
   String get cannotJoinFinished;
 
+  /// No description provided for @finishGame.
+  ///
+  /// In en, this message translates to:
+  /// **'End game'**
+  String get finishGame;
+
+  /// No description provided for @finishGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End this adventure?'**
+  String get finishGameTitle;
+
+  /// No description provided for @finishGameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every player will see the recap screen.'**
+  String get finishGameBody;
+
+  /// No description provided for @gameSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adventure over'**
+  String get gameSummaryTitle;
+
+  /// No description provided for @gameResultVictory.
+  ///
+  /// In en, this message translates to:
+  /// **'Victory'**
+  String get gameResultVictory;
+
+  /// No description provided for @gameResultDefeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat'**
+  String get gameResultDefeat;
+
+  /// No description provided for @gameResultNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing'**
+  String get gameResultNeutral;
+
+  /// No description provided for @gameSummaryCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters'**
+  String get gameSummaryCharacters;
+
+  /// No description provided for @gameSummaryNarrative.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get gameSummaryNarrative;
+
+  /// No description provided for @gameSummaryEpilogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Epilogue'**
+  String get gameSummaryEpilogue;
+
+  /// No description provided for @gameSummaryEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Notable events'**
+  String get gameSummaryEvents;
+
+  /// No description provided for @gameSummaryEnemies.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeated enemies'**
+  String get gameSummaryEnemies;
+
+  /// No description provided for @gameSummaryItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Items found'**
+  String get gameSummaryItems;
+
+  /// No description provided for @gameSummaryCriticals.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical rolls'**
+  String get gameSummaryCriticals;
+
+  /// No description provided for @gameSummaryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get gameSummaryEmpty;
+
+  /// No description provided for @gameDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String gameDurationMinutes(int minutes);
+
+  /// No description provided for @gameDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String gameDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @backToTavern.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the tavern'**
+  String get backToTavern;
+
   /// No description provided for @waitingForHost.
   ///
   /// In en, this message translates to:

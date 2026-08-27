@@ -129,6 +129,35 @@
   "roomPlayingBadge": "In progress",
   "cannotJoinInProgress": "This game already started. New players cannot join.",
   "cannotJoinFinished": "This game is finished.",
+  "finishGame": "End game",
+  "finishGameTitle": "End this adventure?",
+  "finishGameBody": "Every player will see the recap screen.",
+  "gameSummaryTitle": "Adventure over",
+  "gameResultVictory": "Victory",
+  "gameResultDefeat": "Defeat",
+  "gameResultNeutral": "Closing",
+  "gameSummaryCharacters": "Characters",
+  "gameSummaryNarrative": "Summary",
+  "gameSummaryEpilogue": "Epilogue",
+  "gameSummaryEvents": "Notable events",
+  "gameSummaryEnemies": "Defeated enemies",
+  "gameSummaryItems": "Items found",
+  "gameSummaryCriticals": "Critical rolls",
+  "gameSummaryEmpty": "None",
+  "gameDurationMinutes": "{minutes} min",
+  "@gameDurationMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "gameDurationHoursMinutes": "{hours} h {minutes} min",
+  "@gameDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "backToTavern": "Back to the tavern",
   "waitingForHost": "Waiting for the host",
   "notEnoughPlayers": "Not enough players ({current} / {minimum}).",
   "@notEnoughPlayers": {

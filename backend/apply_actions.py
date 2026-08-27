@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from finish_game import parse_finish_game
 from models import (
     DefeatEnemyPayload,
     EnemyHpPayload,
@@ -13,6 +14,7 @@ from models import (
 from state_effects import (
     COMBAT_MUTATING_TYPES,
     ENEMY_MUTATING_TYPES,
+    FINALE_TYPES,
     MUTATING_TYPES,
     apply_damage,
     apply_heal,
@@ -38,6 +40,7 @@ from supabase_admin import (
     fetch_room_enemy_by_name,
     fetch_room_player,
     fetch_room_players,
+    finish_room,
     heal_enemy,
     move_enemy,
     patch_room_player,
@@ -68,11 +71,14 @@ async def apply_game_master_actions(
     if has_request_roll(actions):
         summaries = await persist_request_rolls(room_id=room_id, actions=actions)
         for action in actions:
-            if action.type not in COMBAT_MUTATING_TYPES:
-                continue
-            summary = await _apply_combat(room_id=room_id, action=action)
-            if summary:
-                summaries.append(summary)
+            if action.type in COMBAT_MUTATING_TYPES:
+                summary = await _apply_combat(room_id=room_id, action=action)
+                if summary:
+                    summaries.append(summary)
+            elif action.type in FINALE_TYPES:
+                summary = await _apply_finish(room_id=room_id, action=action)
+                if summary:
+                    summaries.append(summary)
         return summaries
 
     summaries: list[str] = []
@@ -87,6 +93,8 @@ async def apply_game_master_actions(
 
 
 async def _apply_one(*, room_id: str, action: GameMasterAction) -> str | None:
+    if action.type == "finish_game":
+        return await _apply_finish(room_id=room_id, action=action)
     if action.type in ENEMY_MUTATING_TYPES:
         return await _apply_enemy(room_id=room_id, action=action)
     if action.type in COMBAT_MUTATING_TYPES:
@@ -357,6 +365,14 @@ async def _apply_combat(*, room_id: str, action: GameMasterAction) -> str | None
         return None
 
     return None
+
+
+async def _apply_finish(*, room_id: str, action: GameMasterAction) -> str | None:
+    ending = parse_finish_game(action.payload)
+    changed = await finish_room(room_id=room_id, ending=ending)
+    if not changed:
+        return None
+    return f"Fin de partie ({ending['result']})."
 
 
 async def persist_request_rolls(

@@ -129,6 +129,35 @@
   "roomPlayingBadge": "Laeuft",
   "cannotJoinInProgress": "Dieses Spiel laeuft bereits. Keine neuen Spieler.",
   "cannotJoinFinished": "Dieses Spiel ist beendet.",
+  "finishGame": "Beenden",
+  "finishGameTitle": "Abenteuer beenden?",
+  "finishGameBody": "Alle Spieler sehen den Abschlussbildschirm.",
+  "gameSummaryTitle": "Ende des Abenteuers",
+  "gameResultVictory": "Sieg",
+  "gameResultDefeat": "Niederlage",
+  "gameResultNeutral": "Abschluss",
+  "gameSummaryCharacters": "Figuren",
+  "gameSummaryNarrative": "Zusammenfassung",
+  "gameSummaryEpilogue": "Epilog",
+  "gameSummaryEvents": "Wichtige Ereignisse",
+  "gameSummaryEnemies": "Besiegte Gegner",
+  "gameSummaryItems": "Gefundene Gegenstaende",
+  "gameSummaryCriticals": "Kritische Wuerfe",
+  "gameSummaryEmpty": "Keine",
+  "gameDurationMinutes": "{minutes} min",
+  "@gameDurationMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "gameDurationHoursMinutes": "{hours} h {minutes} min",
+  "@gameDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "backToTavern": "Zurueck zur Taverne",
   "waitingForHost": "Warte auf den Host",
   "notEnoughPlayers": "Nicht genug Spieler ({current} / {minimum}).",
   "@notEnoughPlayers": {

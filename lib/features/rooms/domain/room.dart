@@ -1,4 +1,5 @@
 import '../../scenarios/domain/world_state.dart';
+import 'game_ending.dart';
 import 'room_locale.dart';
 
 enum RoomStatus {
@@ -35,6 +36,9 @@ class Room {
     this.scenarioPrompt = '',
     this.worldState = const {},
     this.locale = fallbackRoomLocale,
+    this.startedAt,
+    this.finishedAt,
+    this.ending = const GameEnding(),
   });
 
   final String id;
@@ -50,6 +54,9 @@ class Room {
   final String scenarioPrompt;
   final Map<String, dynamic> worldState;
   final String locale;
+  final DateTime? startedAt;
+  final DateTime? finishedAt;
+  final GameEnding ending;
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
@@ -66,6 +73,9 @@ class Room {
       scenarioPrompt: json['scenario_prompt'] as String? ?? '',
       worldState: sanitizePublicWorldState(json['world_state']),
       locale: normalizeRoomLocale(json['locale']),
+      startedAt: _dateTime(json['started_at']),
+      finishedAt: _dateTime(json['finished_at']),
+      ending: GameEnding.fromJson(json['ending']),
     );
   }
 
@@ -84,7 +94,17 @@ class Room {
       'scenario_prompt': scenarioPrompt,
       'world_state': worldState,
       'locale': locale,
+      'started_at': startedAt?.toIso8601String(),
+      'finished_at': finishedAt?.toIso8601String(),
+      'ending': ending.toJson(),
     };
+  }
+
+  static DateTime? _dateTime(Object? value) {
+    if (value is! String || value.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(value);
   }
 
   static List<String> _stringList(Object? value) {

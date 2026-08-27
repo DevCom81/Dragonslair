@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
@@ -55,8 +56,21 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final currentUser = ref.watch(authControllerProvider).value;
     final room = ref.watch(roomProvider(widget.roomId)).value;
     final paused = room?.status == RoomStatus.paused;
+    final finished = room?.status == RoomStatus.finished;
     final isHost =
         currentUser != null && room != null && currentUser.id == room.hostId;
+
+    ref.listen(roomProvider(widget.roomId), (_, next) {
+      final nextRoom = next.value;
+      if (nextRoom?.status == RoomStatus.finished &&
+          context.mounted &&
+          GoRouterState.of(context).name == 'board') {
+        context.pushReplacementNamed(
+          'summary',
+          pathParameters: {'roomId': widget.roomId},
+        );
+      }
+    });
 
     ref.listen(roomEventsProvider(widget.roomId), (previous, next) {
       final events = next.value;
@@ -119,19 +133,29 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
         autofocus: true,
         child: Scaffold(
           appBar: AppBar(
-            title: Text(paused ? l10n.gamePaused : l10n.boardTitle),
+            title: Text(
+              finished
+                  ? l10n.gameSummaryTitle
+                  : (paused ? l10n.gamePaused : l10n.boardTitle),
+            ),
             actions: [
-              if (isHost && !paused)
+              if (isHost && !paused && !finished)
                 IconButton(
                   onPressed: _pauseRoom,
                   icon: const Icon(Icons.pause_circle_outline),
                   tooltip: l10n.pauseGame,
                 ),
-              if (isHost && paused)
+              if (isHost && paused && !finished)
                 IconButton(
                   onPressed: _resumeRoom,
                   icon: const Icon(Icons.play_circle_outline),
                   tooltip: l10n.resumeGame,
+                ),
+              if (isHost && !finished)
+                IconButton(
+                  onPressed: _finishRoom,
+                  icon: const Icon(Icons.flag_outlined),
+                  tooltip: l10n.finishGame,
                 ),
               const LanguageButton(),
             ],
@@ -153,7 +177,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                     enemies: enemies,
                     currentUserId: currentUser?.id,
                     onMovePlayer: (player, x, y) {
-                      if (paused) {
+                      if (paused || finished) {
                         return Future.value();
                       }
                       return ref.read(playerRepositoryProvider).updatePosition(
@@ -180,7 +204,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                     roomId: widget.roomId,
                     currentPlayer: currentPlayer,
                     players: players,
-                    paused: paused,
+                    paused: paused || finished,
                   ),
                   hud: Padding(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
@@ -314,6 +338,77 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   Future<void> _resumeRoom() async {
     try {
       await ref.read(roomRepositoryProvider).resumeRoom(widget.roomId);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _finishRoom() async {
+    final l10n = AppLocalizations.of(context);
+    var result = 'neutral';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(l10n.finishGameTitle),
+              content: RadioGroup<String>(
+                groupValue: result,
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => result = value);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.finishGameBody),
+                    RadioListTile<String>(
+                      value: 'victory',
+                      title: Text(l10n.gameResultVictory),
+                    ),
+                    RadioListTile<String>(
+                      value: 'defeat',
+                      title: Text(l10n.gameResultDefeat),
+                    ),
+                    RadioListTile<String>(
+                      value: 'neutral',
+                      title: Text(l10n.gameResultNeutral),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(l10n.guestWarningCancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(l10n.finishGame),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    try {
+      await ref.read(roomRepositoryProvider).finishRoom(
+            roomId: widget.roomId,
+            result: result,
+          );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

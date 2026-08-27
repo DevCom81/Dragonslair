@@ -129,6 +129,35 @@
   "roomPlayingBadge": "En cours",
   "cannotJoinInProgress": "Cette partie a deja commence. Pas de nouveaux joueurs.",
   "cannotJoinFinished": "Cette partie est terminee.",
+  "finishGame": "Terminer",
+  "finishGameTitle": "Terminer la partie ?",
+  "finishGameBody": "Tous les joueurs verront l ecran de resume.",
+  "gameSummaryTitle": "Fin de l aventure",
+  "gameResultVictory": "Victoire",
+  "gameResultDefeat": "Defaite",
+  "gameResultNeutral": "Conclusion",
+  "gameSummaryCharacters": "Personnages",
+  "gameSummaryNarrative": "Resume",
+  "gameSummaryEpilogue": "Epilogue",
+  "gameSummaryEvents": "Evenements marquants",
+  "gameSummaryEnemies": "Ennemis vaincus",
+  "gameSummaryItems": "Objets obtenus",
+  "gameSummaryCriticals": "Jets critiques",
+  "gameSummaryEmpty": "Aucun",
+  "gameDurationMinutes": "{minutes} min",
+  "@gameDurationMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "gameDurationHoursMinutes": "{hours} h {minutes} min",
+  "@gameDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "backToTavern": "Retour a la taverne",
   "waitingForHost": "En attente du host",
   "notEnoughPlayers": "Joueurs insuffisants ({current} / {minimum}).",
   "@notEnoughPlayers": {

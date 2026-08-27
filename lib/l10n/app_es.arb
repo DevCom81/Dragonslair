@@ -129,6 +129,35 @@
   "roomPlayingBadge": "En curso",
   "cannotJoinInProgress": "Esta partida ya empezo. No se admiten jugadores nuevos.",
   "cannotJoinFinished": "Esta partida ha terminado.",
+  "finishGame": "Terminar",
+  "finishGameTitle": "Terminar la aventura?",
+  "finishGameBody": "Todos los jugadores veran el resumen.",
+  "gameSummaryTitle": "Fin de la aventura",
+  "gameResultVictory": "Victoria",
+  "gameResultDefeat": "Derrota",
+  "gameResultNeutral": "Conclusion",
+  "gameSummaryCharacters": "Personajes",
+  "gameSummaryNarrative": "Resumen",
+  "gameSummaryEpilogue": "Epilogo",
+  "gameSummaryEvents": "Hechos destacados",
+  "gameSummaryEnemies": "Enemigos derrotados",
+  "gameSummaryItems": "Objetos obtenidos",
+  "gameSummaryCriticals": "Tiradas criticas",
+  "gameSummaryEmpty": "Ninguno",
+  "gameDurationMinutes": "{minutes} min",
+  "@gameDurationMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "gameDurationHoursMinutes": "{hours} h {minutes} min",
+  "@gameDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "backToTavern": "Volver a la taberna",
   "waitingForHost": "Esperando al anfitrion",
   "notEnoughPlayers": "Jugadores insuficientes ({current} / {minimum}).",
   "@notEnoughPlayers": {

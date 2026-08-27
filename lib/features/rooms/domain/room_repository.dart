@@ -21,4 +21,10 @@ abstract interface class RoomRepository {
   Future<void> startRoom(String roomId);
   Future<void> pauseRoom(String roomId);
   Future<void> resumeRoom(String roomId);
+  Future<void> finishRoom({
+    required String roomId,
+    String result = 'neutral',
+    String summary = '',
+    String epilogue = '',
+  });
 }
