@@ -11,5 +11,7 @@ void main() {
 
     expect(profile.id, 'user-id');
     expect(profile.displayName, 'Jérôme');
+    expect(profile.stats.strength, 10);
+    expect(profile.sheetConfirmed, isFalse);
   });
 }

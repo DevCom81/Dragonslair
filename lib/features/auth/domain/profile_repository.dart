@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
+import 'character_stats.dart';
 import 'player_profile.dart';
 
 abstract interface class ProfileRepository {
@@ -10,6 +11,11 @@ abstract interface class ProfileRepository {
   Future<PlayerProfile> upsertDisplayName({
     required String userId,
     required String displayName,
+  });
+  Future<PlayerProfile> upsertSheet({
+    required String userId,
+    required String displayName,
+    required CharacterStats stats,
   });
 }
 
@@ -64,6 +70,26 @@ class SupabaseProfileRepository implements ProfileRepository {
         .upsert({
           'id': userId,
           'display_name': trimmed,
+        })
+        .select()
+        .single();
+
+    return PlayerProfile.fromJson(row);
+  }
+
+  @override
+  Future<PlayerProfile> upsertSheet({
+    required String userId,
+    required String displayName,
+    required CharacterStats stats,
+  }) async {
+    final row = await _requiredClient
+        .from('profiles')
+        .upsert({
+          'id': userId,
+          'display_name': displayName,
+          'sheet_confirmed': true,
+          ...stats.toJson(),
         })
         .select()
         .single();

@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/profile_providers.dart';
 import '../../players/presentation/player_providers.dart';
+import '../../rooms/presentation/room_providers.dart';
+import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/figurine_definition.dart';
 import 'figurine_sprite.dart';
 
-class FigurineSelectionScreen extends ConsumerWidget {
+class FigurineSelectionScreen extends ConsumerStatefulWidget {
   const FigurineSelectionScreen({
     required this.roomId,
     super.key,
@@ -17,40 +21,136 @@ class FigurineSelectionScreen extends ConsumerWidget {
   final String roomId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final playersState = ref.watch(roomPlayersProvider(roomId));
+  ConsumerState<FigurineSelectionScreen> createState() =>
+      _FigurineSelectionScreenState();
+}
+
+class _FigurineSelectionScreenState
+    extends ConsumerState<FigurineSelectionScreen> {
+  String? _classId;
+  int? _figurineId;
+  var _isSubmitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final roomState = ref.watch(roomProvider(widget.roomId));
+    final playersState = ref.watch(roomPlayersProvider(widget.roomId));
     final user = ref.watch(authControllerProvider).value;
+    final profile = ref.watch(currentProfileProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choisir une figurine')),
+      appBar: AppBar(title: const Text('Figurine et classe')),
       body: SafeArea(
-        child: playersState.when(
-          data: (players) {
-            final takenIds = players.map((player) => player.figurineId).toSet();
+        child: roomState.when(
+          data: (room) {
+            if (room == null) {
+              return const Center(child: Text('Partie introuvable.'));
+            }
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: FigurineCatalog.count,
-              itemBuilder: (context, index) {
-                final figurine = FigurineCatalog.byId(index);
-                final isTaken = takenIds.contains(figurine.id);
+            final scenario = ScenarioCatalog.byId(room.scenarioId);
 
-                return _FigurineCard(
-                  figurine: figurine,
-                  isTaken: isTaken,
-                  onTap: user == null || isTaken
-                      ? null
-                      : () async {
-                          await _joinRoom(context, ref, user.id, figurine);
+            return playersState.when(
+              data: (players) {
+                final takenFigurines =
+                    players.map((player) => player.figurineId).toSet();
+                final takenClasses = players
+                    .map((player) => player.classId)
+                    .whereType<String>()
+                    .toSet();
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Une classe unique par joueur.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final classId in scenario.allowedClassIds)
+                                ChoiceChip(
+                                  label: Text(
+                                    takenClasses.contains(classId)
+                                        ? '${CharacterClassCatalog.byId(classId).label} (prise)'
+                                        : CharacterClassCatalog.byId(classId)
+                                            .label,
+                                  ),
+                                  selected: _classId == classId,
+                                  onSelected: takenClasses.contains(classId)
+                                      ? null
+                                      : (_) {
+                                          setState(() => _classId = classId);
+                                        },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: FigurineCatalog.count,
+                        itemBuilder: (context, index) {
+                          final figurine = FigurineCatalog.byId(index);
+                          final isTaken = takenFigurines.contains(figurine.id);
+
+                          return _FigurineCard(
+                            figurine: figurine,
+                            isTaken: isTaken,
+                            isSelected: _figurineId == figurine.id,
+                            onTap: isTaken
+                                ? null
+                                : () {
+                                    setState(() => _figurineId = figurine.id);
+                                  },
+                          );
                         },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: FilledButton(
+                        onPressed: user == null ||
+                                profile == null ||
+                                _classId == null ||
+                                _figurineId == null ||
+                                _isSubmitting
+                            ? null
+                            : () => _join(
+                                  user.id,
+                                  profile,
+                                  FigurineCatalog.byId(_figurineId!),
+                                ),
+                        child: _isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Rejoindre le lobby'),
+                      ),
+                    ),
+                  ],
                 );
               },
+              error: (error, stackTrace) => Center(child: Text(error.toString())),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.gold),
+              ),
             );
           },
           error: (error, stackTrace) => Center(child: Text(error.toString())),
@@ -62,31 +162,41 @@ class FigurineSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _joinRoom(
-    BuildContext context,
-    WidgetRef ref,
+  Future<void> _join(
     String userId,
+    PlayerProfile profile,
     FigurineDefinition figurine,
   ) async {
+    final classId = _classId;
+    if (classId == null) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
     try {
       await ref.read(playerRepositoryProvider).joinRoom(
-            roomId: roomId,
+            roomId: widget.roomId,
             userId: userId,
             figurineId: figurine.id,
             figurineName: figurine.name,
+            classId: classId,
+            stats: profile.stats,
           );
-
-      if (context.mounted) {
-        context.pushNamed('lobby', pathParameters: {'roomId': roomId});
+      if (mounted) {
+        context.pushNamed('lobby', pathParameters: {'roomId': widget.roomId});
       }
     } catch (error) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error.toString()),
             backgroundColor: AppColors.danger,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -96,11 +206,13 @@ class _FigurineCard extends StatelessWidget {
   const _FigurineCard({
     required this.figurine,
     required this.isTaken,
+    required this.isSelected,
     required this.onTap,
   });
 
   final FigurineDefinition figurine;
   final bool isTaken;
+  final bool isSelected;
   final VoidCallback? onTap;
 
   @override
@@ -110,6 +222,13 @@ class _FigurineCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Card(
         color: isTaken ? AppColors.surface.withValues(alpha: 0.5) : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isSelected ? AppColors.gold : Colors.transparent,
+            width: 2,
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(

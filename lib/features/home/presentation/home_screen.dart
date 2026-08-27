@@ -17,7 +17,8 @@ class HomeScreen extends ConsumerWidget {
     final profileState = ref.watch(currentProfileProvider);
     final isAuthenticated = authState.value != null;
     final hasProfile = profileState.value != null;
-    final canPlay = isAuthenticated && hasProfile;
+    final hasSheet = profileState.value?.sheetConfirmed ?? false;
+    final canPlay = isAuthenticated && hasProfile && hasSheet;
 
     return Scaffold(
       body: SafeArea(
@@ -29,69 +30,93 @@ class HomeScreen extends ConsumerWidget {
               colors: [AppColors.parchment, AppColors.background],
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                Image.asset(
-                  'Assets/splash-icon.png',
-                  height: 120,
-                  semanticLabel: 'Embleme DragonsLair',
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'DragonsLair',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Jeu de role multijoueur avec maitre du jeu IA.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 32),
-                _AuthStatus(authState: authState),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: AppConfig.isSupabaseConfigured
-                      ? () => _enterTavern(context, ref)
-                      : null,
-                  child: const Text('Entrer dans la taverne'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: canPlay
-                      ? () => context.pushNamed('create-room')
-                      : isAuthenticated
-                          ? () => context.pushNamed('display-name')
-                          : null,
-                  child: Text(
-                    hasProfile || !isAuthenticated
-                        ? 'Creer une partie'
-                        : 'Choisir un pseudo',
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Image.asset(
+                          'Assets/splash-icon.png',
+                          height: 120,
+                          semanticLabel: 'Embleme DragonsLair',
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'DragonsLair',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Jeu de role multijoueur avec maitre du jeu IA.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 32),
+                        _AuthStatus(authState: authState),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: AppConfig.isSupabaseConfigured
+                              ? () => _enterTavern(context, ref)
+                              : null,
+                          child: const Text('Entrer dans la taverne'),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: canPlay
+                              ? () => context.pushNamed('create-room')
+                              : isAuthenticated && hasProfile
+                                  ? () => context.pushNamed('character-sheet')
+                                  : isAuthenticated
+                                      ? () => context.pushNamed('display-name')
+                                      : null,
+                          child: Text(
+                            !isAuthenticated
+                                ? 'Creer une partie'
+                                : !hasProfile
+                                    ? 'Choisir un pseudo'
+                                    : hasSheet
+                                        ? 'Creer une partie'
+                                        : 'Completer la fiche',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed:
+                              canPlay ? () => context.pushNamed('rooms') : null,
+                          child: const Text('Rejoindre une partie'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: canPlay
+                              ? () => context.pushNamed('join-room')
+                              : null,
+                          child: const Text('Rejoindre par code'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: canPlay
+                              ? () => context.pushNamed('character-sheet')
+                              : null,
+                          child: const Text('Ma fiche'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: () => context.pushNamed('game-master'),
+                          child: const Text('Tester le MJ IA'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: canPlay ? () => context.pushNamed('rooms') : null,
-                  child: const Text('Rejoindre une partie'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: canPlay ? () => context.pushNamed('join-room') : null,
-                  child: const Text('Rejoindre par code'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () => context.pushNamed('game-master'),
-                  child: const Text('Tester le MJ IA'),
-                ),
-                const Spacer(),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -108,6 +133,8 @@ Future<void> _enterTavern(BuildContext context, WidgetRef ref) async {
   }
   if (profile == null) {
     context.pushNamed('display-name');
+  } else if (!profile.sheetConfirmed) {
+    context.pushNamed('character-sheet');
   }
 }
 

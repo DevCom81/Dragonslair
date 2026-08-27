@@ -1,3 +1,4 @@
+import '../../auth/domain/character_stats.dart';
 import 'player.dart';
 
 abstract interface class PlayerRepository {
@@ -8,6 +9,8 @@ abstract interface class PlayerRepository {
     required String userId,
     required int figurineId,
     required String figurineName,
+    required String classId,
+    required CharacterStats stats,
   });
   Future<void> updatePosition({
     required String playerId,

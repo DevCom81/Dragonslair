@@ -5,8 +5,11 @@ abstract interface class RoomRepository {
   Stream<List<Room>> watchWaitingRooms();
   Future<Room> createRoom({
     required String name,
-    required String scenario,
     required String hostId,
+    required String scenarioId,
+    required String scenarioName,
+    required int minPlayers,
+    required List<String> requiredClassIds,
   });
   Future<Room> fetchRoom(String roomId);
   Future<Room?> fetchRoomByJoinCode(String joinCode);

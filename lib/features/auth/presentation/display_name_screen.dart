@@ -94,7 +94,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
           );
       ref.invalidate(currentProfileProvider);
       if (mounted) {
-        context.goNamed('home');
+        context.pushNamed('character-sheet');
       }
     } catch (error) {
       _showError(error.toString());

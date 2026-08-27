@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/presentation/character_sheet_screen.dart';
 import '../features/auth/presentation/display_name_screen.dart';
 import '../features/board/presentation/board_screen.dart';
 import '../features/figurines/presentation/figurine_selection_screen.dart';
@@ -24,6 +25,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/display-name',
         name: 'display-name',
         builder: (context, state) => const DisplayNameScreen(),
+      ),
+      GoRoute(
+        path: '/character-sheet',
+        name: 'character-sheet',
+        builder: (context, state) => const CharacterSheetScreen(),
       ),
       GoRoute(
         path: '/game-master',

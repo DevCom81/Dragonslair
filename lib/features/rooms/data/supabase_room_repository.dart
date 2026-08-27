@@ -42,8 +42,11 @@ class SupabaseRoomRepository implements RoomRepository {
   @override
   Future<Room> createRoom({
     required String name,
-    required String scenario,
     required String hostId,
+    required String scenarioId,
+    required String scenarioName,
+    required int minPlayers,
+    required List<String> requiredClassIds,
   }) async {
     Object? lastError;
     for (var attempt = 0; attempt < 3; attempt++) {
@@ -52,7 +55,10 @@ class SupabaseRoomRepository implements RoomRepository {
             .from('rooms')
             .insert({
               'name': name,
-              'scenario': scenario,
+              'scenario': scenarioName,
+              'scenario_id': scenarioId,
+              'min_players': minPlayers,
+              'required_class_ids': requiredClassIds,
               'host_id': hostId,
               'status': RoomStatus.waiting.toJson(),
               'join_code': JoinCode.generate(),
@@ -111,10 +117,19 @@ class SupabaseRoomRepository implements RoomRepository {
 
   @override
   Future<void> startRoom(String roomId) async {
-    await _requiredClient.from('rooms').update({
-      'status': RoomStatus.playing.toJson(),
-      'game_phase': 'exploration',
-      'started_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', roomId);
+    try {
+      await _requiredClient.from('rooms').update({
+        'status': RoomStatus.playing.toJson(),
+        'game_phase': 'exploration',
+        'started_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', roomId);
+    } on PostgrestException catch (error) {
+      throw GameException(
+        error.message.isEmpty
+            ? 'Impossible de demarrer la partie.'
+            : error.message,
+        cause: error,
+      );
+    }
   }
 }

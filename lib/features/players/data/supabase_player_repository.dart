@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../auth/domain/character_stats.dart';
 import '../domain/player.dart';
 import '../domain/player_repository.dart';
 
@@ -51,6 +52,8 @@ class SupabasePlayerRepository implements PlayerRepository {
     required String userId,
     required int figurineId,
     required String figurineName,
+    required String classId,
+    required CharacterStats stats,
   }) async {
     final existingPlayers = await fetchRoomPlayers(roomId);
     Player? existingUser;
@@ -73,22 +76,45 @@ class SupabasePlayerRepository implements PlayerRepository {
       throw const GameException('Cette figurine est deja prise.');
     }
 
-    final row = await _requiredClient
-        .from('players')
-        .insert({
-          'room_id': roomId,
-          'user_id': userId,
-          'figurine_id': figurineId,
-          'figurine_name': figurineName,
-          'position_x': 0.5,
-          'position_y': 0.5,
-          'hp': 100,
-          'inventory': <Map<String, dynamic>>[],
-        })
-        .select()
-        .single();
+    final classTaken = existingPlayers.any((player) {
+      return player.classId == classId;
+    });
+    if (classTaken) {
+      throw const GameException('Cette classe est deja prise.');
+    }
 
-    return Player.fromJson(row);
+    try {
+      final row = await _requiredClient
+          .from('players')
+          .insert({
+            'room_id': roomId,
+            'user_id': userId,
+            'figurine_id': figurineId,
+            'figurine_name': figurineName,
+            'class_id': classId,
+            'position_x': 0.5,
+            'position_y': 0.5,
+            'hp': 100,
+            'inventory': <Map<String, dynamic>>[],
+            ...stats.toJson(),
+          })
+          .select()
+          .single();
+
+      return Player.fromJson(row);
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') {
+        final text = '${error.message} ${error.details ?? ''}';
+        if (text.contains('players_room_class_unique')) {
+          throw const GameException('Cette classe est deja prise.');
+        }
+        if (text.contains('players_room_figurine_unique')) {
+          throw const GameException('Cette figurine est deja prise.');
+        }
+        throw const GameException('Cette place est deja prise.');
+      }
+      throw GameException(error.message, cause: error);
+    }
   }
 
   @override

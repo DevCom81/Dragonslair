@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../scenarios/domain/scenario_definition.dart';
 import 'room_providers.dart';
 
 class CreateRoomScreen extends ConsumerStatefulWidget {
@@ -16,13 +17,12 @@ class CreateRoomScreen extends ConsumerStatefulWidget {
 class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _scenarioController = TextEditingController();
+  var _scenario = ScenarioCatalog.dungeon;
   var _isSubmitting = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _scenarioController.dispose();
     super.dispose();
   }
 
@@ -31,55 +31,63 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Creer une partie')),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom de la partie',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _requiredField,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nom de la partie',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _scenarioController,
-                  minLines: 3,
-                  maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'Scenario',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _requiredField,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Champ obligatoire.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Text('Scenario', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              RadioGroup<ScenarioDefinition>(
+                groupValue: _scenario,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _scenario = value);
+                  }
+                },
+                child: Column(
+                  children: [
+                    for (final scenario in ScenarioCatalog.all)
+                      RadioListTile<ScenarioDefinition>(
+                        contentPadding: EdgeInsets.zero,
+                        value: scenario,
+                        title: Text(
+                          '${scenario.name} (min ${scenario.minPlayers})',
+                        ),
+                        subtitle: Text(scenario.description),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Creer'),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Creer'),
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  String? _requiredField(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Champ obligatoire.';
-    }
-    return null;
   }
 
   Future<void> _submit() async {
@@ -97,8 +105,11 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
     try {
       final room = await ref.read(roomRepositoryProvider).createRoom(
             name: _nameController.text.trim(),
-            scenario: _scenarioController.text.trim(),
             hostId: user.id,
+            scenarioId: _scenario.id,
+            scenarioName: _scenario.name,
+            minPlayers: _scenario.minPlayers,
+            requiredClassIds: _scenario.requiredClassIds,
           );
       if (mounted) {
         context.pushNamed('figurines', pathParameters: {'roomId': room.id});
@@ -114,10 +125,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.danger,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.danger),
     );
   }
 }

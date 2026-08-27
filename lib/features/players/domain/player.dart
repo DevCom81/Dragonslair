@@ -1,3 +1,4 @@
+import '../../auth/domain/character_stats.dart';
 import 'inventory_item.dart';
 
 class Player {
@@ -12,6 +13,8 @@ class Player {
     required this.hp,
     required this.inventory,
     required this.joinedAt,
+    required this.stats,
+    this.classId,
   });
 
   final String id;
@@ -24,6 +27,8 @@ class Player {
   final int hp;
   final List<InventoryItem> inventory;
   final DateTime joinedAt;
+  final String? classId;
+  final CharacterStats stats;
 
   factory Player.fromJson(Map<String, dynamic> json) {
     return Player(
@@ -37,6 +42,8 @@ class Player {
       hp: (json['hp'] as num).toInt(),
       inventory: InventoryItem.listFromJson(json['inventory']),
       joinedAt: DateTime.parse(json['joined_at'] as String),
+      classId: json['class_id'] as String?,
+      stats: CharacterStats.fromJson(json),
     );
   }
 
@@ -52,6 +59,8 @@ class Player {
       'hp': hp,
       'inventory': inventory.map((item) => item.toJson()).toList(),
       'joined_at': joinedAt.toIso8601String(),
+      'class_id': classId,
+      ...stats.toJson(),
     };
   }
 
