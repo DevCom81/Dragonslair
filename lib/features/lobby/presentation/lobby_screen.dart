@@ -44,7 +44,7 @@ class LobbyScreen extends ConsumerWidget {
               return const Center(child: Text('Partie introuvable.'));
             }
 
-            final isHost = user?.id == room.hostId;
+            final isHost = user != null && user.id == room.hostId;
 
             return playersState.when(
               data: (players) => Padding(

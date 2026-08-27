@@ -29,13 +29,20 @@ class SupabasePlayerRepository implements PlayerRepository {
   }
 
   @override
-  Stream<List<Player>> watchRoomPlayers(String roomId) {
-    return _requiredClient
+  Stream<List<Player>> watchRoomPlayers(String roomId) async* {
+    yield await fetchRoomPlayers(roomId);
+
+    yield* _requiredClient
         .from('players')
         .stream(primaryKey: ['id'])
-        .eq('room_id', roomId)
-        .order('joined_at')
-        .map((rows) => rows.map((row) => Player.fromJson(row)).toList());
+        .map((rows) {
+          final players = rows
+              .where((row) => row['room_id']?.toString() == roomId)
+              .map(Player.fromJson)
+              .toList();
+          players.sort((a, b) => a.joinedAt.compareTo(b.joinedAt));
+          return players;
+        });
   }
 
   @override
