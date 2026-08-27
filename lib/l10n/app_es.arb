@@ -1,0 +1,268 @@
+{
+  "@@locale": "es",
+  "appTitle": "DragonsLair",
+  "appTagline": "Juego de rol multijugador con un director de juego de IA.",
+  "emblemSemantic": "Emblema de DragonsLair",
+  "playAsGuest": "Jugar sin registrarse",
+  "logIn": "Iniciar sesion",
+  "signUp": "Registrarse",
+  "continuePlay": "Continuar",
+  "signOut": "Cerrar sesion",
+  "language": "Idioma",
+  "preferences": "Preferencias",
+  "supabaseMissing": "Falta la configuracion de Supabase. La app funciona en modo local.",
+  "sessionClosed": "Sin sesion.",
+  "sessionConnected": "Sesion iniciada.",
+  "sessionGuest": "Sesion de invitado en este dispositivo.",
+  "guestWarningTitle": "Jugar sin cuenta",
+  "guestWarningBody": "Tu nombre y tu ficha permanecen solo en este dispositivo. Si desinstalas la app o cierras sesion, se pierden. Aun podras retomar una partida en pausa desde este dispositivo.",
+  "guestWarningConfirm": "Jugar como invitado",
+  "guestWarningCancel": "Cancelar",
+  "guestSuggestedName": "Viajero-{suffix}",
+  "@guestSuggestedName": {
+    "placeholders": {
+      "suffix": {"type": "String"}
+    }
+  },
+  "authSignUpTitle": "Crear una cuenta",
+  "authLogInTitle": "Iniciar sesion",
+  "authAccountHint": "Tu nombre y tu ficha quedan vinculados a esta cuenta.",
+  "email": "Correo",
+  "emailInvalid": "Correo no valido.",
+  "password": "Contrasena",
+  "passwordTooShort": "Al menos 6 caracteres.",
+  "createAccount": "Crear cuenta",
+  "alreadyHaveAccount": "Ya tienes cuenta? Inicia sesion",
+  "newPlayerSignUp": "Jugador nuevo? Registrate",
+  "authRequired": "Se requiere autenticacion.",
+  "displayNameTitle": "Tu nombre",
+  "displayNameHint": "Elige un nombre visible para los demas jugadores de tu partida.",
+  "displayNameLabel": "Nombre",
+  "minTwoChars": "Al menos 2 caracteres.",
+  "save": "Guardar",
+  "sheetTitle": "Ficha de personaje",
+  "sheetIntro": "Elige una clase y lanza 1d20 por caracteristica. Un 1 a 7 se convierte en 8; un 19 o 20, en 18. La clase suma +2 (max. 18) a su caracteristica principal.",
+  "classLabel": "Clase",
+  "classBonusChip": "{className} (+2 {statName})",
+  "@classBonusChip": {
+    "placeholders": {
+      "className": {"type": "String"},
+      "statName": {"type": "String"}
+    }
+  },
+  "rollAbilities": "Lanzar dados (6d20)",
+  "saveSheet": "Guardar ficha",
+  "sheetRequiresAccount": "Se requieren cuenta y nombre antes de la ficha.",
+  "statLine": "{statName}: {value}",
+  "@statLine": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "value": {"type": "int"}
+    }
+  },
+  "statLineBonus": "{statName}: {raw} → {finalValue} (+2 {className})",
+  "@statLineBonus": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "raw": {"type": "int"},
+      "finalValue": {"type": "int"},
+      "className": {"type": "String"}
+    }
+  },
+  "tavernTitle": "Taberna",
+  "welcome": "Bienvenido.",
+  "welcomeNamed": "Bienvenido, {name}.",
+  "@welcomeNamed": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "welcomeNamedClass": "Bienvenido, {name} ({className}).",
+  "@welcomeNamedClass": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "className": {"type": "String"}
+    }
+  },
+  "hubSubtitle": "Crea una partida o unete a tus companeros.",
+  "createGame": "Crear una partida",
+  "joinGame": "Unirse a una partida",
+  "joinByCode": "Unirse con codigo",
+  "mySheet": "Mi ficha",
+  "guestBanner": "Modo invitado: este personaje existe solo en este dispositivo.",
+  "lobbyTitle": "Lobby",
+  "roomNotFound": "Partida no encontrada.",
+  "codeLabel": "Codigo: {code}",
+  "@codeLabel": {
+    "placeholders": {
+      "code": {"type": "String"}
+    }
+  },
+  "scenarioMinPlayersLine": "{scenario} · min. {count} jugadores",
+  "@scenarioMinPlayersLine": {
+    "placeholders": {
+      "scenario": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "players": "Jugadores",
+  "waitingForPlayers": "Esperando jugadores.",
+  "hpLabel": "PV {hp}",
+  "@hpLabel": {
+    "placeholders": {
+      "hp": {"type": "int"}
+    }
+  },
+  "startGame": "Empezar la partida",
+  "waitingForHost": "Esperando al anfitrion",
+  "notEnoughPlayers": "Jugadores insuficientes ({current} / {minimum}).",
+  "@notEnoughPlayers": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "minimum": {"type": "int"}
+    }
+  },
+  "missingRequiredClass": "Falta la clase obligatoria: {className}.",
+  "@missingRequiredClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "createRoomTitle": "Crear una partida",
+  "roomName": "Nombre de la partida",
+  "fieldRequired": "Campo obligatorio.",
+  "scenario": "Escenario",
+  "scenarioMinPlayers": "{name} (min. {count})",
+  "@scenarioMinPlayers": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "create": "Crear",
+  "joinCodeTitle": "Unirse con codigo",
+  "joinCodeLabel": "Codigo de partida",
+  "joinCodeInvalid": "El codigo debe tener 6 caracteres.",
+  "join": "Unirse",
+  "noRoomForCode": "No hay partida para este codigo.",
+  "openGames": "Partidas abiertas",
+  "noWaitingGames": "No hay partidas en espera.",
+  "chooseFigurine": "Elige una figurita",
+  "completeSheetFirst": "Completa tu ficha antes de unirte.",
+  "classAlreadyTaken": "Tu clase ({className}) ya esta ocupada.",
+  "@classAlreadyTaken": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "yourClass": "Clase: {className}",
+  "@yourClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "classNotAllowed": "Tu clase no esta permitida en este escenario.",
+  "joinLobby": "Unirse al lobby",
+  "taken": "Ocupada",
+  "statStrength": "Fuerza",
+  "statDexterity": "Destreza",
+  "statConstitution": "Constitucion",
+  "statIntelligence": "Inteligencia",
+  "statWisdom": "Sabiduria",
+  "statCharisma": "Carisma",
+  "classBarbarian": "Barbaro",
+  "classBard": "Bardo",
+  "classCleric": "Clerigo",
+  "classDruid": "Druida",
+  "classFighter": "Guerrero",
+  "classMonk": "Monje",
+  "classPaladin": "Paladin",
+  "classRanger": "Explorador",
+  "classRogue": "Picaro",
+  "classSorcerer": "Hechicero",
+  "classWarlock": "Brujo",
+  "classWizard": "Mago",
+  "scenarioDungeonName": "Mazmorra",
+  "scenarioDungeonDescription": "Exploracion subterranea. Se requiere un clerigo.",
+  "scenarioForestName": "Bosque",
+  "scenarioForestDescription": "Pistas y emboscadas. Se requiere un clerigo.",
+  "scenarioSiegeName": "Asedio",
+  "scenarioSiegeDescription": "Defensa de una fortaleza. Guerrero y clerigo son obligatorios.",
+  "boardTitle": "Tablero",
+  "journalTitle": "Historia",
+  "journalEmpty": "Todavia no hay sucesos.",
+  "gmChoices": "El DJ propone:",
+  "actionHint": "Describe tu accion...",
+  "sendToGm": "Enviar al DJ",
+  "actionExamine": "Examinar",
+  "actionInteract": "Interactuar",
+  "actionAttack": "Atacar",
+  "actionDefend": "Defender",
+  "actionUseItem": "Usar un objeto",
+  "actionFree": "Accion libre",
+  "hudSheet": "Ficha",
+  "hudInventory": "Inventario",
+  "hudJournal": "Libro",
+  "inGameSheetTitle": "Ficha de personaje",
+  "inGameInventoryTitle": "Inventario",
+  "emptyInventory": "Todavia no hay objetos.",
+  "itemQuantity": "x{count}",
+  "@itemQuantity": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pendingRollBody": "Tirada de {ability}, CD {dc}",
+  "@pendingRollBody": {
+    "placeholders": {
+      "ability": {"type": "String"},
+      "dc": {"type": "int"}
+    }
+  },
+  "pendingRollCta": "Tirar 1d20",
+  "pendingRollSuccess": "Exito",
+  "pendingRollFailure": "Fallo",
+  "pendingRollWaiting": "Esperando la tirada de {name}.",
+  "@pendingRollWaiting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pendingRollUnknownPlayer": "un jugador",
+  "statLineEffective": "{statName}: {effective} ({base})",
+  "@statLineEffective": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "effective": {"type": "int"},
+      "base": {"type": "int"}
+    }
+  },
+  "effectsTitle": "Efectos",
+  "emptyEffects": "Ningun efecto activo.",
+  "effectPermanent": "permanente",
+  "effectRemaining": "{count} escenas",
+  "@effectRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "effectKindBuff": "bono",
+  "effectKindDebuff": "penalizacion",
+  "effectKindWound": "herida",
+  "effectKindSpell": "hechizo",
+  "itemEquip": "Equipar",
+  "itemUnequip": "Quitar",
+  "itemUse": "Usar",
+  "itemEquipped": "Equipado",
+  "itemTypeWeapon": "Arma",
+  "itemTypeArmor": "Armadura",
+  "itemTypeShield": "Escudo",
+  "itemTypeAccessory": "Accesorio",
+  "itemTypePotion": "Pocion",
+  "itemTypeScroll": "Pergamino",
+  "itemTypeTool": "Herramienta",
+  "languageFrench": "Français",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageGerman": "Deutsch"
+}

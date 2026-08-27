@@ -1,0 +1,268 @@
+{
+  "@@locale": "en",
+  "appTitle": "DragonsLair",
+  "appTagline": "Multiplayer role-playing game with an AI game master.",
+  "emblemSemantic": "DragonsLair emblem",
+  "playAsGuest": "Play without signing up",
+  "logIn": "Log in",
+  "signUp": "Sign up",
+  "continuePlay": "Continue",
+  "signOut": "Sign out",
+  "language": "Language",
+  "preferences": "Preferences",
+  "supabaseMissing": "Supabase configuration is missing. The app runs in local mode.",
+  "sessionClosed": "No session.",
+  "sessionConnected": "Signed in.",
+  "sessionGuest": "Guest session on this device.",
+  "guestWarningTitle": "Play without an account",
+  "guestWarningBody": "Your display name and character sheet stay on this device only. If you uninstall the app or sign out, they are lost. You can still rejoin a paused game from this device.",
+  "guestWarningConfirm": "Play as guest",
+  "guestWarningCancel": "Cancel",
+  "guestSuggestedName": "Wanderer-{suffix}",
+  "@guestSuggestedName": {
+    "placeholders": {
+      "suffix": {"type": "String"}
+    }
+  },
+  "authSignUpTitle": "Create an account",
+  "authLogInTitle": "Log in",
+  "authAccountHint": "Your display name and character sheet stay linked to this account.",
+  "email": "Email",
+  "emailInvalid": "Invalid email.",
+  "password": "Password",
+  "passwordTooShort": "At least 6 characters.",
+  "createAccount": "Create account",
+  "alreadyHaveAccount": "Already have an account? Log in",
+  "newPlayerSignUp": "New player? Sign up",
+  "authRequired": "Authentication required.",
+  "displayNameTitle": "Your display name",
+  "displayNameHint": "Choose a name other players will see in your party.",
+  "displayNameLabel": "Display name",
+  "minTwoChars": "At least 2 characters.",
+  "save": "Save",
+  "sheetTitle": "Character sheet",
+  "sheetIntro": "Pick a class, then roll 1d20 per ability. Rolls from 1 to 7 become 8, 19 or 20 become 18. The class adds +2 (max 18) to its primary ability.",
+  "classLabel": "Class",
+  "classBonusChip": "{className} (+2 {statName})",
+  "@classBonusChip": {
+    "placeholders": {
+      "className": {"type": "String"},
+      "statName": {"type": "String"}
+    }
+  },
+  "rollAbilities": "Roll dice (6d20)",
+  "saveSheet": "Save sheet",
+  "sheetRequiresAccount": "Account and display name are required before the sheet.",
+  "statLine": "{statName}: {value}",
+  "@statLine": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "value": {"type": "int"}
+    }
+  },
+  "statLineBonus": "{statName}: {raw} → {finalValue} (+2 {className})",
+  "@statLineBonus": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "raw": {"type": "int"},
+      "finalValue": {"type": "int"},
+      "className": {"type": "String"}
+    }
+  },
+  "tavernTitle": "Tavern",
+  "welcome": "Welcome.",
+  "welcomeNamed": "Welcome, {name}.",
+  "@welcomeNamed": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "welcomeNamedClass": "Welcome, {name} ({className}).",
+  "@welcomeNamedClass": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "className": {"type": "String"}
+    }
+  },
+  "hubSubtitle": "Create a game or join your companions.",
+  "createGame": "Create a game",
+  "joinGame": "Join a game",
+  "joinByCode": "Join with a code",
+  "mySheet": "My sheet",
+  "guestBanner": "Guest mode: this character exists on this device only.",
+  "lobbyTitle": "Lobby",
+  "roomNotFound": "Game not found.",
+  "codeLabel": "Code: {code}",
+  "@codeLabel": {
+    "placeholders": {
+      "code": {"type": "String"}
+    }
+  },
+  "scenarioMinPlayersLine": "{scenario} · min {count} players",
+  "@scenarioMinPlayersLine": {
+    "placeholders": {
+      "scenario": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "players": "Players",
+  "waitingForPlayers": "Waiting for players.",
+  "hpLabel": "HP {hp}",
+  "@hpLabel": {
+    "placeholders": {
+      "hp": {"type": "int"}
+    }
+  },
+  "startGame": "Start the game",
+  "waitingForHost": "Waiting for the host",
+  "notEnoughPlayers": "Not enough players ({current} / {minimum}).",
+  "@notEnoughPlayers": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "minimum": {"type": "int"}
+    }
+  },
+  "missingRequiredClass": "Required class missing: {className}.",
+  "@missingRequiredClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "createRoomTitle": "Create a game",
+  "roomName": "Game name",
+  "fieldRequired": "Required field.",
+  "scenario": "Scenario",
+  "scenarioMinPlayers": "{name} (min {count})",
+  "@scenarioMinPlayers": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "create": "Create",
+  "joinCodeTitle": "Join with a code",
+  "joinCodeLabel": "Game code",
+  "joinCodeInvalid": "The code must contain 6 characters.",
+  "join": "Join",
+  "noRoomForCode": "No game found for this code.",
+  "openGames": "Open games",
+  "noWaitingGames": "No games waiting.",
+  "chooseFigurine": "Choose a figurine",
+  "completeSheetFirst": "Complete your sheet before joining.",
+  "classAlreadyTaken": "Your class ({className}) is already taken.",
+  "@classAlreadyTaken": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "yourClass": "Class: {className}",
+  "@yourClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "classNotAllowed": "Your class is not allowed in this scenario.",
+  "joinLobby": "Join the lobby",
+  "taken": "Taken",
+  "statStrength": "Strength",
+  "statDexterity": "Dexterity",
+  "statConstitution": "Constitution",
+  "statIntelligence": "Intelligence",
+  "statWisdom": "Wisdom",
+  "statCharisma": "Charisma",
+  "classBarbarian": "Barbarian",
+  "classBard": "Bard",
+  "classCleric": "Cleric",
+  "classDruid": "Druid",
+  "classFighter": "Fighter",
+  "classMonk": "Monk",
+  "classPaladin": "Paladin",
+  "classRanger": "Ranger",
+  "classRogue": "Rogue",
+  "classSorcerer": "Sorcerer",
+  "classWarlock": "Warlock",
+  "classWizard": "Wizard",
+  "scenarioDungeonName": "Dungeon",
+  "scenarioDungeonDescription": "Underground exploration. A cleric is required.",
+  "scenarioForestName": "Forest",
+  "scenarioForestDescription": "Tracks and ambushes. A cleric is required.",
+  "scenarioSiegeName": "Siege",
+  "scenarioSiegeDescription": "Defense of a stronghold. Fighter and cleric are required.",
+  "boardTitle": "Board",
+  "journalTitle": "Story",
+  "journalEmpty": "No events yet.",
+  "gmChoices": "The GM offers:",
+  "actionHint": "Describe your action...",
+  "sendToGm": "Send to GM",
+  "actionExamine": "Examine",
+  "actionInteract": "Interact",
+  "actionAttack": "Attack",
+  "actionDefend": "Defend",
+  "actionUseItem": "Use an item",
+  "actionFree": "Free action",
+  "hudSheet": "Sheet",
+  "hudInventory": "Inventory",
+  "hudJournal": "Book",
+  "inGameSheetTitle": "Character sheet",
+  "inGameInventoryTitle": "Inventory",
+  "emptyInventory": "No items yet.",
+  "itemQuantity": "x{count}",
+  "@itemQuantity": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pendingRollBody": "{ability} check, DC {dc}",
+  "@pendingRollBody": {
+    "placeholders": {
+      "ability": {"type": "String"},
+      "dc": {"type": "int"}
+    }
+  },
+  "pendingRollCta": "Roll 1d20",
+  "pendingRollSuccess": "Success",
+  "pendingRollFailure": "Failure",
+  "pendingRollWaiting": "Waiting for {name}'s roll.",
+  "@pendingRollWaiting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pendingRollUnknownPlayer": "a player",
+  "statLineEffective": "{statName}: {effective} ({base})",
+  "@statLineEffective": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "effective": {"type": "int"},
+      "base": {"type": "int"}
+    }
+  },
+  "effectsTitle": "Effects",
+  "emptyEffects": "No active effects.",
+  "effectPermanent": "permanent",
+  "effectRemaining": "{count} scenes",
+  "@effectRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "effectKindBuff": "buff",
+  "effectKindDebuff": "debuff",
+  "effectKindWound": "wound",
+  "effectKindSpell": "spell",
+  "itemEquip": "Equip",
+  "itemUnequip": "Unequip",
+  "itemUse": "Use",
+  "itemEquipped": "Equipped",
+  "itemTypeWeapon": "Weapon",
+  "itemTypeArmor": "Armor",
+  "itemTypeShield": "Shield",
+  "itemTypeAccessory": "Accessory",
+  "itemTypePotion": "Potion",
+  "itemTypeScroll": "Scroll",
+  "itemTypeTool": "Tool",
+  "languageFrench": "Français",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageGerman": "Deutsch"
+}

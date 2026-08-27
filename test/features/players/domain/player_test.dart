@@ -27,6 +27,7 @@ void main() {
     expect(player.figurineId, 7);
     expect(player.positionX, 0.25);
     expect(player.inventory.single.name, 'Torche');
+    expect(player.effects, isEmpty);
     expect(player.classId, isNull);
     expect(player.stats.strength, 10);
   });

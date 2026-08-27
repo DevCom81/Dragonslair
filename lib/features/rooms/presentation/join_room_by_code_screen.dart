@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/join_code.dart';
 import 'room_providers.dart';
@@ -28,8 +30,12 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Rejoindre par code')),
+      appBar: AppBar(
+        title: Text(l10n.joinCodeTitle),
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -42,14 +48,14 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
                   controller: _codeController,
                   textCapitalization: TextCapitalization.characters,
                   maxLength: JoinCode.length,
-                  decoration: const InputDecoration(
-                    labelText: 'Code de partie',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.joinCodeLabel,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (JoinCode.normalize(value ?? '').length !=
                         JoinCode.length) {
-                      return 'Le code doit contenir 6 caracteres.';
+                      return l10n.joinCodeInvalid;
                     }
                     return null;
                   },
@@ -62,7 +68,7 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Rejoindre'),
+                      : Text(l10n.join),
                 ),
               ],
             ),
@@ -78,8 +84,9 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
     }
 
     final user = ref.read(authControllerProvider).value;
+    final l10n = AppLocalizations.of(context);
     if (user == null) {
-      _showError('Authentification requise.');
+      _showError(l10n.authRequired);
       return;
     }
 
@@ -89,7 +96,7 @@ class _JoinRoomByCodeScreenState extends ConsumerState<JoinRoomByCodeScreen> {
           .read(roomRepositoryProvider)
           .fetchRoomByJoinCode(_codeController.text);
       if (room == null) {
-        _showError('Aucune partie trouvee pour ce code.');
+        _showError(l10n.noRoomForCode);
         return;
       }
       if (mounted) {

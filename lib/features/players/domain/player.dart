@@ -1,5 +1,7 @@
 import '../../auth/domain/character_stats.dart';
 import 'inventory_item.dart';
+import 'inventory_rules.dart';
+import 'player_effect.dart';
 
 class Player {
   const Player({
@@ -15,6 +17,7 @@ class Player {
     required this.joinedAt,
     required this.stats,
     this.classId,
+    this.effects = const [],
   });
 
   final String id;
@@ -29,6 +32,25 @@ class Player {
   final DateTime joinedAt;
   final String? classId;
   final CharacterStats stats;
+  final List<PlayerEffect> effects;
+
+  int effectiveScoreFor(String key) {
+    return effectiveScore(
+      stats: stats,
+      inventory: inventory,
+      effects: effects,
+      key: key,
+    );
+  }
+
+  int effectiveModifierFor(String key) {
+    return effectiveModifier(
+      stats: stats,
+      inventory: inventory,
+      effects: effects,
+      key: key,
+    );
+  }
 
   factory Player.fromJson(Map<String, dynamic> json) {
     return Player(
@@ -44,6 +66,7 @@ class Player {
       joinedAt: DateTime.parse(json['joined_at'] as String),
       classId: json['class_id'] as String?,
       stats: CharacterStats.fromJson(json),
+      effects: PlayerEffect.listFromJson(json['effects']),
     );
   }
 
@@ -60,6 +83,7 @@ class Player {
       'inventory': inventory.map((item) => item.toJson()).toList(),
       'joined_at': joinedAt.toIso8601String(),
       'class_id': classId,
+      'effects': effects.map((effect) => effect.toJson()).toList(),
       ...stats.toJson(),
     };
   }

@@ -1,0 +1,268 @@
+{
+  "@@locale": "de",
+  "appTitle": "DragonsLair",
+  "appTagline": "Mehrspieler-Rollenspiel mit einem KI-Spielleiter.",
+  "emblemSemantic": "DragonsLair-Wappen",
+  "playAsGuest": "Ohne Anmeldung spielen",
+  "logIn": "Anmelden",
+  "signUp": "Registrieren",
+  "continuePlay": "Weiter",
+  "signOut": "Abmelden",
+  "language": "Sprache",
+  "preferences": "Einstellungen",
+  "supabaseMissing": "Supabase-Konfiguration fehlt. Die App laeuft im lokalen Modus.",
+  "sessionClosed": "Keine Sitzung.",
+  "sessionConnected": "Angemeldet.",
+  "sessionGuest": "Gastsitzung auf diesem Geraet.",
+  "guestWarningTitle": "Ohne Konto spielen",
+  "guestWarningBody": "Name und Charakterbogen bleiben nur auf diesem Geraet. Bei Deinstallation oder Abmeldung gehen sie verloren. Eine pausierte Partie kannst du von diesem Geraet trotzdem fortsetzen.",
+  "guestWarningConfirm": "Als Gast spielen",
+  "guestWarningCancel": "Abbrechen",
+  "guestSuggestedName": "Wanderer-{suffix}",
+  "@guestSuggestedName": {
+    "placeholders": {
+      "suffix": {"type": "String"}
+    }
+  },
+  "authSignUpTitle": "Konto erstellen",
+  "authLogInTitle": "Anmelden",
+  "authAccountHint": "Name und Charakterbogen bleiben mit diesem Konto verbunden.",
+  "email": "E-Mail",
+  "emailInvalid": "Ungueltige E-Mail.",
+  "password": "Passwort",
+  "passwordTooShort": "Mindestens 6 Zeichen.",
+  "createAccount": "Konto erstellen",
+  "alreadyHaveAccount": "Schon ein Konto? Anmelden",
+  "newPlayerSignUp": "Neuer Spieler? Registrieren",
+  "authRequired": "Authentifizierung erforderlich.",
+  "displayNameTitle": "Dein Name",
+  "displayNameHint": "Waehle einen Namen, den die anderen in deiner Gruppe sehen.",
+  "displayNameLabel": "Name",
+  "minTwoChars": "Mindestens 2 Zeichen.",
+  "save": "Speichern",
+  "sheetTitle": "Charakterbogen",
+  "sheetIntro": "Waehle eine Klasse und wuerfle 1W20 pro Eigenschaft. 1 bis 7 werden zu 8, 19 oder 20 zu 18. Die Klasse gibt +2 (max. 18) auf ihre Haupteigenschaft.",
+  "classLabel": "Klasse",
+  "classBonusChip": "{className} (+2 {statName})",
+  "@classBonusChip": {
+    "placeholders": {
+      "className": {"type": "String"},
+      "statName": {"type": "String"}
+    }
+  },
+  "rollAbilities": "Wuerfeln (6W20)",
+  "saveSheet": "Bogen speichern",
+  "sheetRequiresAccount": "Konto und Name sind vor dem Bogen noetig.",
+  "statLine": "{statName}: {value}",
+  "@statLine": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "value": {"type": "int"}
+    }
+  },
+  "statLineBonus": "{statName}: {raw} → {finalValue} (+2 {className})",
+  "@statLineBonus": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "raw": {"type": "int"},
+      "finalValue": {"type": "int"},
+      "className": {"type": "String"}
+    }
+  },
+  "tavernTitle": "Taverne",
+  "welcome": "Willkommen.",
+  "welcomeNamed": "Willkommen, {name}.",
+  "@welcomeNamed": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "welcomeNamedClass": "Willkommen, {name} ({className}).",
+  "@welcomeNamedClass": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "className": {"type": "String"}
+    }
+  },
+  "hubSubtitle": "Erstelle eine Partie oder tritt deinen Gefaehrten bei.",
+  "createGame": "Partie erstellen",
+  "joinGame": "Partie beitreten",
+  "joinByCode": "Mit Code beitreten",
+  "mySheet": "Mein Bogen",
+  "guestBanner": "Gastmodus: Dieser Charakter existiert nur auf diesem Geraet.",
+  "lobbyTitle": "Lobby",
+  "roomNotFound": "Partie nicht gefunden.",
+  "codeLabel": "Code: {code}",
+  "@codeLabel": {
+    "placeholders": {
+      "code": {"type": "String"}
+    }
+  },
+  "scenarioMinPlayersLine": "{scenario} · min. {count} Spieler",
+  "@scenarioMinPlayersLine": {
+    "placeholders": {
+      "scenario": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "players": "Spieler",
+  "waitingForPlayers": "Warte auf Spieler.",
+  "hpLabel": "TP {hp}",
+  "@hpLabel": {
+    "placeholders": {
+      "hp": {"type": "int"}
+    }
+  },
+  "startGame": "Partie starten",
+  "waitingForHost": "Warte auf den Host",
+  "notEnoughPlayers": "Nicht genug Spieler ({current} / {minimum}).",
+  "@notEnoughPlayers": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "minimum": {"type": "int"}
+    }
+  },
+  "missingRequiredClass": "Pflichtklasse fehlt: {className}.",
+  "@missingRequiredClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "createRoomTitle": "Partie erstellen",
+  "roomName": "Name der Partie",
+  "fieldRequired": "Pflichtfeld.",
+  "scenario": "Szenario",
+  "scenarioMinPlayers": "{name} (min. {count})",
+  "@scenarioMinPlayers": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "create": "Erstellen",
+  "joinCodeTitle": "Mit Code beitreten",
+  "joinCodeLabel": "Partiecode",
+  "joinCodeInvalid": "Der Code muss 6 Zeichen haben.",
+  "join": "Beitreten",
+  "noRoomForCode": "Keine Partie fuer diesen Code.",
+  "openGames": "Offene Partien",
+  "noWaitingGames": "Keine wartenden Partien.",
+  "chooseFigurine": "Figur waehlen",
+  "completeSheetFirst": "Vervollstaendige deinen Bogen vor dem Beitritt.",
+  "classAlreadyTaken": "Deine Klasse ({className}) ist bereits vergeben.",
+  "@classAlreadyTaken": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "yourClass": "Klasse: {className}",
+  "@yourClass": {
+    "placeholders": {
+      "className": {"type": "String"}
+    }
+  },
+  "classNotAllowed": "Deine Klasse ist in diesem Szenario nicht erlaubt.",
+  "joinLobby": "Der Lobby beitreten",
+  "taken": "Belegt",
+  "statStrength": "Staerke",
+  "statDexterity": "Geschicklichkeit",
+  "statConstitution": "Konstitution",
+  "statIntelligence": "Intelligenz",
+  "statWisdom": "Weisheit",
+  "statCharisma": "Charisma",
+  "classBarbarian": "Barbar",
+  "classBard": "Barde",
+  "classCleric": "Kleriker",
+  "classDruid": "Druide",
+  "classFighter": "Kaempfer",
+  "classMonk": "Moench",
+  "classPaladin": "Paladin",
+  "classRanger": "Waldlaeufer",
+  "classRogue": "Schurke",
+  "classSorcerer": "Zauberer",
+  "classWarlock": "Hexenmeister",
+  "classWizard": "Magier",
+  "scenarioDungeonName": "Kerker",
+  "scenarioDungeonDescription": "Unterirdische Erkundung. Ein Kleriker ist Pflicht.",
+  "scenarioForestName": "Wald",
+  "scenarioForestDescription": "Spuren und Hinterhalte. Ein Kleriker ist Pflicht.",
+  "scenarioSiegeName": "Belagerung",
+  "scenarioSiegeDescription": "Verteidigung einer Festung. Kaempfer und Kleriker sind Pflicht.",
+  "boardTitle": "Spielfeld",
+  "journalTitle": "Geschichte",
+  "journalEmpty": "Noch keine Ereignisse.",
+  "gmChoices": "Der SL schlaegt vor:",
+  "actionHint": "Beschreibe deine Aktion...",
+  "sendToGm": "An den SL senden",
+  "actionExamine": "Untersuchen",
+  "actionInteract": "Interagieren",
+  "actionAttack": "Angreifen",
+  "actionDefend": "Verteidigen",
+  "actionUseItem": "Gegenstand nutzen",
+  "actionFree": "Freie Aktion",
+  "hudSheet": "Bogen",
+  "hudInventory": "Inventar",
+  "hudJournal": "Buch",
+  "inGameSheetTitle": "Charakterbogen",
+  "inGameInventoryTitle": "Inventar",
+  "emptyInventory": "Noch keine Gegenstaende.",
+  "itemQuantity": "x{count}",
+  "@itemQuantity": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pendingRollBody": "{ability}-Probe, SG {dc}",
+  "@pendingRollBody": {
+    "placeholders": {
+      "ability": {"type": "String"},
+      "dc": {"type": "int"}
+    }
+  },
+  "pendingRollCta": "1W20 wuerfeln",
+  "pendingRollSuccess": "Erfolg",
+  "pendingRollFailure": "Misserfolg",
+  "pendingRollWaiting": "Warte auf den Wurf von {name}.",
+  "@pendingRollWaiting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pendingRollUnknownPlayer": "einem Spieler",
+  "statLineEffective": "{statName}: {effective} ({base})",
+  "@statLineEffective": {
+    "placeholders": {
+      "statName": {"type": "String"},
+      "effective": {"type": "int"},
+      "base": {"type": "int"}
+    }
+  },
+  "effectsTitle": "Effekte",
+  "emptyEffects": "Keine aktiven Effekte.",
+  "effectPermanent": "dauerhaft",
+  "effectRemaining": "{count} Szenen",
+  "@effectRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "effectKindBuff": "Bonus",
+  "effectKindDebuff": "Malus",
+  "effectKindWound": "Wunde",
+  "effectKindSpell": "Zauber",
+  "itemEquip": "Anlegen",
+  "itemUnequip": "Ablegen",
+  "itemUse": "Benutzen",
+  "itemEquipped": "Angelegt",
+  "itemTypeWeapon": "Waffe",
+  "itemTypeArmor": "Ruestung",
+  "itemTypeShield": "Schild",
+  "itemTypeAccessory": "Accessoire",
+  "itemTypePotion": "Trank",
+  "itemTypeScroll": "Schriftrolle",
+  "itemTypeTool": "Werkzeug",
+  "languageFrench": "Français",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageGerman": "Deutsch"
+}

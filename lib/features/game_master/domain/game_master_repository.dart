@@ -37,6 +37,13 @@ class GameMasterPlayerContext {
     required this.figurineId,
     this.position,
     this.inventory = const [],
+    this.strength = 10,
+    this.dexterity = 10,
+    this.constitution = 10,
+    this.intelligence = 10,
+    this.wisdom = 10,
+    this.charisma = 10,
+    this.effects = const [],
   });
 
   final String id;
@@ -45,6 +52,13 @@ class GameMasterPlayerContext {
   final int figurineId;
   final GameMasterPosition? position;
   final List<Map<String, dynamic>> inventory;
+  final int strength;
+  final int dexterity;
+  final int constitution;
+  final int intelligence;
+  final int wisdom;
+  final int charisma;
+  final List<Map<String, dynamic>> effects;
 
   Map<String, dynamic> toJson() {
     return {
@@ -54,6 +68,13 @@ class GameMasterPlayerContext {
       'figurine_id': figurineId,
       'position': position?.toJson(),
       'inventory': inventory,
+      'strength': strength,
+      'dexterity': dexterity,
+      'constitution': constitution,
+      'intelligence': intelligence,
+      'wisdom': wisdom,
+      'charisma': charisma,
+      'effects': effects,
     };
   }
 }

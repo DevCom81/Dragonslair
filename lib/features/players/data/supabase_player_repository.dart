@@ -2,7 +2,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../auth/domain/character_stats.dart';
+import '../domain/inventory_item.dart';
 import '../domain/player.dart';
+import '../domain/player_effect.dart';
 import '../domain/player_repository.dart';
 
 class SupabasePlayerRepository implements PlayerRepository {
@@ -127,5 +129,38 @@ class SupabasePlayerRepository implements PlayerRepository {
       'position_x': x.clamp(0, 1),
       'position_y': y.clamp(0, 1),
     }).eq('id', playerId);
+  }
+
+  @override
+  Future<void> patchOwnPlayer({
+    required String playerId,
+    int? hp,
+    List<InventoryItem>? inventory,
+    List<PlayerEffect>? effects,
+  }) async {
+    final userId = _requiredClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw const GameException('Session expiree.');
+    }
+
+    final fields = <String, dynamic>{};
+    if (hp != null) {
+      fields['hp'] = hp.clamp(0, 100);
+    }
+    if (inventory != null) {
+      fields['inventory'] = inventory.map((item) => item.toJson()).toList();
+    }
+    if (effects != null) {
+      fields['effects'] = effects.map((effect) => effect.toJson()).toList();
+    }
+    if (fields.isEmpty) {
+      return;
+    }
+
+    await _requiredClient
+        .from('players')
+        .update(fields)
+        .eq('id', playerId)
+        .eq('user_id', userId);
   }
 }

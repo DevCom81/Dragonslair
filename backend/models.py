@@ -14,6 +14,9 @@ GameMasterActionType = Literal[
     "start_combat",
     "end_combat",
     "system_message",
+    "request_roll",
+    "apply_effect",
+    "remove_effect",
 ]
 
 
@@ -29,6 +32,13 @@ class GamePlayer(BaseModel):
     figurine_id: int = Field(ge=0, le=39)
     position: BoardPosition | None = None
     inventory: list[dict[str, Any]] = Field(default_factory=list)
+    strength: int = Field(default=10, ge=1, le=30)
+    dexterity: int = Field(default=10, ge=1, le=30)
+    constitution: int = Field(default=10, ge=1, le=30)
+    intelligence: int = Field(default=10, ge=1, le=30)
+    wisdom: int = Field(default=10, ge=1, le=30)
+    charisma: int = Field(default=10, ge=1, le=30)
+    effects: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class RecentGameEvent(BaseModel):

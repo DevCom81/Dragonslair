@@ -13,6 +13,32 @@ class AuthController extends AsyncNotifier<User?> {
     return ref.watch(authRepositoryProvider).restoreSession();
   }
 
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).signIn(
+            email: email,
+            password: password,
+          ),
+    );
+  }
+
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).signUp(
+            email: email,
+            password: password,
+          ),
+    );
+  }
+
   Future<void> signInAnonymously() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(

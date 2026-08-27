@@ -28,6 +28,22 @@ class CharacterStats {
     charisma: defaultValue,
   );
 
+  int scoreFor(String key) {
+    return switch (key) {
+      'strength' => strength,
+      'dexterity' => dexterity,
+      'constitution' => constitution,
+      'intelligence' => intelligence,
+      'wisdom' => wisdom,
+      'charisma' => charisma,
+      _ => defaultValue,
+    };
+  }
+
+  int modifierFor(String key) {
+    return (scoreFor(key) - 10) ~/ 2;
+  }
+
   CharacterStats copyWith({
     int? strength,
     int? dexterity,
@@ -74,6 +90,45 @@ class CharacterStats {
       'wisdom': wisdom,
       'charisma': charisma,
     };
+  }
+
+  static int clampValue(int value) {
+    if (value < minValue) {
+      return minValue;
+    }
+    if (value > maxValue) {
+      return maxValue;
+    }
+    return value;
+  }
+
+  factory CharacterStats.fromRolls(List<int> rolls) {
+    if (rolls.length != 6) {
+      throw ArgumentError('Expected 6 rolls.');
+    }
+    return CharacterStats(
+      strength: clampValue(rolls[0]),
+      dexterity: clampValue(rolls[1]),
+      constitution: clampValue(rolls[2]),
+      intelligence: clampValue(rolls[3]),
+      wisdom: clampValue(rolls[4]),
+      charisma: clampValue(rolls[5]),
+    );
+  }
+
+  CharacterStats withPrimaryBonus(String statKey, {int bonus = 2}) {
+    int apply(String key, int value) {
+      return clampValue(value + (key == statKey ? bonus : 0));
+    }
+
+    return CharacterStats(
+      strength: apply('strength', strength),
+      dexterity: apply('dexterity', dexterity),
+      constitution: apply('constitution', constitution),
+      intelligence: apply('intelligence', intelligence),
+      wisdom: apply('wisdom', wisdom),
+      charisma: apply('charisma', charisma),
+    );
   }
 }
 

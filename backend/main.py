@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from apply_actions import apply_game_master_actions
 from models import GameMasterRequest, GameMasterResponse
 from openrouter_client import GameMasterBackendError, request_game_master_response
 from supabase_admin import (
@@ -62,7 +63,17 @@ async def respond(
             event_type="narration",
             content=response.narration,
         )
-        if response.actions:
+        effect_summaries = await apply_game_master_actions(
+            room_id=request.room_id,
+            actions=response.actions,
+        )
+        if effect_summaries:
+            await insert_game_event(
+                room_id=request.room_id,
+                event_type="system",
+                content=" ; ".join(effect_summaries),
+            )
+        elif response.actions:
             summaries = [
                 action.type
                 if not action.payload

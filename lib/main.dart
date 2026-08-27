@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/config/app_config.dart';
+import 'core/l10n/locale_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,5 +23,13 @@ Future<void> main() async {
     );
   }
 
-  runApp(const ProviderScope(child: DragonsLairApp()));
+  final container = ProviderContainer();
+  await container.read(localeControllerProvider.notifier).restore();
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const DragonsLairApp(),
+    ),
+  );
 }

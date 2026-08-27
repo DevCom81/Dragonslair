@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -27,7 +29,6 @@ class FigurineSelectionScreen extends ConsumerStatefulWidget {
 
 class _FigurineSelectionScreenState
     extends ConsumerState<FigurineSelectionScreen> {
-  String? _classId;
   int? _figurineId;
   var _isSubmitting = false;
 
@@ -38,13 +39,15 @@ class _FigurineSelectionScreenState
     final user = ref.watch(authControllerProvider).value;
     final profile = ref.watch(currentProfileProvider).value;
 
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Figurine et classe')),
+      appBar: AppBar(title: Text(l10n.chooseFigurine)),
       body: SafeArea(
         child: roomState.when(
           data: (room) {
             if (room == null) {
-              return const Center(child: Text('Partie introuvable.'));
+              return Center(child: Text(l10n.roomNotFound));
             }
 
             final scenario = ScenarioCatalog.byId(room.scenarioId);
@@ -57,41 +60,33 @@ class _FigurineSelectionScreenState
                     .map((player) => player.classId)
                     .whereType<String>()
                     .toSet();
+                final classId = profile?.classId;
+                final classTaken =
+                    classId != null && takenClasses.contains(classId);
+                final classAllowed = classId != null &&
+                    scenario.allowedClassIds.contains(classId);
 
                 return Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Une classe unique par joueur.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final classId in scenario.allowedClassIds)
-                                ChoiceChip(
-                                  label: Text(
-                                    takenClasses.contains(classId)
-                                        ? '${CharacterClassCatalog.byId(classId).label} (prise)'
-                                        : CharacterClassCatalog.byId(classId)
-                                            .label,
-                                  ),
-                                  selected: _classId == classId,
-                                  onSelected: takenClasses.contains(classId)
-                                      ? null
-                                      : (_) {
-                                          setState(() => _classId = classId);
-                                        },
-                                ),
-                            ],
-                          ),
-                        ],
+                      child: Text(
+                        classId == null
+                            ? l10n.completeSheetFirst
+                            : classTaken
+                                ? l10n.classAlreadyTaken(
+                                    localizedClassLabel(l10n, classId),
+                                  )
+                                : classAllowed
+                                    ? l10n.yourClass(
+                                        localizedClassLabel(l10n, classId),
+                                      )
+                                    : l10n.classNotAllowed,
+                        style: TextStyle(
+                          color: classId != null && classAllowed && !classTaken
+                              ? null
+                              : AppColors.danger,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -113,6 +108,7 @@ class _FigurineSelectionScreenState
                             figurine: figurine,
                             isTaken: isTaken,
                             isSelected: _figurineId == figurine.id,
+                            takenLabel: l10n.taken,
                             onTap: isTaken
                                 ? null
                                 : () {
@@ -127,7 +123,9 @@ class _FigurineSelectionScreenState
                       child: FilledButton(
                         onPressed: user == null ||
                                 profile == null ||
-                                _classId == null ||
+                                classId == null ||
+                                !classAllowed ||
+                                classTaken ||
                                 _figurineId == null ||
                                 _isSubmitting
                             ? null
@@ -141,7 +139,7 @@ class _FigurineSelectionScreenState
                                 dimension: 18,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text('Rejoindre le lobby'),
+                            : Text(l10n.joinLobby),
                       ),
                     ),
                   ],
@@ -167,7 +165,7 @@ class _FigurineSelectionScreenState
     PlayerProfile profile,
     FigurineDefinition figurine,
   ) async {
-    final classId = _classId;
+    final classId = profile.classId;
     if (classId == null) {
       return;
     }
@@ -207,12 +205,14 @@ class _FigurineCard extends StatelessWidget {
     required this.figurine,
     required this.isTaken,
     required this.isSelected,
+    required this.takenLabel,
     required this.onTap,
   });
 
   final FigurineDefinition figurine;
   final bool isTaken;
   final bool isSelected;
+  final String takenLabel;
   final VoidCallback? onTap;
 
   @override
@@ -245,9 +245,9 @@ class _FigurineCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (isTaken)
-                const Text(
-                  'Prise',
-                  style: TextStyle(color: AppColors.danger),
+                Text(
+                  takenLabel,
+                  style: const TextStyle(color: AppColors.danger),
                 ),
             ],
           ),

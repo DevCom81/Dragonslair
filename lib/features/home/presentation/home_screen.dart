@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/onboarding.dart';
 import '../../auth/presentation/profile_providers.dart';
-import '../../auth/domain/profile_repository.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authControllerProvider);
     final profileState = ref.watch(currentProfileProvider);
-    final isAuthenticated = authState.value != null;
-    final hasProfile = profileState.value != null;
-    final hasSheet = profileState.value?.sheetConfirmed ?? false;
-    final canPlay = isAuthenticated && hasProfile && hasSheet;
+    final canPlay = isProfileReady(profileState.value);
+    final user = authState.value;
+    final configured = AppConfig.isSupabaseConfigured;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: DecoratedBox(
           decoration: const BoxDecoration(
@@ -44,72 +51,66 @@ class HomeScreen extends ConsumerWidget {
                         Image.asset(
                           'Assets/splash-icon.png',
                           height: 120,
-                          semanticLabel: 'Embleme DragonsLair',
+                          semanticLabel: l10n.emblemSemantic,
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'DragonsLair',
+                          l10n.appTitle,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Jeu de role multijoueur avec maitre du jeu IA.',
+                          l10n.appTagline,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 32),
                         _AuthStatus(authState: authState),
                         const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: AppConfig.isSupabaseConfigured
-                              ? () => _enterTavern(context, ref)
-                              : null,
-                          child: const Text('Entrer dans la taverne'),
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: canPlay
-                              ? () => context.pushNamed('create-room')
-                              : isAuthenticated && hasProfile
-                                  ? () => context.pushNamed('character-sheet')
-                                  : isAuthenticated
-                                      ? () => context.pushNamed('display-name')
-                                      : null,
-                          child: Text(
-                            !isAuthenticated
-                                ? 'Creer une partie'
-                                : !hasProfile
-                                    ? 'Choisir un pseudo'
-                                    : hasSheet
-                                        ? 'Creer une partie'
-                                        : 'Completer la fiche',
+                        if (user != null) ...[
+                          FilledButton(
+                            onPressed: configured
+                                ? () => canPlay
+                                    ? context.pushNamed('play-hub')
+                                    : routeAfterSession(context, ref)
+                                : null,
+                            child: Text(l10n.continuePlay),
                           ),
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () async {
+                              await ref
+                                  .read(authControllerProvider.notifier)
+                                  .signOut();
+                              ref.invalidate(currentProfileProvider);
+                            },
+                            child: Text(l10n.signOut),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         OutlinedButton(
-                          onPressed:
-                              canPlay ? () => context.pushNamed('rooms') : null,
-                          child: const Text('Rejoindre une partie'),
-                        ),
-                        const SizedBox(height: 8),
-                        OutlinedButton(
-                          onPressed: canPlay
-                              ? () => context.pushNamed('join-room')
+                          onPressed: configured
+                              ? () => _playAsGuest(context, ref)
                               : null,
-                          child: const Text('Rejoindre par code'),
+                          child: Text(l10n.playAsGuest),
                         ),
                         const SizedBox(height: 8),
                         OutlinedButton(
-                          onPressed: canPlay
-                              ? () => context.pushNamed('character-sheet')
+                          onPressed: configured
+                              ? () => context.pushNamed(
+                                    'auth',
+                                    queryParameters: {'mode': 'login'},
+                                  )
                               : null,
-                          child: const Text('Ma fiche'),
+                          child: Text(l10n.logIn),
                         ),
                         const SizedBox(height: 8),
-                        OutlinedButton(
-                          onPressed: () => context.pushNamed('game-master'),
-                          child: const Text('Tester le MJ IA'),
+                        FilledButton.tonal(
+                          onPressed: configured
+                              ? () => context.pushNamed('auth')
+                              : null,
+                          child: Text(l10n.signUp),
                         ),
                       ],
                     ),
@@ -124,39 +125,77 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-Future<void> _enterTavern(BuildContext context, WidgetRef ref) async {
-  await ref.read(authControllerProvider.notifier).signInAnonymously();
-  final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
-  ref.invalidate(currentProfileProvider);
-  if (!context.mounted) {
+Future<void> _playAsGuest(BuildContext context, WidgetRef ref) async {
+  final user = ref.read(authControllerProvider).value;
+  if (user != null) {
+    await routeAfterSession(context, ref);
     return;
   }
-  if (profile == null) {
-    context.pushNamed('display-name');
-  } else if (!profile.sheetConfirmed) {
-    context.pushNamed('character-sheet');
+
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: Text(l10n.guestWarningTitle),
+        content: Text(l10n.guestWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.guestWarningCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.guestWarningConfirm),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true || !context.mounted) {
+    return;
+  }
+
+  await ref.read(authControllerProvider.notifier).signInAnonymously();
+  final authState = ref.read(authControllerProvider);
+  if (authState.hasError) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.error.toString()),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+    return;
+  }
+  if (context.mounted) {
+    await routeAfterSession(context, ref);
   }
 }
 
 class _AuthStatus extends StatelessWidget {
   const _AuthStatus({required this.authState});
 
-  final AsyncValue<Object?> authState;
+  final AsyncValue<User?> authState;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (!AppConfig.isSupabaseConfigured) {
-      return const _StatusMessage(
-        message: 'Configuration Supabase absente. L app compile en mode local.',
-      );
+      return _StatusMessage(message: l10n.supabaseMissing);
     }
 
     return authState.when(
-      data: (user) => _StatusMessage(
-        message: user == null
-            ? 'Session non ouverte.'
-            : 'Session anonyme active.',
-      ),
+      data: (user) {
+        if (user == null) {
+          return _StatusMessage(message: l10n.sessionClosed);
+        }
+        return _StatusMessage(
+          message: user.isAnonymous ? l10n.sessionGuest : l10n.sessionConnected,
+        );
+      },
       error: (error, stackTrace) => _StatusMessage(message: error.toString()),
       loading: () =>
           const Center(child: CircularProgressIndicator(color: AppColors.gold)),

@@ -3,35 +3,38 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('blocks start when player count is below minimum', () {
-    final reasons = RoomStartRules.blockingReasons(
+    final issues = RoomStartRules.issues(
       playerCount: 1,
       minPlayers: 3,
-      requiredClassIds: const ['healer'],
-      takenClassIds: const ['healer'],
+      requiredClassIds: const ['cleric'],
+      takenClassIds: const ['cleric'],
     );
 
-    expect(reasons, ['Joueurs insuffisants (1 / 3).']);
+    expect(issues, hasLength(1));
+    expect(issues.single.current, 1);
+    expect(issues.single.minimum, 3);
+    expect(issues.single.missingClassId, isNull);
   });
 
   test('blocks start when a required class is missing', () {
-    final reasons = RoomStartRules.blockingReasons(
+    final issues = RoomStartRules.issues(
       playerCount: 3,
       minPlayers: 3,
-      requiredClassIds: const ['warrior', 'healer'],
-      takenClassIds: const ['warrior', 'mage', 'rogue'],
+      requiredClassIds: const ['fighter', 'cleric'],
+      takenClassIds: const ['fighter', 'wizard', 'rogue'],
     );
 
-    expect(reasons, ['Classe obligatoire manquante : Soigneur.']);
+    expect(issues.single.missingClassId, 'cleric');
   });
 
   test('allows start when min players and required classes are present', () {
-    final reasons = RoomStartRules.blockingReasons(
+    final issues = RoomStartRules.issues(
       playerCount: 3,
       minPlayers: 3,
-      requiredClassIds: const ['healer'],
-      takenClassIds: const ['warrior', 'healer', 'mage'],
+      requiredClassIds: const ['cleric'],
+      takenClassIds: const ['fighter', 'cleric', 'wizard'],
     );
 
-    expect(reasons, isEmpty);
+    expect(issues, isEmpty);
   });
 }

@@ -33,13 +33,27 @@ Tu dois retourner uniquement un objet JSON valide compatible avec ce contrat:
 
 Types d'actions autorises:
 narrate, spawn_enemy, move_enemy, damage_player, heal_player, give_item,
-remove_item, start_combat, end_combat, system_message.
+remove_item, start_combat, end_combat, system_message, request_roll,
+apply_effect, remove_effect.
+
+Payloads:
+- damage_player / heal_player: {"player_id": "<id>", "amount": 4}
+- give_item: {"player_id": "<id>", "item": {"id": "sword", "name": "Epee", "quantity": 1, "type": "weapon|armor|shield|accessory|potion|scroll|tool", "bonuses": {"strength": 1}, "heal": 20, "effect": {"id": "bless", "name": "Benediction", "kind": "buff", "stat": "wisdom", "delta": 2, "remaining": 3}}}
+- remove_item: {"player_id": "<id>", "item_id": "torch"}
+- request_roll: {"player_id": "<id>", "ability": "strength|dexterity|constitution|intelligence|wisdom|charisma", "dc": 12, "reason": "escalader"}
+- apply_effect: {"player_id": "<id>", "effect": {"id": "poison", "name": "Poison", "kind": "debuff", "stat": "constitution", "delta": -2, "remaining": 2}}
+- remove_effect: {"player_id": "<id>", "effect_id": "poison"}
 
 Contraintes:
 - garde une narration courte et jouable;
 - ne demande jamais de secret;
 - n'invente pas de regle complexe inutile;
-- si une action structuree n'est pas certaine, utilise system_message.
+- pour une action incertaine, utilise request_roll et n'applique PAS encore damage/heal/give/remove/apply_effect;
+- si le message joueur contient deja un resultat de jet, resous la scene (succes/echec) et applique les effets;
+- si une action structuree n'est pas certaine, utilise system_message ou request_roll;
+- un objet equipe ou un effet deja present sur le joueur ne doit pas etre reapplique a l'identique;
+- les potions (type potion, heal) et parchemins structures (type scroll + effect) sont utilises par le joueur: narre seulement, ne les re-soigne pas;
+- sorts et blessures durables: apply_effect (remaining = nombre de resolutions MJ, omit si permanent).
 """.strip()
 
 

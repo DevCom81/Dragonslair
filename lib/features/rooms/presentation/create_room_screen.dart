@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/l10n_labels.dart';
+import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import 'room_providers.dart';
@@ -28,8 +31,12 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Creer une partie')),
+      appBar: AppBar(
+        title: Text(l10n.createRoomTitle),
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -38,19 +45,19 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom de la partie',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.roomName,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Champ obligatoire.';
+                    return l10n.fieldRequired;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              Text('Scenario', style: Theme.of(context).textTheme.titleMedium),
+              Text(l10n.scenario, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               RadioGroup<ScenarioDefinition>(
                 groupValue: _scenario,
@@ -66,9 +73,14 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                         contentPadding: EdgeInsets.zero,
                         value: scenario,
                         title: Text(
-                          '${scenario.name} (min ${scenario.minPlayers})',
+                          l10n.scenarioMinPlayers(
+                            localizedScenarioName(l10n, scenario.id),
+                            scenario.minPlayers,
+                          ),
                         ),
-                        subtitle: Text(scenario.description),
+                        subtitle: Text(
+                          localizedScenarioDescription(l10n, scenario.id),
+                        ),
                       ),
                   ],
                 ),
@@ -81,7 +93,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Creer'),
+                    : Text(l10n.create),
               ),
             ],
           ),
@@ -96,8 +108,9 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
     }
 
     final user = ref.read(authControllerProvider).value;
+    final l10n = AppLocalizations.of(context);
     if (user == null) {
-      _showError('Authentification requise.');
+      _showError(l10n.authRequired);
       return;
     }
 
@@ -107,7 +120,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
             name: _nameController.text.trim(),
             hostId: user.id,
             scenarioId: _scenario.id,
-            scenarioName: _scenario.name,
+            scenarioName: localizedScenarioName(l10n, _scenario.id),
             minPlayers: _scenario.minPlayers,
             requiredClassIds: _scenario.requiredClassIds,
           );

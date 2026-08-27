@@ -6,6 +6,14 @@ import '../../../core/supabase/supabase_client_provider.dart';
 
 abstract interface class AuthRepository {
   Future<User?> restoreSession();
+  Future<User> signIn({
+    required String email,
+    required String password,
+  });
+  Future<User> signUp({
+    required String email,
+    required String password,
+  });
   Future<User> signInAnonymously();
   Future<void> signOut();
 }
@@ -35,13 +43,77 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<User> signInAnonymously() async {
-    final response = await _requiredClient.auth.signInAnonymously();
-    final user = response.user;
-    if (user == null) {
-      throw const AppAuthException('Authentification anonyme impossible.');
+  Future<User> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _requiredClient.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AppAuthException('Connexion impossible.');
+      }
+      return user;
+    } on AuthException catch (error) {
+      throw AppAuthException(error.message, cause: error);
     }
-    return user;
+  }
+
+  @override
+  Future<User> signUp({
+    required String email,
+    required String password,
+  }) async {
+    final trimmedEmail = email.trim();
+    try {
+      final response = await _requiredClient.auth.signUp(
+        email: trimmedEmail,
+        password: password,
+      );
+      final sessionUser = response.session?.user ?? response.user;
+      if (response.session == null) {
+        try {
+          return await signIn(email: trimmedEmail, password: password);
+        } on AppAuthException {
+          throw const AppAuthException(
+            'Compte cree. Desactive Confirm email dans Supabase Auth.',
+          );
+        }
+      }
+      if (sessionUser == null) {
+        throw const AppAuthException('Inscription impossible.');
+      }
+      return sessionUser;
+    } on AppAuthException {
+      rethrow;
+    } on AuthException catch (error) {
+      throw AppAuthException(
+        '${error.message} Si le compte est cree, desactive Confirm email dans Supabase Auth.',
+        cause: error,
+      );
+    }
+  }
+
+  @override
+  Future<User> signInAnonymously() async {
+    final existing = _client?.auth.currentUser;
+    if (existing != null) {
+      return existing;
+    }
+
+    try {
+      final response = await _requiredClient.auth.signInAnonymously();
+      final user = response.user;
+      if (user == null) {
+        throw const AppAuthException('Anonymous sign-in is not available.');
+      }
+      return user;
+    } on AuthException catch (error) {
+      throw AppAuthException(error.message, cause: error);
+    }
   }
 
   @override

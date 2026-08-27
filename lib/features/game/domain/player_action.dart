@@ -1,14 +1,21 @@
 enum PlayerActionType {
-  examine('Examiner'),
-  interact('Interagir'),
-  attack('Attaquer'),
-  defend('Defendre'),
-  useItem('Utiliser un objet'),
-  free('Action libre');
+  examine,
+  interact,
+  attack,
+  defend,
+  useItem,
+  free;
 
-  const PlayerActionType(this.label);
-
-  final String label;
+  String get protocolLabel {
+    return switch (this) {
+      PlayerActionType.examine => 'Examiner',
+      PlayerActionType.interact => 'Interagir',
+      PlayerActionType.attack => 'Attaquer',
+      PlayerActionType.defend => 'Defendre',
+      PlayerActionType.useItem => 'Utiliser un objet',
+      PlayerActionType.free => 'Action libre',
+    };
+  }
 
   String format(String detail) {
     final trimmed = detail.trim();
@@ -16,8 +23,8 @@ enum PlayerActionType {
       return trimmed;
     }
     if (trimmed.isEmpty) {
-      return label;
+      return protocolLabel;
     }
-    return '$label : $trimmed';
+    return '$protocolLabel : $trimmed';
   }
 }

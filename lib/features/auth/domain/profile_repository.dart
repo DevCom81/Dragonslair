@@ -16,6 +16,7 @@ abstract interface class ProfileRepository {
     required String userId,
     required String displayName,
     required CharacterStats stats,
+    required String classId,
   });
 }
 
@@ -65,16 +66,23 @@ class SupabaseProfileRepository implements ProfileRepository {
       throw const GameException('Le pseudo doit contenir entre 2 et 32 caracteres.');
     }
 
-    final row = await _requiredClient
-        .from('profiles')
-        .upsert({
-          'id': userId,
-          'display_name': trimmed,
-        })
-        .select()
-        .single();
+    try {
+      final row = await _requiredClient
+          .from('profiles')
+          .upsert({
+            'id': userId,
+            'display_name': trimmed,
+          })
+          .select()
+          .single();
 
-    return PlayerProfile.fromJson(row);
+      return PlayerProfile.fromJson(row);
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') {
+        throw const GameException('Ce pseudo est deja pris.');
+      }
+      throw GameException(error.message, cause: error);
+    }
   }
 
   @override
@@ -82,18 +90,27 @@ class SupabaseProfileRepository implements ProfileRepository {
     required String userId,
     required String displayName,
     required CharacterStats stats,
+    required String classId,
   }) async {
-    final row = await _requiredClient
-        .from('profiles')
-        .upsert({
-          'id': userId,
-          'display_name': displayName,
-          'sheet_confirmed': true,
-          ...stats.toJson(),
-        })
-        .select()
-        .single();
+    try {
+      final row = await _requiredClient
+          .from('profiles')
+          .upsert({
+            'id': userId,
+            'display_name': displayName,
+            'sheet_confirmed': true,
+            'class_id': classId,
+            ...stats.toJson(),
+          })
+          .select()
+          .single();
 
-    return PlayerProfile.fromJson(row);
+      return PlayerProfile.fromJson(row);
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') {
+        throw const GameException('Ce pseudo est deja pris.');
+      }
+      throw GameException(error.message, cause: error);
+    }
   }
 }

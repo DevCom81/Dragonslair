@@ -13,5 +13,7 @@ void main() {
     expect(profile.displayName, 'Jérôme');
     expect(profile.stats.strength, 10);
     expect(profile.sheetConfirmed, isFalse);
+    expect(profile.classId, isNull);
+    expect(profile.isReadyToPlay, isFalse);
   });
 }

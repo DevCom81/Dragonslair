@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../dice/domain/dice_roll_service.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/presentation/game_master_controller.dart';
 import '../../players/domain/player.dart';
 import '../domain/player_action.dart';
+import 'pending_ability_roll.dart';
 
 class ActionPanel extends ConsumerStatefulWidget {
   const ActionPanel({
@@ -37,9 +39,26 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
     super.dispose();
   }
 
+  String _actionLabel(AppLocalizations l10n, PlayerActionType action) {
+    return switch (action) {
+      PlayerActionType.examine => l10n.actionExamine,
+      PlayerActionType.interact => l10n.actionInteract,
+      PlayerActionType.attack => l10n.actionAttack,
+      PlayerActionType.defend => l10n.actionDefend,
+      PlayerActionType.useItem => l10n.actionUseItem,
+      PlayerActionType.free => l10n.actionFree,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final canAct = widget.currentPlayer != null && !_isSubmitting;
+    final l10n = AppLocalizations.of(context);
+    final pending = ref.watch(pendingAbilityRollProvider);
+    final isMyRoll = pending != null &&
+        widget.currentPlayer != null &&
+        pending.playerId == widget.currentPlayer!.id;
+    final canAct =
+        widget.currentPlayer != null && !_isSubmitting && !isMyRoll;
 
     return Material(
       color: AppColors.surface,
@@ -49,12 +68,17 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            PendingAbilityRollBar(
+              roomId: widget.roomId,
+              currentPlayer: widget.currentPlayer,
+              players: widget.players,
+            ),
             Wrap(
               spacing: 8,
               children: [
                 for (final action in PlayerActionType.values)
                   ChoiceChip(
-                    label: Text(action.label),
+                    label: Text(_actionLabel(l10n, action)),
                     selected: _selectedAction == action,
                     onSelected: (_) {
                       setState(() => _selectedAction = action);
@@ -65,9 +89,9 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
             const SizedBox(height: 8),
             TextField(
               controller: _actionController,
-              decoration: const InputDecoration(
-                hintText: 'Precise ton action...',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.actionHint,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 8),
@@ -81,7 +105,7 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Envoyer au MJ'),
+                        : Text(l10n.sendToGm),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -119,21 +143,21 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
         content: '${player.figurineName} : $content',
       );
 
-      final response = await ref.read(gameMasterControllerProvider.notifier).submit(
-            GameMasterInput(
-              roomId: widget.roomId,
-              playerId: player.id,
-              playerName: player.figurineName,
-              action: content,
-              players: widget.players.map(_toGameMasterPlayer).toList(),
-            ),
+      final response =
+          await ref.read(gameMasterControllerProvider.notifier).submit(
+                GameMasterInput(
+                  roomId: widget.roomId,
+                  playerId: player.id,
+                  playerName: player.figurineName,
+                  action: content,
+                  players:
+                      widget.players.map(toGameMasterPlayerContext).toList(),
+                  recentEvents: recentEventsForRoom(ref, widget.roomId),
+                ),
+              );
+      ref.read(pendingAbilityRollProvider.notifier).setRoll(
+            pendingRollFromResponse(response),
           );
-
-      if (response.choices.isNotEmpty && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Choix MJ: ${response.choices.first.label}')),
-        );
-      }
 
       _actionController.clear();
     } catch (error) {
@@ -176,18 +200,5 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
       }
     }
   }
-
-  GameMasterPlayerContext _toGameMasterPlayer(Player player) {
-    return GameMasterPlayerContext(
-      id: player.id,
-      name: player.figurineName,
-      hp: player.hp,
-      figurineId: player.figurineId,
-      position: GameMasterPosition(
-        x: player.positionX,
-        y: player.positionY,
-      ),
-      inventory: player.inventory.map((item) => item.toJson()).toList(),
-    );
-  }
 }
+

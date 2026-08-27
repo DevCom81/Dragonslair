@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/l10n_labels.dart';
+import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../dice/domain/dice_roll_service.dart';
+import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/character_stats.dart';
 import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
+import 'onboarding.dart';
 import 'profile_providers.dart';
 
 class CharacterSheetScreen extends ConsumerStatefulWidget {
@@ -17,75 +22,92 @@ class CharacterSheetScreen extends ConsumerStatefulWidget {
 }
 
 class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
-  var _stats = CharacterStats.defaults;
-  var _loaded = false;
+  final _dice = DiceRollService();
+  String? _classId;
+  CharacterStats? _rawStats;
   var _isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(currentProfileProvider).value;
-    if (profile != null && !_loaded) {
-      _stats = profile.stats;
-      _loaded = true;
-    }
+    final l10n = AppLocalizations.of(context);
+    final selectedClass = _classId == null
+        ? null
+        : CharacterClassCatalog.byId(_classId!);
+    final finalStats = _rawStats == null || selectedClass == null
+        ? null
+        : _rawStats!.withPrimaryBonus(
+            selectedClass.primaryStatKey,
+            bonus: CharacterClassCatalog.classBonus,
+          );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Fiche de personnage')),
+      appBar: AppBar(
+        title: Text(l10n.sheetTitle),
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'Ces caracteristiques restent liees a ton pseudo.',
+              l10n.sheetIntro,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            for (final field in characterStatFields) ...[
-              Text(field.label),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: field.read(_stats) <= CharacterStats.minValue
-                        ? null
-                        : () {
-                            setState(() {
-                              _stats = field.write(
-                                _stats,
-                                field.read(_stats) - 1,
-                              );
-                            });
-                          },
-                    icon: const Icon(Icons.remove),
+            Text(l10n.classLabel, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final item in CharacterClassCatalog.all)
+                  ChoiceChip(
+                    label: Text(
+                      l10n.classBonusChip(
+                        localizedClassLabel(l10n, item.id),
+                        localizedStatLabel(l10n, item.primaryStatKey),
+                      ),
+                    ),
+                    selected: _classId == item.id,
+                    onSelected: (_) {
+                      setState(() => _classId = item.id);
+                    },
                   ),
-                  Text(
-                    '${field.read(_stats)}',
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: _rollStats,
+              child: Text(l10n.rollAbilities),
+            ),
+            const SizedBox(height: 16),
+            if (_rawStats != null)
+              for (final field in characterStatFields)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    _statLine(
+                      l10n: l10n,
+                      field: field,
+                      raw: _rawStats!,
+                      finalStats: finalStats,
+                      selectedClass: selectedClass,
+                    ),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  IconButton(
-                    onPressed: field.read(_stats) >= CharacterStats.maxValue
-                        ? null
-                        : () {
-                            setState(() {
-                              _stats = field.write(
-                                _stats,
-                                field.read(_stats) + 1,
-                              );
-                            });
-                          },
-                    icon: const Icon(Icons.add),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
+                ),
             FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
+              onPressed: _isSubmitting ||
+                      _classId == null ||
+                      finalStats == null
+                  ? null
+                  : () => _submit(finalStats),
               child: _isSubmitting
                   ? const SizedBox.square(
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Enregistrer la fiche'),
+                  : Text(l10n.saveSheet),
             ),
           ],
         ),
@@ -93,11 +115,44 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
     );
   }
 
-  Future<void> _submit() async {
+  void _rollStats() {
+    final roll = _dice.roll(count: 6, sides: 20);
+    setState(() {
+      _rawStats = CharacterStats.fromRolls(roll.values);
+    });
+  }
+
+  String _statLine({
+    required AppLocalizations l10n,
+    required CharacterStatField field,
+    required CharacterStats raw,
+    required CharacterStats? finalStats,
+    required CharacterClass? selectedClass,
+  }) {
+    final statName = localizedStatLabel(l10n, field.key);
+    final rawValue = field.read(raw);
+    if (finalStats == null || selectedClass == null) {
+      return l10n.statLine(statName, rawValue);
+    }
+    final finalValue = field.read(finalStats);
+    if (field.key == selectedClass.primaryStatKey && finalValue != rawValue) {
+      return l10n.statLineBonus(
+        statName,
+        rawValue,
+        finalValue,
+        localizedClassLabel(l10n, selectedClass.id),
+      );
+    }
+    return l10n.statLine(statName, finalValue);
+  }
+
+  Future<void> _submit(CharacterStats stats) async {
+    final l10n = AppLocalizations.of(context);
     final user = ref.read(authControllerProvider).value;
     final profile = ref.read(currentProfileProvider).value;
-    if (user == null || profile == null) {
-      _showError('Pseudo requis avant la fiche.');
+    final classId = _classId;
+    if (user == null || profile == null || classId == null) {
+      _showError(l10n.sheetRequiresAccount);
       return;
     }
 
@@ -106,11 +161,12 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
       await ref.read(profileRepositoryProvider).upsertSheet(
             userId: user.id,
             displayName: profile.displayName,
-            stats: _stats,
+            stats: stats,
+            classId: classId,
           );
       ref.invalidate(currentProfileProvider);
       if (mounted) {
-        context.goNamed('home');
+        await routeAfterSession(context, ref);
       }
     } catch (error) {
       _showError(error.toString());

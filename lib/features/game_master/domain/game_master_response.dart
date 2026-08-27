@@ -8,7 +8,10 @@ enum GameMasterActionType {
   removeItem('remove_item'),
   startCombat('start_combat'),
   endCombat('end_combat'),
-  systemMessage('system_message');
+  systemMessage('system_message'),
+  requestRoll('request_roll'),
+  applyEffect('apply_effect'),
+  removeEffect('remove_effect');
 
   const GameMasterActionType(this.value);
 

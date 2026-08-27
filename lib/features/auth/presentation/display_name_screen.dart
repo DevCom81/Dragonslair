@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/language_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
+import 'onboarding.dart';
 import 'profile_providers.dart';
 
 class DisplayNameScreen extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class DisplayNameScreen extends ConsumerStatefulWidget {
 class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  var _prefilled = false;
   var _isSubmitting = false;
 
   @override
@@ -27,8 +30,20 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final user = ref.watch(authControllerProvider).value;
+    if (!_prefilled && user != null && user.isAnonymous) {
+      _prefilled = true;
+      final suffix = user.id.replaceAll('-', '');
+      final end = suffix.length < 4 ? suffix.length : 4;
+      _nameController.text = l10n.guestSuggestedName(suffix.substring(0, end));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Ton pseudo')),
+      appBar: AppBar(
+        title: Text(l10n.displayNameTitle),
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -38,21 +53,21 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Choisis un nom visible par les autres joueurs de ta partie.',
+                  l10n.displayNameHint,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nameController,
                   maxLength: 32,
-                  decoration: const InputDecoration(
-                    labelText: 'Pseudo',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.displayNameLabel,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     final trimmed = value?.trim() ?? '';
                     if (trimmed.length < 2) {
-                      return 'Au moins 2 caracteres.';
+                      return l10n.minTwoChars;
                     }
                     return null;
                   },
@@ -65,7 +80,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Enregistrer'),
+                      : Text(l10n.save),
                 ),
               ],
             ),
@@ -80,9 +95,10 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context);
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      _showError('Authentification requise.');
+      _showError(l10n.authRequired);
       return;
     }
 
@@ -94,7 +110,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
           );
       ref.invalidate(currentProfileProvider);
       if (mounted) {
-        context.pushNamed('character-sheet');
+        await routeAfterSession(context, ref);
       }
     } catch (error) {
       _showError(error.toString());
