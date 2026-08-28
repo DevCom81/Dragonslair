@@ -9,16 +9,9 @@ import '../domain/music_playback_state.dart';
 
 final musicServiceProvider = Provider<MusicService>((ref) {
   final service = JustAudioMusicService();
+  unawaited(service.preload(MusicMood.exploration.assetPath));
   ref.onDispose(service.dispose);
   return service;
-});
-
-final musicClockProvider = Provider<DateTime Function()>((ref) {
-  return DateTime.now;
-});
-
-final musicNarrativeCooldownProvider = Provider<Duration>((ref) {
-  return const Duration(seconds: 60);
 });
 
 final musicControllerProvider =
@@ -27,8 +20,6 @@ final musicControllerProvider =
 class MusicController extends Notifier<MusicPlaybackState> {
   static const _mutedKey = 'music_muted';
   static const _volumeKey = 'music_volume';
-
-  DateTime? _lastNarrativeChangeAt;
 
   MusicService get _service => ref.read(musicServiceProvider);
 
@@ -46,51 +37,81 @@ class MusicController extends Notifier<MusicPlaybackState> {
     }
   }
 
+  void primeFromUserGesture() {
+    _service.primeFromUserGesture();
+    unawaited(unlock());
+  }
+
   Future<void> unlock() async {
-    if (state.isUnlocked) {
-      return;
-    }
     state = state.copyWith(isUnlocked: true);
-    final mood = state.currentMood;
-    if (mood == null) {
-      return;
+    final mood = state.currentMood ?? MusicMood.exploration;
+    if (state.currentMood == null) {
+      state = state.copyWith(currentMood: mood);
     }
-    await _service.crossfadeTo(
+    await _service.ensurePlaying(
       assetPath: mood.assetPath,
       targetVolume: state.outputVolume,
     );
   }
 
   Future<void> setMood(MusicMood mood) {
-    return _applyMood(mood, fromNarrative: true);
-  }
-
-  Future<void> restorePreviousMood() {
-    return _applyMood(
-      state.previousMood ?? MusicMood.exploration,
-      fromNarrative: false,
-      bypassCooldown: true,
+    if (mood == MusicMood.combat) {
+      return enterCombat();
+    }
+    return syncScene(
+      narrativeMood: mood,
+      combatActive: state.combatActive,
     );
   }
 
   Future<void> enterCombat() {
-    if (state.combatActive && state.currentMood == MusicMood.combat) {
-      return Future.value();
-    }
-    return _applyMood(
-      MusicMood.combat,
-      fromNarrative: false,
-      bypassCooldown: true,
-      enteringCombat: true,
-    );
+    final narrative = state.currentMood == MusicMood.combat
+        ? (state.previousMood ?? MusicMood.exploration)
+        : (state.currentMood ?? MusicMood.exploration);
+    return syncScene(narrativeMood: narrative, combatActive: true);
   }
 
   Future<void> leaveCombat() {
-    if (!state.combatActive) {
-      return Future.value();
+    return syncScene(
+      narrativeMood: state.previousMood ?? MusicMood.exploration,
+      combatActive: false,
+    );
+  }
+
+  Future<void> syncScene({
+    required MusicMood narrativeMood,
+    required bool combatActive,
+  }) async {
+    final narrative = narrativeMood.isNarrative
+        ? narrativeMood
+        : (state.previousMood ?? MusicMood.exploration);
+    final target = combatActive ? MusicMood.combat : narrative;
+    final unchanged =
+        state.currentMood == target &&
+        state.combatActive == combatActive &&
+        state.previousMood == narrative;
+    if (unchanged) {
+      if (state.isUnlocked) {
+        await _service.ensurePlaying(
+          assetPath: target.assetPath,
+          targetVolume: state.outputVolume,
+        );
+      }
+      return;
     }
-    state = state.copyWith(combatActive: false);
-    return restorePreviousMood();
+
+    state = state.copyWith(
+      previousMood: narrative,
+      currentMood: target,
+      combatActive: combatActive,
+    );
+    if (!state.isUnlocked) {
+      return;
+    }
+    await _service.crossfadeTo(
+      assetPath: target.assetPath,
+      targetVolume: state.outputVolume,
+    );
   }
 
   void setVolume(double volume) {
@@ -109,56 +130,6 @@ class MusicController extends Notifier<MusicPlaybackState> {
   void stop() {
     state = state.copyWith(clearCurrentMood: true, combatActive: false);
     unawaited(_service.stop());
-  }
-
-  Future<void> _applyMood(
-    MusicMood mood, {
-    required bool fromNarrative,
-    bool bypassCooldown = false,
-    bool enteringCombat = false,
-  }) async {
-    if (state.combatActive && mood != MusicMood.combat && !enteringCombat) {
-      return;
-    }
-    if (!bypassCooldown && fromNarrative && !_cooldownElapsed()) {
-      return;
-    }
-    if (mood == state.currentMood) {
-      if (enteringCombat) {
-        state = state.copyWith(combatActive: true);
-      }
-      return;
-    }
-
-    final previous = state.currentMood;
-    final nextPrevious = mood == MusicMood.combat
-        ? (previous == MusicMood.combat ? state.previousMood : previous)
-        : previous;
-
-    state = state.copyWith(
-      previousMood: nextPrevious,
-      currentMood: mood,
-      combatActive: enteringCombat ? true : state.combatActive,
-    );
-    if (fromNarrative) {
-      _lastNarrativeChangeAt = ref.read(musicClockProvider)();
-    }
-    if (!state.isUnlocked) {
-      return;
-    }
-    await _service.crossfadeTo(
-      assetPath: mood.assetPath,
-      targetVolume: state.outputVolume,
-    );
-  }
-
-  bool _cooldownElapsed() {
-    final last = _lastNarrativeChangeAt;
-    if (last == null) {
-      return true;
-    }
-    final now = ref.read(musicClockProvider)();
-    return now.difference(last) >= ref.read(musicNarrativeCooldownProvider);
   }
 
   Future<void> _persist() async {

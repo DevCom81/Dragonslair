@@ -13,15 +13,33 @@ enum MusicMood {
     MusicMood.combat => 'Assets/sound/Combat.mp3',
   };
 
+  bool get isNarrative => this != MusicMood.combat;
+
   String get jsonValue => name;
 
-  static const jsonValues = {
+  static const narrativeJsonValues = {
     'tavern',
     'exploration',
     'mystery',
     'tension',
+  };
+
+  static const jsonValues = {
+    ...narrativeJsonValues,
     'combat',
   };
+
+  static MusicMood parseNarrative(Object? value) {
+    return tryParseNarrative(value) ?? MusicMood.exploration;
+  }
+
+  static MusicMood? tryParseNarrative(Object? value) {
+    final mood = tryParse(value);
+    if (mood == null || !mood.isNarrative) {
+      return null;
+    }
+    return mood;
+  }
 
   static MusicMood? tryParse(Object? value) {
     if (value == null) {

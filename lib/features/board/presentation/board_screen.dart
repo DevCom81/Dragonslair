@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,7 +57,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       if (!mounted) {
         return;
       }
-      ref.read(musicControllerProvider.notifier).unlock();
+      _syncSceneMusic();
+      if (!kIsWeb) {
+        ref.read(musicControllerProvider.notifier).unlock();
+      }
     });
   }
 
@@ -102,16 +106,18 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
           'summary',
           pathParameters: {'roomId': widget.roomId},
         );
+        return;
       }
+      _syncSceneMusic();
     });
 
     if (AppConfig.isGameMasterRemote) {
       ref.listen(roomCombatProvider(widget.roomId), (previous, next) {
-        _syncCombatMusic(previous?.value?.active, next.value?.active);
+        _syncSceneMusic();
       });
     } else {
       ref.listen(localCombatProvider, (previous, next) {
-        _syncCombatMusic(previous?.active, next.active);
+        _syncSceneMusic();
       });
     }
 
@@ -146,7 +152,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
 
     return Listener(
       onPointerDown: (_) {
-        ref.read(musicControllerProvider.notifier).unlock();
+        ref.read(musicControllerProvider.notifier).primeFromUserGesture();
       },
       child: CallbackShortcuts(
         bindings: {
@@ -285,12 +291,17 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     );
   }
 
-  void _syncCombatMusic(bool? wasActive, bool? isActive) {
-    if (isActive == true && wasActive != true) {
-      ref.read(musicControllerProvider.notifier).enterCombat();
-    } else if (isActive == false && wasActive == true) {
-      ref.read(musicControllerProvider.notifier).leaveCombat();
+  void _syncSceneMusic() {
+    final room = ref.read(roomProvider(widget.roomId)).value;
+    if (room == null) {
+      return;
     }
+    unawaited(
+      ref.read(musicControllerProvider.notifier).syncScene(
+        narrativeMood: room.musicMood,
+        combatActive: readActiveCombat(ref, widget.roomId).active,
+      ),
+    );
   }
 
   Player? _currentPlayer(List<Player>? players, String? userId) {

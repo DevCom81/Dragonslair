@@ -1,3 +1,4 @@
+import '../../music/domain/music_mood.dart';
 import '../../scenarios/domain/world_state.dart';
 import 'game_ending.dart';
 import 'room_locale.dart';
@@ -46,6 +47,7 @@ class Room {
     this.startedAt,
     this.finishedAt,
     this.ending = const GameEnding(),
+    this.musicMood = MusicMood.exploration,
   });
 
   final String id;
@@ -64,6 +66,7 @@ class Room {
   final DateTime? startedAt;
   final DateTime? finishedAt;
   final GameEnding ending;
+  final MusicMood musicMood;
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
@@ -83,6 +86,7 @@ class Room {
       startedAt: _dateTime(json['started_at']),
       finishedAt: _dateTime(json['finished_at']),
       ending: GameEnding.fromJson(json['ending']),
+      musicMood: MusicMood.parseNarrative(json['music_mood']),
     );
   }
 
@@ -104,6 +108,7 @@ class Room {
       'started_at': startedAt?.toIso8601String(),
       'finished_at': finishedAt?.toIso8601String(),
       'ending': ending.toJson(),
+      'music_mood': musicMood.jsonValue,
     };
   }
 

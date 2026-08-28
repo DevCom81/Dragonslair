@@ -139,6 +139,7 @@ class GameMasterRequest(BaseModel):
     gm_secrets: list[str] = Field(default_factory=list, max_length=12)
     campaign_summary: str = Field(default="", max_length=1800)
     locale: str = Field(default="en", max_length=8)
+    music_mood: str = Field(default="exploration", max_length=20)
     roll_result: RollResult | None = None
     demo_end_required: bool = False
 

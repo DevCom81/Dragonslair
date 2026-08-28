@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../music/domain/music_mood.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../../scenarios/domain/world_state.dart';
 import '../domain/game_ending.dart';
@@ -156,6 +157,7 @@ class SupabaseRoomRepository implements RoomRepository {
       await _requiredClient.from('rooms').update({
         'status': RoomStatus.playing.toJson(),
         'game_phase': 'exploration',
+        'music_mood': MusicMood.exploration.jsonValue,
         'started_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', roomId);
     } on PostgrestException catch (error) {

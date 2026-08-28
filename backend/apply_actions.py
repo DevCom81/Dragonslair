@@ -31,6 +31,7 @@ from state_effects import (
     tick_effects,
     upsert_effect,
 )
+from music_mood import last_narrative_music_mood
 from supabase_admin import (
     create_enemy,
     create_pending_roll,
@@ -45,6 +46,7 @@ from supabase_admin import (
     finish_room,
     heal_enemy,
     move_enemy,
+    patch_room_music_mood,
     patch_room_player,
     set_enemy_status,
     upsert_combat_session,
@@ -70,6 +72,7 @@ async def apply_game_master_actions(
     room_id: str,
     actions: list[GameMasterAction],
 ) -> list[str]:
+    await _persist_narrative_music_mood(room_id=room_id, actions=actions)
     if has_request_roll(actions):
         summaries = await persist_request_rolls(room_id=room_id, actions=actions)
         for action in actions:
@@ -92,6 +95,17 @@ async def apply_game_master_actions(
             summaries.append(summary)
     summaries.extend(await _tick_room_effects(room_id=room_id))
     return summaries
+
+
+async def _persist_narrative_music_mood(
+    *,
+    room_id: str,
+    actions: list[GameMasterAction],
+) -> None:
+    mood = last_narrative_music_mood(actions)
+    if mood is None:
+        return
+    await patch_room_music_mood(room_id=room_id, music_mood=mood)
 
 
 async def _apply_one(*, room_id: str, action: GameMasterAction) -> str | None:

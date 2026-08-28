@@ -108,8 +108,22 @@ class LobbyScreen extends ConsumerWidget {
                 );
                 final startButton = FilledButton(
                   onPressed: isPaused
-                      ? (canResume ? () => _resumeRoom(context, ref) : null)
-                      : (canStart ? () => _startRoom(context, ref) : null),
+                      ? (canResume
+                            ? () {
+                                ref
+                                    .read(musicControllerProvider.notifier)
+                                    .primeFromUserGesture();
+                                _resumeRoom(context, ref);
+                              }
+                            : null)
+                      : (canStart
+                            ? () {
+                                ref
+                                    .read(musicControllerProvider.notifier)
+                                    .primeFromUserGesture();
+                                _startRoom(context, ref);
+                              }
+                            : null),
                   child: Text(
                     isPaused
                         ? (isHost ? l10n.resumeGame : l10n.waitingForHostResume)

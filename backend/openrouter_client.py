@@ -56,7 +56,7 @@ Payloads:
 - start_combat: {{"round": 1}} optionnel. Premier start = round 1. Un start pendant un combat actif passe au round suivant, ou au round fourni.
 - end_combat: {{}} pour terminer. Ne supprime pas les ennemis.
 - finish_game: {{"result": "victory|defeat|neutral", "summary": "short recap in {language}", "epilogue": "closing narration in {language}"}} when the adventure is over.
-- set_music_mood: {{"mood": "tavern|exploration|mystery|tension|combat"}} — never send a filename.
+- set_music_mood: {{"mood": "tavern|exploration|mystery|tension"}} — never send a filename. Never send combat; use start_combat.
 
 Contraintes:
 - garde une narration courte et jouable;
@@ -81,15 +81,18 @@ Contraintes:
 - write narration, choice labels, reason text, item names shown to players, and system_message text in {language};
 - JSON keys, action types, ability ids, and payload field names stay in English;
 - emets finish_game seulement quand l'aventure est vraiment terminee (objectif atteint, echec irreversible, ou conclusion narrative).
-- la musique represente l'ambiance generale de la scene;
-- utilise set_music_mood uniquement lors d'un changement significatif d'atmosphere, pas a chaque narration;
-- tavern: repos, auberge, conversation calme, lieu sur, ville;
-- exploration: voyage, deplacement, decouverte, exploration normale;
+- la musique est l'ambiance de la SCENE, partagee par tous les joueurs, en boucle jusqu'au prochain changement;
+- au debut de l'aventure l'ambiance est exploration; ne la renvoie pas tant que le lieu/ton ne change pas;
+- emets set_music_mood a chaque changement de LIEU ou d'ATMOSPHERE (entrer/sortir d'une auberge, enigme, menace), pas a chaque phrase;
+- tavern: auberge, taverne, salle commune, repos, conversation calme dans un lieu sur;
+- exploration: voyage, route, ville en exterieur, donjon "normal", deplacement;
 - mystery: enigme, investigation, phenomene etrange, lieu inconnu;
-- tension: danger imminent, suspense, menace, approche d'un ennemi;
-- combat: affrontement actif;
-- start_combat et end_combat restent prioritaires sur set_music_mood;
-- n'envoie jamais un nom de fichier audio, seulement mood.
+- tension: danger imminent, poursuite, piege, menace avant le combat;
+- n'utilise PAS set_music_mood combat: si le combat est inevitable ou commence, emets start_combat (la musique combat suit automatiquement jusqu'a end_combat);
+- start_combat: Combat.mp3 jusqu'a victoire, fuite ou defaite; emets end_combat a la fin; la musique d'avant (auberge, exploration, etc.) reprend;
+- un combat dans une auberge: start_combat sans changer tavern; apres end_combat, tavern continue jusqu'a la sortie;
+- en sortant d'un lieu, reviens a l'ambiance du nouveau lieu (souvent exploration);
+- n'envoie jamais un nom de fichier audio, seulement mood: tavern|exploration|mystery|tension.
 """.strip()
 
 
@@ -133,6 +136,8 @@ def build_user_prompt(request: GameMasterRequest) -> str:
             request.combat.model_dump() if request.combat else None,
             ensure_ascii=False,
         ),
+        "CURRENT SCENE MUSIC",
+        request.music_mood,
         "RECENT EVENTS",
         json.dumps(recent, ensure_ascii=False),
         "CURRENT ACTION",

@@ -1,3 +1,4 @@
+import 'package:dragons_lair/features/music/domain/music_mood.dart';
 import 'package:dragons_lair/features/rooms/domain/room.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,6 +21,31 @@ void main() {
     expect(room.minPlayers, 1);
     expect(room.requiredClassIds, isEmpty);
     expect(room.locale, 'en');
+    expect(room.musicMood, MusicMood.exploration);
+  });
+
+  test('parses a narrative music mood from Supabase row', () {
+    final room = Room.fromJson({
+      'id': 'room-id',
+      'name': 'La Crypte',
+      'status': 'playing',
+      'created_at': '2026-08-26T12:00:00Z',
+      'host_id': 'user-id',
+      'music_mood': 'tavern',
+    });
+    expect(room.musicMood, MusicMood.tavern);
+  });
+
+  test('falls back to exploration when music mood is combat or unknown', () {
+    final combat = Room.fromJson({
+      'id': 'room-id',
+      'name': 'La Crypte',
+      'status': 'playing',
+      'created_at': '2026-08-26T12:00:00Z',
+      'host_id': 'user-id',
+      'music_mood': 'combat',
+    });
+    expect(combat.musicMood, MusicMood.exploration);
   });
 
   test('parses scenario constraints from Supabase row', () {

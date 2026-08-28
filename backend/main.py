@@ -40,6 +40,7 @@ from models import (
     ResolveRollRequest,
     RollResult,
 )
+from music_mood import normalize_narrative_music_mood
 from openrouter_client import GameMasterBackendError, request_game_master_response
 from rate_limit import (
     DEMO_EXPIRED,
@@ -348,6 +349,7 @@ async def _with_authoritative_combat(
         "campaign_summary": str(memory.get("campaign_summary") or ""),
         "recent_events": recent_events,
         "locale": locale,
+        "music_mood": normalize_narrative_music_mood(narrative.get("music_mood")),
     }
     if drop_roll_result:
         updates["roll_result"] = None

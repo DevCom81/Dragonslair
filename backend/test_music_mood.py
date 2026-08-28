@@ -1,6 +1,7 @@
 import unittest
 
 from models import GameMasterAction, GameMasterResponse
+from music_mood import last_narrative_music_mood
 
 
 class MusicMoodContractTest(unittest.TestCase):
@@ -44,6 +45,43 @@ class MusicMoodContractTest(unittest.TestCase):
         )
         self.assertEqual(response.actions[0].type, "set_music_mood")
         self.assertEqual(response.actions[0].payload.get("mood"), "mystery")
+
+    def test_last_narrative_mood_ignores_combat_and_keeps_place(self) -> None:
+        actions = [
+            GameMasterAction.model_validate(
+                {"type": "set_music_mood", "mood": "tavern"}
+            ),
+            GameMasterAction.model_validate({"type": "start_combat"}),
+            GameMasterAction.model_validate(
+                {"type": "set_music_mood", "mood": "combat"}
+            ),
+        ]
+        self.assertEqual(last_narrative_music_mood(actions), "tavern")
+
+    def test_last_narrative_mood_uses_the_latest_place(self) -> None:
+        actions = [
+            GameMasterAction.model_validate(
+                {"type": "set_music_mood", "mood": "exploration"}
+            ),
+            GameMasterAction.model_validate(
+                {"type": "set_music_mood", "mood": "tavern"}
+            ),
+        ]
+        self.assertEqual(last_narrative_music_mood(actions), "tavern")
+
+    def test_user_prompt_includes_current_scene_music(self) -> None:
+        from models import GameMasterRequest
+        from openrouter_client import build_user_prompt
+
+        request = GameMasterRequest(
+            room_id="room-1",
+            player_id="p1",
+            action="Entre dans l auberge.",
+            music_mood="tavern",
+        )
+        prompt = build_user_prompt(request)
+        self.assertIn("CURRENT SCENE MUSIC", prompt)
+        self.assertIn("tavern", prompt)
 
 
 if __name__ == "__main__":

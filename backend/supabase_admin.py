@@ -706,7 +706,7 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
             f"{_supabase_url()}/rest/v1/rooms",
             params={
                 "id": f"eq.{room_id}",
-                "select": "world_state,scenario_prompt,scenario_id,scenario,locale,status,host_id",
+                "select": "world_state,scenario_prompt,scenario_id,scenario,locale,status,host_id,music_mood",
                 "limit": "1",
             },
             headers=_admin_headers(),
@@ -717,7 +717,12 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
 
     rows = response.json()
     if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
-        return {"world_state": {}, "locale": "en", "status": "waiting"}
+        return {
+            "world_state": {},
+            "locale": "en",
+            "status": "waiting",
+            "music_mood": "exploration",
+        }
     row = rows[0]
     return {
         "world_state": public_world_state(row.get("world_state")),
@@ -725,6 +730,7 @@ async def fetch_room_narrative_context(*, room_id: str) -> dict:
         "status": str(row.get("status") or "waiting"),
         "scenario_id": str(row.get("scenario_id") or ""),
         "host_id": str(row.get("host_id") or ""),
+        "music_mood": str(row.get("music_mood") or "exploration"),
     }
 
 
@@ -855,6 +861,24 @@ async def fetch_room_events_slice(
     if not isinstance(rows, list):
         return []
     return [row for row in rows if isinstance(row, dict)]
+
+
+async def patch_room_music_mood(*, room_id: str, music_mood: str) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.patch(
+            f"{_supabase_url()}/rest/v1/rooms",
+            params={"id": f"eq.{room_id}"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=minimal",
+            },
+            json={"music_mood": music_mood},
+        )
+
+    if response.status_code >= 400:
+        raise SupabaseAdminError(
+            f"Unable to save music mood ({response.status_code})."
+        )
 
 
 async def patch_room_world_state(

@@ -10,9 +10,30 @@ class FakeMusicService implements MusicService {
   final played = <String>[];
   double volume = 0.7;
   var stopCount = 0;
+  var primeCount = 0;
+  var preloadCount = 0;
+
+  @override
+  void primeFromUserGesture() {
+    primeCount += 1;
+  }
+
+  @override
+  Future<void> preload(String assetPath) async {
+    preloadCount += 1;
+  }
 
   @override
   Future<void> crossfadeTo({
+    required String assetPath,
+    required double targetVolume,
+  }) async {
+    played.add(assetPath);
+    volume = targetVolume;
+  }
+
+  @override
+  Future<void> ensurePlaying({
     required String assetPath,
     required double targetVolume,
   }) async {
@@ -38,23 +59,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FakeMusicService fake;
-  late DateTime now;
   late ProviderContainer container;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     fake = FakeMusicService();
-    now = DateTime.utc(2026, 8, 28, 12);
     container = ProviderContainer(
       overrides: [
         musicServiceProvider.overrideWith((ref) => fake),
-        musicClockProvider.overrideWith(
-          (ref) =>
-              () => now,
-        ),
-        musicNarrativeCooldownProvider.overrideWith(
-          (ref) => const Duration(seconds: 60),
-        ),
       ],
     );
   });
@@ -74,32 +86,46 @@ void main() {
     expect(MusicMood.combat.assetPath, 'Assets/sound/Combat.mp3');
   });
 
-  test('changes ambiance after unlock', () async {
+  test('unlock starts exploration when no mood is set', () async {
     final music = controller();
     await music.unlock();
-    await music.setMood(MusicMood.exploration);
-    now = now.add(const Duration(seconds: 61));
-    await music.setMood(MusicMood.mystery);
+
+    expect(
+      container.read(musicControllerProvider).currentMood,
+      MusicMood.exploration,
+    );
+    expect(fake.played, [MusicMood.exploration.assetPath]);
+    expect(container.read(musicControllerProvider).isUnlocked, isTrue);
+  });
+
+  test('unlock retries playback after a failed autoplay', () async {
+    final music = controller();
+    await music.unlock();
+    fake.played.clear();
+    await music.unlock();
+
+    expect(fake.played, [MusicMood.exploration.assetPath]);
+  });
+
+  test('changes ambiance as soon as the scene changes', () async {
+    final music = controller();
+    await music.unlock();
+    await music.setMood(MusicMood.tavern);
 
     expect(fake.played, [
       MusicMood.exploration.assetPath,
-      MusicMood.mystery.assetPath,
+      MusicMood.tavern.assetPath,
     ]);
     expect(
       container.read(musicControllerProvider).currentMood,
-      MusicMood.mystery,
-    );
-    expect(
-      container.read(musicControllerProvider).previousMood,
-      MusicMood.exploration,
+      MusicMood.tavern,
     );
   });
 
   test('combat music takes priority over narrative mood', () async {
     final music = controller();
     await music.unlock();
-    await music.setMood(MusicMood.exploration);
-    now = now.add(const Duration(seconds: 61));
+    await music.setMood(MusicMood.tavern);
     await music.enterCombat();
     await music.setMood(MusicMood.mystery);
 
@@ -109,7 +135,7 @@ void main() {
     );
     expect(
       container.read(musicControllerProvider).previousMood,
-      MusicMood.exploration,
+      MusicMood.mystery,
     );
     expect(fake.played.last, MusicMood.combat.assetPath);
     expect(
@@ -118,19 +144,40 @@ void main() {
     );
   });
 
-  test('restores previous ambiance after combat', () async {
+  test('restores tavern after combat in the tavern', () async {
     final music = controller();
     await music.unlock();
-    await music.setMood(MusicMood.tension);
-    now = now.add(const Duration(seconds: 61));
+    await music.setMood(MusicMood.tavern);
     await music.enterCombat();
     await music.leaveCombat();
 
     expect(
       container.read(musicControllerProvider).currentMood,
-      MusicMood.tension,
+      MusicMood.tavern,
     );
-    expect(fake.played.last, MusicMood.tension.assetPath);
+    expect(fake.played.last, MusicMood.tavern.assetPath);
+  });
+
+  test('shared scene keeps combat over a persisted tavern mood', () async {
+    final music = controller();
+    await music.unlock();
+    await music.syncScene(
+      narrativeMood: MusicMood.tavern,
+      combatActive: true,
+    );
+
+    expect(
+      container.read(musicControllerProvider).currentMood,
+      MusicMood.combat,
+    );
+    await music.syncScene(
+      narrativeMood: MusicMood.tavern,
+      combatActive: false,
+    );
+    expect(
+      container.read(musicControllerProvider).currentMood,
+      MusicMood.tavern,
+    );
   });
 
   test(
@@ -175,44 +222,6 @@ void main() {
 
     expect(response.actions.single.type, GameMasterActionType.setMusicMood);
     expect(response.actions.single.payload['mood'], 'tavern');
-  });
-
-  test('narrative mood changes respect a 60s cooldown', () async {
-    final music = controller();
-    await music.unlock();
-    await music.setMood(MusicMood.exploration);
-    await music.setMood(MusicMood.mystery);
-
-    expect(
-      container.read(musicControllerProvider).currentMood,
-      MusicMood.exploration,
-    );
-
-    now = now.add(const Duration(seconds: 59));
-    await music.setMood(MusicMood.mystery);
-    expect(
-      container.read(musicControllerProvider).currentMood,
-      MusicMood.exploration,
-    );
-
-    now = now.add(const Duration(seconds: 2));
-    await music.setMood(MusicMood.mystery);
-    expect(
-      container.read(musicControllerProvider).currentMood,
-      MusicMood.mystery,
-    );
-  });
-
-  test('combat ignores the narrative cooldown', () async {
-    final music = controller();
-    await music.unlock();
-    await music.setMood(MusicMood.exploration);
-    await music.enterCombat();
-
-    expect(
-      container.read(musicControllerProvider).currentMood,
-      MusicMood.combat,
-    );
   });
 
   test('mute and volume update state and output', () async {

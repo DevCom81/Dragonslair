@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../music/presentation/music_controller.dart';
 import '../../players/presentation/player_providers.dart';
 import '../domain/room.dart';
 import '../domain/room_entry.dart';
@@ -19,6 +20,8 @@ Future<void> openRoomForCurrentUser({
   if (user == null) {
     throw GameException(l10n.authRequired);
   }
+
+  ref.read(musicControllerProvider.notifier).primeFromUserGesture();
 
   final players =
       await ref.read(playerRepositoryProvider).fetchRoomPlayers(room.id);
@@ -37,6 +40,10 @@ Future<void> openRoomForCurrentUser({
     );
   }
   if (context.mounted) {
+    await ref.read(musicControllerProvider.notifier).unlock();
+    if (!context.mounted) {
+      return;
+    }
     context.pushNamed(
       routeName,
       pathParameters: {'roomId': room.id},

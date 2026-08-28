@@ -30,6 +30,13 @@ class SqlContractTest(unittest.TestCase):
         self.assertNotIn("on enemies for delete", sql)
         self.assertIn("Mutations INSERT/UPDATE/DELETE : service role", sql)
 
+    def test_sql_contracts_music_mood_is_narrative_only(self) -> None:
+        sql = _read("supabase/migrations/20260828_room_music_mood.sql")
+        self.assertIn("add column if not exists music_mood", sql)
+        self.assertIn("tavern", sql)
+        self.assertIn("exploration", sql)
+        self.assertNotIn("'combat'", sql)
+
     def test_ai_usage_is_not_readable_by_clients(self) -> None:
         sql = _read("supabase/migrations/20260827_ai_usage.sql")
         self.assertIn("revoke all on table ai_usage_events from anon, authenticated", sql)
