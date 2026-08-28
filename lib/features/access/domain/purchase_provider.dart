@@ -28,9 +28,12 @@ class PurchaseOffer {
   }
 }
 
+/// Store-agnostic billing. Screens must not import Stripe or Play Billing.
 abstract interface class PurchaseProvider {
+  bool get canPurchase;
   Future<PurchaseOffer> loadOffer();
-  Future<Uri> startCheckout();
+  Future<void> purchase();
+  Future<void> restore();
 }
 
 class PurchaseUnavailableException implements Exception {
@@ -40,4 +43,61 @@ class PurchaseUnavailableException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Store purchase is offered only to DEMO users on a platform that can bill.
+bool shouldStartStorePurchase({
+  required bool isFull,
+  required bool canPurchase,
+}) {
+  return !isFull && canPurchase;
+}
+
+class PlayPurchase {
+  const PlayPurchase({
+    required this.productId,
+    required this.purchaseToken,
+    this.isPending = false,
+  });
+
+  final String productId;
+  final String purchaseToken;
+  final bool isPending;
+}
+
+abstract interface class PlayBillingStore {
+  bool get isSupported;
+  Future<PurchaseOffer> loadOffer(String productId);
+  Future<PlayPurchase> buy(
+    String productId, {
+    String obfuscatedAccountId = '',
+  });
+  Future<List<PlayPurchase>> restore(
+    String productId, {
+    String obfuscatedAccountId = '',
+  });
+  Future<void> finish(String purchaseToken);
+}
+
+abstract interface class PlayPurchaseVerifier {
+  bool get isConfigured;
+  Future<void> verify({
+    required String productId,
+    required String purchaseToken,
+  });
+}
+
+class UnconfiguredPlayPurchaseVerifier implements PlayPurchaseVerifier {
+  const UnconfiguredPlayPurchaseVerifier();
+
+  @override
+  bool get isConfigured => false;
+
+  @override
+  Future<void> verify({
+    required String productId,
+    required String purchaseToken,
+  }) async {
+    throw const PurchaseUnavailableException();
+  }
 }

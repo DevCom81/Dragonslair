@@ -43,6 +43,8 @@ dependencies:
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
   just_audio: ^0.9.46
+  in_app_purchase: ^3.2.3
+  crypto: ^3.0.7
   # Windows has no native just_audio backend; media_kit provides MP3 playback
   # for the .exe only. Android/iOS/Web keep using just_audio / HTML audio.
   just_audio_media_kit: ^2.1.0

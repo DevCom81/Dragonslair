@@ -3,4 +3,5 @@ httpx
 pydantic
 python-dotenv
 uvicorn
+google-auth
 boto3

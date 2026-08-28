@@ -35,7 +35,7 @@ void main() {
     expect(find.text('• Jouer sans limite'), findsOneWidget);
     expect(find.text('• Jouer avec vos amis'), findsOneWidget);
     expect(find.text('• Sauvegarder vos parties'), findsOneWidget);
-    expect(find.text('Debloquer le jeu'), findsOneWidget);
+    expect(find.text('Debloquer DragonsLair'), findsOneWidget);
 
     expect(find.textContaining('gemme', findRichText: true), findsNothing);
     expect(find.textContaining('energie', findRichText: true), findsNothing);
@@ -44,11 +44,38 @@ void main() {
 
     await tester.ensureVisible(find.text('Commencer la demo'));
     await tester.tap(find.text('Commencer la demo'));
-    await tester.ensureVisible(find.text('Debloquer le jeu'));
-    await tester.tap(find.text('Debloquer le jeu'));
+    await tester.ensureVisible(find.text('Debloquer DragonsLair'));
+    await tester.tap(find.text('Debloquer DragonsLair'));
     expect(demoTaps, 1);
     expect(unlockTaps, 1);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('full entitlement hides purchase cta', (tester) async {
+    var unlockTaps = 0;
+    await pumpAtSize(
+      tester,
+      size: const Size(390, 844),
+      child: SingleChildScrollView(
+        child: AccessOfferView(
+          demoCtaLabel: 'Commencer la demo',
+          isFull: true,
+          onStartDemo: () {},
+          onUnlock: () => unlockTaps++,
+          onRestore: () {},
+        ),
+      ),
+    );
+
+    expect(find.text('Debloquer DragonsLair'), findsNothing);
+    expect(find.text('Jeu complet active'), findsOneWidget);
+    expect(
+      find.text('Votre acces est deja actif sur votre compte.'),
+      findsOneWidget,
+    );
+    expect(find.text('Restaurer mon achat'), findsNothing);
+    await tester.tap(find.text('Jeu complet active'));
+    expect(unlockTaps, 0);
   });
 
   testWidgets('access offer does not overflow at target sizes', (tester) async {

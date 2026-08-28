@@ -1178,6 +1178,54 @@ async def fetch_entitlement_sources(*, user_id: str) -> list[dict]:
     return []
 
 
+async def find_entitlement_user_by_google_play_ref(provider_ref: str) -> str | None:
+    ref = provider_ref.strip()
+    if not ref:
+        return None
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/entitlement_sources",
+            params={
+                "provider": "eq.google_play",
+                "provider_ref": f"eq.{ref}",
+                "select": "user_id",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load entitlement sources.")
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        user_id = str(rows[0].get("user_id") or "").strip()
+        return user_id or None
+    return None
+
+
+async def find_entitlement_user_by_play_account_id(play_account_id: str) -> str | None:
+    account_id = play_account_id.strip()
+    if not account_id:
+        return None
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/entitlement_sources",
+            params={
+                "provider": "eq.google_play",
+                "metadata->>play_account_id": f"eq.{account_id}",
+                "select": "user_id",
+                "limit": "1",
+            },
+            headers=_admin_headers(),
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load entitlement sources.")
+    rows = response.json()
+    if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+        user_id = str(rows[0].get("user_id") or "").strip()
+        return user_id or None
+    return None
+
+
 async def upsert_entitlement_source(
     *,
     user_id: str,
@@ -1300,6 +1348,34 @@ async def refresh_user_entitlement(*, user_id: str) -> dict:
     sources = await fetch_entitlement_sources(user_id=user_id)
     computed = compute_global_entitlement(user_id=user_id, sources=sources)
     return await persist_computed_entitlement(computed=computed)
+
+
+async def revoke_provider_entitlement(*, user_id: str, provider: str) -> dict:
+    from entitlements import normalize_billing_provider
+
+    billing_provider = normalize_billing_provider(provider)
+    if billing_provider is None:
+        raise SupabaseAdminError("Unknown entitlement provider.")
+    sources = await fetch_entitlement_sources(user_id=user_id)
+    matching = [
+        row
+        for row in sources
+        if normalize_billing_provider(row.get("provider")) == billing_provider
+    ]
+    if not matching:
+        return await fetch_user_entitlement(user_id=user_id)
+    for row in matching:
+        extra = row.get("metadata")
+        await upsert_entitlement_source(
+            user_id=user_id,
+            provider=billing_provider,
+            provider_ref=str(row.get("provider_ref") or "legacy"),
+            status="revoked",
+            current_period_end=row.get("current_period_end"),
+            metadata=extra if isinstance(extra, dict) else {},
+        )
+    return await refresh_user_entitlement(user_id=user_id)
+
 
 
 

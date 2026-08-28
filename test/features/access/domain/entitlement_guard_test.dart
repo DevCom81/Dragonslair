@@ -47,11 +47,81 @@ void main() {
     expect(src.contains('.upsert('), isFalse);
   });
 
+  test('google play verifier sends token without a client-side full grant', () {
+    final src = File(
+      'lib/features/access/data/google_play_backend_verifier.dart',
+    ).readAsStringSync();
+    expect(src.contains("'purchase_token': purchaseToken"), isTrue);
+    expect(src.contains("'access_level':"), isFalse);
+    expect(src.contains('user_entitlements'), isFalse);
+  });
+
   test('stripe checkout client never sends access_level', () {
     final src = File(
       'lib/features/access/data/stripe_checkout_purchase_provider.dart',
     ).readAsStringSync();
     expect(src.contains('access_level'), isFalse);
     expect(src.contains("'full'"), isFalse);
+  });
+
+  test('hub and offer screens do not import play billing or stripe', () {
+    const paths = [
+      'lib/features/access/presentation/access_offer_screen.dart',
+      'lib/features/access/presentation/purchase_flow.dart',
+      'lib/features/access/presentation/purchase_platform.dart',
+      'lib/features/home/presentation/play_hub_screen.dart',
+    ];
+    for (final path in paths) {
+      final src = File(path).readAsStringSync();
+      expect(src.contains('in_app_purchase'), isFalse, reason: path);
+      expect(src.contains('StripeCheckout'), isFalse, reason: path);
+      expect(src.contains('GooglePlayPurchase'), isFalse, reason: path);
+    }
+  });
+
+  test('purchase provider is disabled when entitlement is full', () {
+    final src = File(
+      'lib/features/access/presentation/access_providers.dart',
+    ).readAsStringSync();
+    expect(src.contains('UnavailablePurchaseProvider'), isTrue);
+    expect(src.contains('BackendEntitlementClient'), isTrue);
+    expect(src.contains('fetchMe'), isTrue);
+  });
+
+  test('stripe full on web does not force google play on android install path', () {
+    final src = File(
+      'test/features/access/cross_platform_stripe_full_test.dart',
+    ).readAsStringSync();
+    expect(src.contains('stripe-user'), isTrue);
+    expect(src.contains('UnavailablePurchaseProvider'), isTrue);
+  });
+
+  test('google play full on android does not force stripe on web login path', () {
+    final src = File(
+      'test/features/access/cross_platform_google_play_full_test.dart',
+    ).readAsStringSync();
+    expect(src.contains('play-user'), isTrue);
+    expect(src.contains('UnavailablePurchaseProvider'), isTrue);
+    expect(src.contains('startWindowsDownload'), isTrue);
+  });
+
+  test('play account id is derived from uuid never from email', () {
+    final src = File(
+      'lib/features/access/domain/play_account_id.dart',
+    ).readAsStringSync();
+    expect(src.contains('email'), isFalse);
+    expect(src.contains('sha256'), isTrue);
+    final store = File(
+      'lib/features/access/data/play_billing_store_io.dart',
+    ).readAsStringSync();
+    expect(store.contains('applicationUserName: obfuscatedAccountId'), isTrue);
+    expect(store.contains('restorePurchases('), isTrue);
+    expect(store.contains('completePurchase'), isTrue);
+  });
+
+  test('flutter never embeds google play service account', () {
+    final src = File('lib/core/config/app_config.dart').readAsStringSync();
+    expect(src.contains('SERVICE_ACCOUNT'), isFalse);
+    expect(src.contains('private_key'), isFalse);
   });
 }

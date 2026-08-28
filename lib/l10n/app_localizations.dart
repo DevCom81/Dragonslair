@@ -1223,6 +1223,18 @@ abstract class AppLocalizations {
   /// **'Unlock the game'**
   String get unlockTheGame;
 
+  /// No description provided for @fullGameActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Full game unlocked'**
+  String get fullGameActivated;
+
+  /// No description provided for @accessAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Your access is already active on this account.'**
+  String get accessAlreadyActive;
+
   /// No description provided for @demoBenefitMinutes.
   ///
   /// In en, this message translates to:

@@ -42,19 +42,19 @@ class EntitlementModelTest(unittest.TestCase):
     def test_google_only_is_full(self) -> None:
         row = compute_global_entitlement(
             user_id="u1",
-            sources=[_source("google_play", period_end=self.future)],
+            sources=[_source("google_play")],
             now=self.now,
         )
         self.assertEqual(row["access_level"], "full")
         self.assertEqual(row["metadata"]["active_sources"], ["google_play"])
-        self.assertEqual(row["expires_at"], self.future.isoformat())
+        self.assertIsNone(row["expires_at"])
 
     def test_stripe_and_google_are_full(self) -> None:
         row = compute_global_entitlement(
             user_id="u1",
             sources=[
                 _source("stripe"),
-                _source("google_play", period_end=self.future),
+                _source("google_play"),
             ],
             now=self.now,
         )
@@ -62,36 +62,36 @@ class EntitlementModelTest(unittest.TestCase):
         self.assertEqual(row["metadata"]["active_sources"], ["google_play", "stripe"])
         self.assertIsNone(row["expires_at"])
 
-    def test_expired_stripe_with_active_google_is_full(self) -> None:
+    def test_revoked_stripe_with_active_google_is_full(self) -> None:
         row = compute_global_entitlement(
             user_id="u1",
             sources=[
-                _source("stripe", status="expired", period_end=self.past),
-                _source("google_play", period_end=self.future),
+                _source("stripe", status="revoked"),
+                _source("google_play"),
             ],
             now=self.now,
         )
         self.assertEqual(row["access_level"], "full")
         self.assertEqual(row["metadata"]["active_sources"], ["google_play"])
 
-    def test_expired_google_with_active_stripe_is_full(self) -> None:
+    def test_revoked_google_with_active_stripe_is_full(self) -> None:
         row = compute_global_entitlement(
             user_id="u1",
             sources=[
                 _source("stripe"),
-                _source("google_play", status="expired", period_end=self.past),
+                _source("google_play", status="revoked"),
             ],
             now=self.now,
         )
         self.assertEqual(row["access_level"], "full")
         self.assertEqual(row["metadata"]["active_sources"], ["stripe"])
 
-    def test_all_expired_is_demo(self) -> None:
+    def test_all_revoked_is_demo(self) -> None:
         row = compute_global_entitlement(
             user_id="u1",
             sources=[
-                _source("stripe", status="expired", period_end=self.past),
-                _source("google_play", status="expired", period_end=self.past),
+                _source("stripe", status="revoked"),
+                _source("google_play", status="revoked"),
             ],
             now=self.now,
         )
@@ -106,22 +106,6 @@ class EntitlementModelTest(unittest.TestCase):
         )
         self.assertEqual(row["access_level"], "demo")
         self.assertFalse(source_grants_full(_source("google_play", status="pending")))
-
-    def test_canceled_until_period_end_is_full(self) -> None:
-        row = compute_global_entitlement(
-            user_id="u1",
-            sources=[_source("google_play", status="canceled", period_end=self.future)],
-            now=self.now,
-        )
-        self.assertEqual(row["access_level"], "full")
-
-    def test_canceled_after_period_end_is_demo(self) -> None:
-        row = compute_global_entitlement(
-            user_id="u1",
-            sources=[_source("google_play", status="canceled", period_end=self.past)],
-            now=self.now,
-        )
-        self.assertEqual(row["access_level"], "demo")
 
     def test_revoked_is_demo(self) -> None:
         row = compute_global_entitlement(

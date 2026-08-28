@@ -10,6 +10,7 @@ from purchases import (
     normalize_purchase_source,
     offer_from_stripe_price,
     parse_checkout_user_id,
+    parse_stripe_inactive_user_id,
     verify_stripe_signature,
 )
 
@@ -54,6 +55,40 @@ class PurchasesTest(unittest.TestCase):
     def test_unrelated_event_is_ignored(self) -> None:
         self.assertIsNone(
             parse_checkout_user_id({"type": "invoice.paid", "data": {"object": {}}})
+        )
+        self.assertIsNone(
+            parse_stripe_inactive_user_id(
+                {"type": "invoice.paid", "data": {"object": {}}}
+            )
+        )
+
+    def test_full_refund_maps_user_from_charge_metadata(self) -> None:
+        user_id = parse_stripe_inactive_user_id(
+            {
+                "type": "charge.refunded",
+                "data": {
+                    "object": {
+                        "refunded": True,
+                        "metadata": {"user_id": "user-1"},
+                    }
+                },
+            }
+        )
+        self.assertEqual(user_id, "user-1")
+
+    def test_partial_refund_does_not_inactivate(self) -> None:
+        self.assertIsNone(
+            parse_stripe_inactive_user_id(
+                {
+                    "type": "charge.refunded",
+                    "data": {
+                        "object": {
+                            "refunded": False,
+                            "metadata": {"user_id": "user-1"},
+                        }
+                    },
+                }
+            )
         )
 
     def test_unpaid_or_processing_checkout_is_ignored(self) -> None:

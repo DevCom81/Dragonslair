@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../data/backend_entitlement_client.dart';
+import '../data/google_play_backend_verifier.dart';
+import '../data/google_play_purchase_provider.dart';
+import '../data/play_billing_store.dart';
 import '../data/stripe_checkout_purchase_provider.dart';
 import '../domain/entitlement_repository.dart';
 import '../domain/game_access.dart';
@@ -15,7 +19,29 @@ final currentEntitlementProvider = FutureProvider.autoDispose<UserEntitlement?>(
     if (user == null) {
       return null;
     }
-    return ref.watch(entitlementRepositoryProvider).fetchCurrent(user.id);
+    final repo = ref.watch(entitlementRepositoryProvider);
+    final cached = await repo.fetchCurrent(user.id);
+    final session = ref.watch(supabaseClientProvider)?.auth.currentSession;
+    final token = session?.accessToken;
+    if (AppConfig.isGameMasterBackendConfigured &&
+        token != null &&
+        token.isNotEmpty) {
+      try {
+        final me = await BackendEntitlementClient(accessToken: token).fetchMe();
+        final isFull = me['is_full'] == true ||
+            GameAccessLevel.fromJson(me['entitlement'] ?? me['access_level']).isFull;
+        if (isFull) {
+          return UserEntitlement(
+            userId: user.id,
+            level: GameAccessLevel.full,
+            source: me['source']?.toString() ?? cached.source,
+          );
+        }
+      } catch (_) {
+        // Fall back to Supabase row when backend is unreachable.
+      }
+    }
+    return cached;
   },
 );
 
@@ -30,24 +56,38 @@ final currentDemoSessionProvider = FutureProvider.autoDispose<DemoSession?>((
 });
 
 final purchaseProvider = Provider<PurchaseProvider>((ref) {
-  if (!_usesStripeCheckout) {
+  final session = ref.watch(supabaseClientProvider)?.auth.currentSession;
+  final isFull = ref.watch(currentEntitlementProvider).maybeWhen(
+    data: (value) => value?.level.isFull ?? false,
+    orElse: () => false,
+  );
+  if (isFull) {
     return const UnavailablePurchaseProvider();
   }
-  final accessToken = ref
-      .watch(supabaseClientProvider)
-      ?.auth
-      .currentSession
-      ?.accessToken;
-  return StripeCheckoutPurchaseProvider(accessToken: accessToken);
+  return billingProviderForPlatform(
+    accessToken: session?.accessToken,
+    userId: session?.user.id,
+  );
 });
 
-/// Stripe Checkout is Web-only. Android IAP will use Play Billing later.
-bool get _usesStripeCheckout {
+/// Web → Stripe. Android → Google Play (verify backend = PASS 6). Else none.
+PurchaseProvider billingProviderForPlatform({
+  String? accessToken,
+  String? userId,
+}) {
   if (!AppConfig.isGameMasterBackendConfigured) {
-    return false;
+    return const UnavailablePurchaseProvider();
   }
   if (kIsWeb) {
-    return true;
+    return StripeCheckoutPurchaseProvider(accessToken: accessToken);
   }
-  return defaultTargetPlatform != TargetPlatform.android;
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return GooglePlayPurchaseProvider(
+      store: createPlayBillingStore(),
+      productId: AppConfig.googlePlayProductId,
+      userId: userId ?? '',
+      verifier: GooglePlayBackendVerifier(accessToken: accessToken),
+    );
+  }
+  return const UnavailablePurchaseProvider();
 }

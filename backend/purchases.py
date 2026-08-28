@@ -5,10 +5,12 @@ import time
 from typing import Any
 
 PURCHASE_SOURCES = {"purchase", "admin", "promo"}
+PURCHASE_ALREADY_FULL = "PURCHASE_ALREADY_FULL"
 CHECKOUT_COMPLETED_TYPES = {
     "checkout.session.completed",
     "checkout.session.async_payment_succeeded",
 }
+STRIPE_INACTIVE_TYPES = {"charge.refunded"}
 
 
 class PurchaseConfigError(RuntimeError):
@@ -89,6 +91,21 @@ def parse_checkout_user_id(event: dict[str, Any]) -> str | None:
     }:
         return None
     return user_id_from_checkout_session(session)
+
+
+def parse_stripe_inactive_user_id(event: dict[str, Any]) -> str | None:
+    event_type = str(event.get("type") or "")
+    if event_type not in STRIPE_INACTIVE_TYPES:
+        return None
+    data = event.get("data")
+    if not isinstance(data, dict):
+        return None
+    charge = data.get("object")
+    if not isinstance(charge, dict):
+        return None
+    if charge.get("refunded") is not True:
+        return None
+    return user_id_from_checkout_session(charge)
 
 
 def session_id_from_event(event: dict[str, Any]) -> str:
@@ -188,6 +205,7 @@ async def create_stripe_checkout_url(*, user_id: str) -> str:
                 "mode": "payment",
                 "client_reference_id": user_id,
                 "metadata[user_id]": user_id,
+                "payment_intent_data[metadata][user_id]": user_id,
                 "line_items[0][price]": stripe_price_id(),
                 "line_items[0][quantity]": "1",
                 "success_url": checkout_success_url(),

@@ -281,6 +281,8 @@
   "tryDragonsLairFree": "Try DragonsLair for free",
   "unlockDragonsLairTitle": "Unlock DragonsLair",
   "unlockTheGame": "Unlock the game",
+  "fullGameActivated": "Full game unlocked",
+  "accessAlreadyActive": "Your access is already active on this account.",
   "demoBenefitMinutes": "10 minutes",
   "demoBenefitSoloPlay": "Solo",
   "demoBenefitAiGm": "AI game master",

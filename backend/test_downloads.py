@@ -132,6 +132,40 @@ class WindowsDownloadTest(unittest.TestCase):
         presign.assert_called_once()
         self.assertEqual(presign.call_args.kwargs["user_id"], "user-full")
 
+    def test_google_play_full_user_can_download_windows(self) -> None:
+        with patch(
+            "main.get_user_id_from_access_token",
+            new=AsyncMock(return_value="play-user"),
+        ):
+            with patch(
+                "main.fetch_user_entitlement",
+                new=AsyncMock(
+                    return_value={
+                        "user_id": "play-user",
+                        "access_level": "full",
+                        "source": "purchase",
+                        "metadata": {"active_sources": ["google_play"]},
+                    }
+                ),
+            ):
+                with patch(
+                    "main.create_windows_presigned_url",
+                    return_value="https://signed.example/play-user",
+                ) as presign:
+                    client = TestClient(main.app)
+                    response = client.get(
+                        "/v1/downloads/windows",
+                        headers={"Authorization": "Bearer play-jwt"},
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"download_url": "https://signed.example/play-user"},
+        )
+        presign.assert_called_once()
+        self.assertEqual(presign.call_args.kwargs["user_id"], "play-user")
+
     def test_endpoint_returns_503_when_r2_fails_for_full_user(self) -> None:
         with patch(
             "main.get_user_id_from_access_token",

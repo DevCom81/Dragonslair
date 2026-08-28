@@ -13,6 +13,7 @@ import '../../access/presentation/access_offer_screen.dart';
 import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/demo_start.dart';
 import '../../access/presentation/purchase_flow.dart';
+import '../../access/presentation/purchase_platform.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -272,7 +273,9 @@ class _DemoAccessHub extends ConsumerWidget {
           demoCtaLabel: demoOfferCtaLabel(l10n, session),
           onStartDemo: () => _runDemo(context, ref),
           onUnlock: () => startUnlockCheckout(context: context, ref: ref),
-          onRestore: () => restorePurchases(context: context, ref: ref),
+          onRestore: billingRestoreOfferedOnPlatform()
+              ? () => restorePurchases(context: context, ref: ref)
+              : null,
         ),
         const SizedBox(height: 16),
         OutlinedButton(

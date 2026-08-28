@@ -62,9 +62,25 @@ class AppConfig {
     return _backendUri('/v1/purchases/checkout');
   }
 
+  static Uri get purchaseMeUri {
+    return _backendUri('/v1/purchases/me');
+  }
+
+  static Uri get googlePlayPurchaseUri {
+    return _backendUri('/v1/purchases/google');
+  }
+
   static Uri get windowsDownloadUri {
     return _backendUri('/v1/downloads/windows');
   }
+
+  /// Play Console product id. Not a secret. Empty disables Android billing.
+  static String get googlePlayProductId =>
+      _readConfig('GOOGLE_PLAY_PRODUCT_ID', _googlePlayProductId);
+
+  static const _googlePlayProductId = String.fromEnvironment(
+    'GOOGLE_PLAY_PRODUCT_ID',
+  );
 
   static Uri _backendUri(String path) {
     final baseUrl = gameMasterBackendUrl.endsWith('/')

@@ -624,6 +624,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get unlockTheGame => 'Desbloquear el juego';
 
   @override
+  String get fullGameActivated => 'Juego completo activado';
+
+  @override
+  String get accessAlreadyActive => 'Tu acceso ya esta activo en esta cuenta.';
+
+  @override
   String get demoBenefitMinutes => '10 minutos';
 
   @override

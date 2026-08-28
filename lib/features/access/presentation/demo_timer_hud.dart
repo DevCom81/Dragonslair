@@ -82,7 +82,7 @@ class _DemoTimerBannerState extends ConsumerState<DemoTimerBanner> {
               if (widget.onUnlock != null)
                 TextButton(
                   onPressed: widget.onUnlock,
-                  child: Text(l10n.unlockTheGame),
+                  child: Text(l10n.unlockDragonsLair),
                 ),
             ],
           ),

@@ -23,9 +23,24 @@ from downloads import (
     create_windows_presigned_url,
 )
 from gm_locale import normalize_locale
+from google_play import (
+    GooglePlayConfigError,
+    GooglePlayPendingError,
+    GooglePlayPurchaseError,
+    is_google_play_configured,
+    redeem_google_play_purchase,
+)
+from google_play_rtdn import (
+    GooglePlayRtdnError,
+    GooglePlayRtdnUnauthorizedError,
+    is_rtdn_configured,
+    process_rtdn_notification,
+    verify_pubsub_push_jwt,
+)
 from purchases import (
     PurchaseConfigError,
     PurchaseSignatureError,
+    PURCHASE_ALREADY_FULL,
     already_has_full_access,
     create_stripe_checkout_url,
     fetch_stripe_offer,
@@ -33,6 +48,7 @@ from purchases import (
     is_checkout_configured,
     is_webhook_configured,
     parse_checkout_user_id,
+    parse_stripe_inactive_user_id,
     session_id_from_event,
     stripe_webhook_secret,
     verify_stripe_signature,
@@ -80,6 +96,7 @@ from supabase_admin import (
     get_user_id_from_access_token,
     grant_full_entitlement,
     insert_game_event,
+    revoke_provider_entitlement,
     mark_pending_roll_resolved,
     patch_room_world_state,
     sync_demo_play,
@@ -477,11 +494,27 @@ async def generate_scenario(
         raise HTTPException(status_code=502, detail=str(error)) from error
 
 
-def _public_entitlement(row: dict) -> dict[str, str]:
-    return {
-        "access_level": normalize_access_level(row.get("access_level")),
+def _public_entitlement(row: dict) -> dict:
+    access_level = normalize_access_level(row.get("access_level"))
+    metadata = row.get("metadata")
+    active_sources: list[str] = []
+    if isinstance(metadata, dict):
+        raw_sources = metadata.get("active_sources")
+        if isinstance(raw_sources, list):
+            active_sources = [
+                str(item).strip()
+                for item in raw_sources
+                if str(item).strip()
+            ]
+    payload: dict[str, object] = {
+        "access_level": access_level,
+        "entitlement": access_level,
+        "is_full": access_level == "full",
         "source": str(row.get("source") or "default"),
     }
+    if active_sources:
+        payload["active_sources"] = active_sources
+    return payload
 
 
 @app.get("/v1/purchases/offer")
@@ -508,12 +541,78 @@ async def purchase_me(
         raise HTTPException(status_code=403, detail=str(error)) from error
 
 
+@app.post("/v1/purchases/google")
+async def purchase_google(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    if not is_google_play_configured():
+        raise HTTPException(status_code=503, detail="GOOGLE_PLAY_UNAVAILABLE")
+    try:
+        user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        body = await request.json()
+    except HTTPException:
+        raise
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+    except (json.JSONDecodeError, ValueError) as error:
+        raise HTTPException(status_code=400, detail="Invalid purchase payload.") from error
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Invalid purchase payload.")
+    product_id = str(body.get("product_id") or "").strip()
+    purchase_token = str(body.get("purchase_token") or "").strip()
+    try:
+        row = await redeem_google_play_purchase(
+            user_id=user_id,
+            product_id=product_id,
+            purchase_token=purchase_token,
+        )
+        return _public_entitlement(row)
+    except GooglePlayPendingError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except GooglePlayPurchaseError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+    except GooglePlayConfigError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@app.post("/v1/purchases/google-rtdn")
+async def purchase_google_rtdn(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    if not is_rtdn_configured():
+        raise HTTPException(status_code=503, detail="GOOGLE_PLAY_RTDN_UNAVAILABLE")
+    try:
+        body = await request.json()
+    except (json.JSONDecodeError, ValueError) as error:
+        raise HTTPException(status_code=400, detail="Invalid RTDN payload.") from error
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Invalid RTDN payload.")
+    try:
+        verify_pubsub_push_jwt(authorization)
+        return await process_rtdn_notification(body)
+    except GooglePlayRtdnUnauthorizedError as error:
+        raise HTTPException(status_code=401, detail=str(error)) from error
+    except GooglePlayRtdnError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except GooglePlayConfigError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
 @app.post("/v1/purchases/checkout")
 async def purchase_checkout(
     authorization: str | None = Header(default=None),
 ) -> dict:
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        entitlement = await fetch_user_entitlement(user_id=user_id)
+        if already_has_full_access(entitlement):
+            raise HTTPException(status_code=409, detail=PURCHASE_ALREADY_FULL)
         url = await create_stripe_checkout_url(user_id=user_id)
         return {"checkout_url": url}
     except HTTPException:
@@ -548,13 +647,23 @@ async def purchase_stripe_webhook(
     if not isinstance(event, dict):
         raise HTTPException(status_code=400, detail="Invalid webhook payload.")
     user_id = parse_checkout_user_id(event)
-    if user_id is None:
+    if user_id is not None:
+        try:
+            await grant_full_entitlement(
+                user_id=user_id,
+                source="purchase",
+                metadata=grant_metadata(session_id=session_id_from_event(event)),
+            )
+        except SupabaseAdminError as error:
+            raise HTTPException(status_code=502, detail=str(error)) from error
+        return {"status": "ok"}
+    inactive_user_id = parse_stripe_inactive_user_id(event)
+    if inactive_user_id is None:
         return {"status": "ignored"}
     try:
-        await grant_full_entitlement(
-            user_id=user_id,
-            source="purchase",
-            metadata=grant_metadata(session_id=session_id_from_event(event)),
+        await revoke_provider_entitlement(
+            user_id=inactive_user_id,
+            provider="stripe",
         )
     except SupabaseAdminError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error

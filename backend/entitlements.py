@@ -86,6 +86,7 @@ def compute_global_entitlement(
     sources: list[Any],
     now: datetime | None = None,
 ) -> dict[str, Any]:
+    """Merge all billing sources. Never use last webhook alone to set global access."""
     clock = now or datetime.now(timezone.utc)
     valid: list[dict[str, Any]] = []
     for item in sources:

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/errors/app_exception.dart';
@@ -17,6 +18,9 @@ class StripeCheckoutPurchaseProvider implements PurchaseProvider {
   final http.Client? _client;
 
   @override
+  bool get canPurchase => AppConfig.isGameMasterBackendConfigured;
+
+  @override
   Future<PurchaseOffer> loadOffer() async {
     final payload = await _request(
       (client) => client.get(
@@ -28,7 +32,18 @@ class StripeCheckoutPurchaseProvider implements PurchaseProvider {
   }
 
   @override
-  Future<Uri> startCheckout() async {
+  Future<void> purchase() async {
+    final uri = await _createCheckoutUri();
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched) {
+      throw const PurchaseUnavailableException();
+    }
+  }
+
+  @override
+  Future<void> restore() async {}
+
+  Future<Uri> _createCheckoutUri() async {
     final payload = await _request(
       (client) => client.post(
         AppConfig.purchaseCheckoutUri,
@@ -94,12 +109,18 @@ class UnavailablePurchaseProvider implements PurchaseProvider {
   const UnavailablePurchaseProvider();
 
   @override
+  bool get canPurchase => false;
+
+  @override
   Future<PurchaseOffer> loadOffer() async {
     throw const PurchaseUnavailableException();
   }
 
   @override
-  Future<Uri> startCheckout() async {
+  Future<void> purchase() async {
     throw const PurchaseUnavailableException();
   }
+
+  @override
+  Future<void> restore() async {}
 }

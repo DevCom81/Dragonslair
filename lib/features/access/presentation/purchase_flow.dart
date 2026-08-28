@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
@@ -12,14 +11,29 @@ Future<void> startUnlockCheckout({
   required WidgetRef ref,
 }) async {
   final l10n = AppLocalizations.of(context);
-  try {
-    final uri = await ref.read(purchaseProvider).startCheckout();
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
+  ref.invalidate(currentEntitlementProvider);
+  final entitlement = await ref.read(currentEntitlementProvider.future);
+  final isFull = entitlement?.level.isFull ?? false;
+  final billing = ref.read(purchaseProvider);
+  if (isFull) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accessAlreadyActive)),
+      );
+    }
+    return;
+  }
+  if (!shouldStartStorePurchase(isFull: isFull, canPurchase: billing.canPurchase)) {
+    if (context.mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.purchaseUnavailable)));
     }
+    return;
+  }
+  try {
+    await billing.purchase();
+    ref.invalidate(currentEntitlementProvider);
   } on PurchaseUnavailableException {
     if (context.mounted) {
       ScaffoldMessenger.of(
@@ -44,17 +58,37 @@ Future<void> restorePurchases({
 }) async {
   final l10n = AppLocalizations.of(context);
   ref.invalidate(currentEntitlementProvider);
+  final entitlementBefore = await ref.read(currentEntitlementProvider.future);
+  if (entitlementBefore?.level.isFull == true) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accessAlreadyActive)),
+      );
+    }
+    return;
+  }
+  final billing = ref.read(purchaseProvider);
+  var restoreFailed = false;
+  try {
+    await billing.restore();
+  } catch (_) {
+    restoreFailed = true;
+  }
+  ref.invalidate(currentEntitlementProvider);
   try {
     final entitlement = await ref.read(currentEntitlementProvider.future);
     if (!context.mounted) {
       return;
     }
+    final isFull = entitlement?.level.isFull == true;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          entitlement?.level.isFull == true
+          isFull
               ? l10n.purchaseRestored
-              : l10n.purchaseNotFound,
+              : restoreFailed
+                  ? l10n.purchaseUnavailable
+                  : l10n.purchaseNotFound,
         ),
       ),
     );

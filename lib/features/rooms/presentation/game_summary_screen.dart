@@ -6,7 +6,9 @@ import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/purchase_flow.dart';
+import '../../access/presentation/purchase_platform.dart';
 import '../../enemies/presentation/enemy_providers.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game/presentation/pending_roll_providers.dart';
@@ -44,11 +46,21 @@ class GameSummaryScreen extends ConsumerWidget {
       rolls: rolls,
     );
 
+    final isFull = ref.watch(currentEntitlementProvider).maybeWhen(
+      data: (value) => value?.level.isFull ?? false,
+      orElse: () => false,
+    );
+
     return GameSummaryView(
       recap: recap,
       onBackToTavern: () => context.goNamed('play-hub'),
-      onUnlock: () => startUnlockCheckout(context: context, ref: ref),
-      onRestore: () => restorePurchases(context: context, ref: ref),
+      accessIsFull: isFull,
+      onUnlock: isFull
+          ? null
+          : () => startUnlockCheckout(context: context, ref: ref),
+      onRestore: isFull || !billingRestoreOfferedOnPlatform()
+          ? null
+          : () => restorePurchases(context: context, ref: ref),
     );
   }
 }
@@ -57,6 +69,7 @@ class GameSummaryView extends StatelessWidget {
   const GameSummaryView({
     required this.recap,
     required this.onBackToTavern,
+    this.accessIsFull = false,
     this.onUnlock,
     this.onRestore,
     super.key,
@@ -64,6 +77,7 @@ class GameSummaryView extends StatelessWidget {
 
   final GameRecap recap;
   final VoidCallback onBackToTavern;
+  final bool accessIsFull;
   final VoidCallback? onUnlock;
   final VoidCallback? onRestore;
 
@@ -139,22 +153,32 @@ class GameSummaryView extends StatelessWidget {
                     Text('✓ ${l10n.unlockBenefitSave}'),
                     Text('✓ ${l10n.unlockBenefitUnlimited}'),
                     const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed:
-                          onUnlock ??
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.purchaseUnavailable)),
-                            );
-                          },
-                      child: Text(l10n.unlockDragonsLair),
-                    ),
-                    if (onRestore != null) ...[
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: onRestore,
-                        child: Text(l10n.restorePurchase),
+                    if (accessIsFull)
+                      Text(
+                        l10n.fullGameActivated,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      )
+                    else ...[
+                      FilledButton(
+                        onPressed:
+                            onUnlock ??
+                            () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.purchaseUnavailable),
+                                ),
+                              );
+                            },
+                        child: Text(l10n.unlockDragonsLair),
                       ),
+                      if (onRestore != null) ...[
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: onRestore,
+                          child: Text(l10n.restorePurchase),
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 8),
                   ],

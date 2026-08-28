@@ -9,6 +9,7 @@ import '../domain/game_access.dart';
 import 'access_providers.dart';
 import 'demo_start.dart';
 import 'purchase_flow.dart';
+import 'purchase_platform.dart';
 
 class AccessOfferScreen extends ConsumerWidget {
   const AccessOfferScreen({super.key});
@@ -34,11 +35,16 @@ class AccessOfferScreen extends ConsumerWidget {
                   child: ContentConstraint(
                     child: AccessOfferView(
                       demoCtaLabel: demoOfferCtaLabel(l10n, session),
+                      isFull: ref.watch(currentEntitlementProvider).maybeWhen(
+                        data: (value) => value?.level.isFull ?? false,
+                        orElse: () => false,
+                      ),
                       onStartDemo: () => _runDemo(context, ref),
                       onUnlock: () =>
                           startUnlockCheckout(context: context, ref: ref),
-                      onRestore: () =>
-                          restorePurchases(context: context, ref: ref),
+                      onRestore: billingRestoreOfferedOnPlatform()
+                          ? () => restorePurchases(context: context, ref: ref)
+                          : null,
                     ),
                   ),
                 ),
@@ -79,6 +85,7 @@ class AccessOfferView extends StatelessWidget {
     required this.onStartDemo,
     required this.onUnlock,
     this.onRestore,
+    this.isFull = false,
     super.key,
   });
 
@@ -86,6 +93,7 @@ class AccessOfferView extends StatelessWidget {
   final VoidCallback onStartDemo;
   final VoidCallback onUnlock;
   final VoidCallback? onRestore;
+  final bool isFull;
 
   @override
   Widget build(BuildContext context) {
@@ -112,11 +120,18 @@ class AccessOfferView extends StatelessWidget {
         l10n.unlockBenefitMultiplayer,
         l10n.unlockBenefitSave,
       ],
-      ctaLabel: l10n.unlockTheGame,
-      onCta: onUnlock,
+      ctaLabel: isFull ? l10n.fullGameActivated : l10n.unlockDragonsLair,
+      onCta: isFull ? null : onUnlock,
       filled: false,
+      footer: isFull
+          ? Text(
+              l10n.accessAlreadyActive,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          : null,
     );
-    final restore = onRestore == null
+    final restore = (onRestore == null || isFull)
         ? const SizedBox.shrink()
         : Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -156,13 +171,15 @@ class _OfferCard extends StatelessWidget {
     required this.ctaLabel,
     required this.onCta,
     required this.filled,
+    this.footer,
   });
 
   final String title;
   final List<String> benefits;
   final String ctaLabel;
-  final VoidCallback onCta;
+  final VoidCallback? onCta;
   final bool filled;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +203,10 @@ class _OfferCard extends StatelessWidget {
               ),
             const SizedBox(height: 12),
             cta,
+            if (footer != null) ...[
+              const SizedBox(height: 8),
+              footer!,
+            ],
           ],
         ),
       ),

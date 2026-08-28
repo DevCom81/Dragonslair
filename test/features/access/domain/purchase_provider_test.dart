@@ -13,6 +13,21 @@ void main() {
     expect(offer.displayAmount, isNot(contains('19.99')));
   });
 
+  test('store purchase is blocked when already full', () {
+    expect(
+      shouldStartStorePurchase(isFull: true, canPurchase: true),
+      isFalse,
+    );
+    expect(
+      shouldStartStorePurchase(isFull: false, canPurchase: true),
+      isTrue,
+    );
+    expect(
+      shouldStartStorePurchase(isFull: false, canPurchase: false),
+      isFalse,
+    );
+  });
+
   test('invalid offer json is rejected', () {
     expect(
       () => PurchaseOffer.fromJson({'currency': 'eur'}),
@@ -26,13 +41,19 @@ void main() {
 
   test('unavailable provider does not invent a checkout', () async {
     const provider = UnavailablePurchaseProvider();
+    expect(provider.canPurchase, isFalse);
     await expectLater(
       provider.loadOffer(),
       throwsA(isA<PurchaseUnavailableException>()),
     );
     await expectLater(
-      provider.startCheckout(),
+      provider.purchase(),
       throwsA(isA<PurchaseUnavailableException>()),
     );
+  });
+
+  test('unavailable provider restore does not invent a play grant', () async {
+    const provider = UnavailablePurchaseProvider();
+    await provider.restore();
   });
 }
