@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/app.dart';
 import 'core/config/app_config.dart';
 import 'core/l10n/locale_controller.dart';
+import 'features/music/presentation/music_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ Future<void> main() async {
 
   final container = ProviderContainer();
   await container.read(localeControllerProvider.notifier).restore();
+  await container.read(musicControllerProvider.notifier).restore();
 
   runApp(
     UncontrolledProviderScope(

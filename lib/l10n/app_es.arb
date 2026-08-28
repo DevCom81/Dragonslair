@@ -10,6 +10,8 @@
   "signOut": "Cerrar sesion",
   "language": "Idioma",
   "preferences": "Preferencias",
+  "musicToggle": "Musica",
+  "musicVolume": "Volumen de la musica",
   "supabaseMissing": "Falta la configuracion de Supabase. La app funciona en modo local.",
   "sessionClosed": "Sin sesion.",
   "sessionConnected": "Sesion iniciada.",
@@ -39,6 +41,11 @@
   "displayNameHint": "Elige un nombre visible para los demas jugadores de tu partida.",
   "displayNameLabel": "Nombre",
   "minTwoChars": "Al menos 2 caracteres.",
+  "profileTitle": "Perfil",
+  "profileHint": "Tu nombre se ve en partida. La figurita es tu ficha en el tablero.",
+  "chooseAvatar": "Tu figurita",
+  "profileSaved": "Perfil guardado.",
+  "myProfile": "Perfil",
   "save": "Guardar",
   "sheetTitle": "Ficha de personaje",
   "sheetIntro": "Elige una clase y lanza 1d20 por caracteristica. Un 1 a 7 se convierte en 8; un 19 o 20, en 18. La clase suma +2 (max. 18) a su caracteristica principal.",
@@ -306,6 +313,19 @@
   "hudSheet": "Ficha",
   "hudInventory": "Inventario",
   "hudJournal": "Libro",
+  "demoTimer": "Demo {time}",
+  "@demoTimer": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoTimerPaused": "Demo en pausa {time}",
+  "@demoTimerPaused": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoKeepOnUnlock": "Desbloquear conserva esta aventura.",
   "inGameSheetTitle": "Ficha de personaje",
   "inGameInventoryTitle": "Inventario",
   "emptyInventory": "Todavia no hay objetos.",

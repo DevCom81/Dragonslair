@@ -10,6 +10,8 @@
   "signOut": "Se deconnecter",
   "language": "Langue",
   "preferences": "Preferences",
+  "musicToggle": "Musique",
+  "musicVolume": "Volume de la musique",
   "supabaseMissing": "Configuration Supabase absente. L app compile en mode local.",
   "sessionClosed": "Session non ouverte.",
   "sessionConnected": "Compte connecte.",
@@ -39,6 +41,11 @@
   "displayNameHint": "Choisis un nom visible par les autres joueurs de ta partie.",
   "displayNameLabel": "Pseudo",
   "minTwoChars": "Au moins 2 caracteres.",
+  "profileTitle": "Profil",
+  "profileHint": "Ton pseudo est visible en jeu. La figurine est ton pion sur le plateau.",
+  "chooseAvatar": "Ta figurine",
+  "profileSaved": "Profil enregistre.",
+  "myProfile": "Profil",
   "save": "Enregistrer",
   "sheetTitle": "Fiche de personnage",
   "sheetIntro": "Choisis une classe, puis lance 1d20 par caracteristique. Un 1 a 7 devient 8, un 19 ou 20 devient 18. La classe ajoute +2 (max 18) a sa caracteristique principale.",
@@ -306,6 +313,19 @@
   "hudSheet": "Fiche",
   "hudInventory": "Inventaire",
   "hudJournal": "Livre",
+  "demoTimer": "Demo {time}",
+  "@demoTimer": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoTimerPaused": "Demo en pause {time}",
+  "@demoTimerPaused": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoKeepOnUnlock": "Debloquer conserve cette partie.",
   "inGameSheetTitle": "Fiche de personnage",
   "inGameInventoryTitle": "Inventaire",
   "emptyInventory": "Aucun objet pour le moment.",

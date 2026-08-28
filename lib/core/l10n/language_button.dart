@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/music/presentation/music_controller.dart';
 import '../../l10n/app_localizations.dart';
 import 'locale_controller.dart';
 
@@ -11,7 +12,7 @@ class LanguageButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return IconButton(
-      tooltip: l10n.language,
+      tooltip: l10n.preferences,
       onPressed: () => _showLanguageSheet(context, ref),
       icon: const Icon(Icons.language),
     );
@@ -26,26 +27,65 @@ class LanguageButton extends ConsumerWidget {
       showDragHandle: true,
       builder: (sheetContext) {
         return SafeArea(
-          child: RadioGroup<Locale>(
-            groupValue: current,
-            onChanged: (value) async {
-              if (value == null) {
-                return;
-              }
-              await ref.read(localeControllerProvider.notifier).setLocale(value);
-              if (sheetContext.mounted) {
-                Navigator.of(sheetContext).pop();
-              }
-            },
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(title: Text(l10n.preferences)),
-                for (final locale in supportedAppLocales)
-                  RadioListTile<Locale>(
-                    value: locale,
-                    title: Text(_label(l10n, locale.languageCode)),
+                RadioGroup<Locale>(
+                  groupValue: current,
+                  onChanged: (value) async {
+                    if (value == null) {
+                      return;
+                    }
+                    await ref
+                        .read(localeControllerProvider.notifier)
+                        .setLocale(value);
+                    if (sheetContext.mounted) {
+                      Navigator.of(sheetContext).pop();
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final locale in supportedAppLocales)
+                        RadioListTile<Locale>(
+                          value: locale,
+                          title: Text(_label(l10n, locale.languageCode)),
+                        ),
+                    ],
                   ),
+                ),
+                const Divider(),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final music = ref.watch(musicControllerProvider);
+                    return Column(
+                      children: [
+                        SwitchListTile(
+                          title: Text(l10n.musicToggle),
+                          value: !music.isMuted,
+                          onChanged: (_) {
+                            ref
+                                .read(musicControllerProvider.notifier)
+                                .toggleMute();
+                          },
+                        ),
+                        ListTile(
+                          title: Text(l10n.musicVolume),
+                          subtitle: Slider(
+                            value: music.volume,
+                            onChanged: (value) {
+                              ref
+                                  .read(musicControllerProvider.notifier)
+                                  .setVolume(value);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),

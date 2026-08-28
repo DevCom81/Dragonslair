@@ -203,6 +203,22 @@ class SupabaseRoomRepository implements RoomRepository {
         current.status != RoomStatus.paused) {
       throw const GameException('Impossible de terminer la partie.');
     }
+    var demoCut = current.scenarioId == ScenarioCatalog.demo.id;
+    final hostId = current.hostId;
+    if (demoCut && hostId != null && hostId.isNotEmpty) {
+      try {
+        final rows = await _requiredClient
+            .from('user_entitlements')
+            .select('access_level')
+            .eq('user_id', hostId)
+            .limit(1);
+        if (rows.isNotEmpty && rows.first['access_level'] == 'full') {
+          demoCut = false;
+        }
+      } on PostgrestException {
+        demoCut = true;
+      }
+    }
     final ending = GameEnding(
       result: GameEndingResult.fromJson(result),
       summary: summary,
@@ -212,7 +228,7 @@ class SupabaseRoomRepository implements RoomRepository {
       final row = await _requiredClient
           .from('rooms')
           .update({
-            'status': current.scenarioId == ScenarioCatalog.demo.id
+            'status': demoCut
                 ? RoomStatus.demoFinished.toJson()
                 : RoomStatus.finished.toJson(),
             'finished_at': DateTime.now().toUtc().toIso8601String(),

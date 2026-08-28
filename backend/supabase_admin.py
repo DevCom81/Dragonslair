@@ -996,11 +996,21 @@ async def fetch_demo_session(*, user_id: str) -> dict | None:
             f"{_supabase_url()}/rest/v1/demo_sessions",
             params={
                 "user_id": f"eq.{user_id}",
-                "select": "id,user_id,room_id,started_at,expires_at,completed_at",
+                "select": "id,user_id,room_id,started_at,expires_at,completed_at,paused_at",
                 "limit": "1",
             },
             headers=_admin_headers(),
         )
+        if response.status_code >= 400:
+            response = await client.get(
+                f"{_supabase_url()}/rest/v1/demo_sessions",
+                params={
+                    "user_id": f"eq.{user_id}",
+                    "select": "id,user_id,room_id,started_at,expires_at,completed_at",
+                    "limit": "1",
+                },
+                headers=_admin_headers(),
+            )
     if response.status_code >= 400:
         raise SupabaseAdminError("Unable to load demo session.")
     rows = response.json()
@@ -1056,6 +1066,7 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
     started_at = _parse_timestamptz((session or {}).get("started_at"))
     expires_at = _parse_timestamptz((session or {}).get("expires_at"))
     completed_at = _parse_timestamptz((session or {}).get("completed_at"))
+    paused_at = _parse_timestamptz((session or {}).get("paused_at"))
     status = evaluate_demo_play(
         access_level=entitlement.get("access_level"),
         room_status=context.get("status"),
@@ -1066,6 +1077,7 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
         expires_at=expires_at,
         completed_at=completed_at,
         now=now,
+        paused_at=paused_at,
     )
     if status != "ok":
         return status
@@ -1076,8 +1088,11 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
         started_at=started_at,
         expires_at=expires_at,
         completed_at=completed_at,
+        paused_at=paused_at,
     )
     if clock == "ok" and started_at is None:
+        if str(context.get("status") or "").strip().lower() == "paused":
+            return "ok"
         await start_demo_clock(
             user_id=user_id,
             room_id=room_id,

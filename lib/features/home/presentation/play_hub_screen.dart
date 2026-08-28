@@ -43,7 +43,14 @@ class PlayHubScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.tavernTitle),
-          actions: const [LanguageButton()],
+          actions: [
+            IconButton(
+              onPressed: () => context.pushNamed('profile'),
+              icon: const Icon(Icons.person_outline),
+              tooltip: l10n.myProfile,
+            ),
+            const LanguageButton(),
+          ],
         ),
         body: SafeArea(
           child: LayoutBuilder(
@@ -211,6 +218,11 @@ class _HubActions extends ConsumerWidget {
           onPressed: () => context.pushNamed('character-sheet'),
           child: Text(l10n.mySheet),
         ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('profile'),
+          child: Text(l10n.myProfile),
+        ),
       ],
     );
   }
@@ -253,6 +265,11 @@ class _DemoAccessHub extends ConsumerWidget {
         OutlinedButton(
           onPressed: () => context.pushNamed('character-sheet'),
           child: Text(l10n.mySheet),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => context.pushNamed('profile'),
+          child: Text(l10n.myProfile),
         ),
       ],
     );

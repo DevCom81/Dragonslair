@@ -100,8 +100,7 @@ GameRecap buildGameRecap({
             (roll.result == 1 || roll.result == 20))
           '${roll.abilityKey} ${roll.result}',
     ],
-    isDemo:
-        room.scenarioId == 'demo' || room.status == RoomStatus.demoFinished,
+    isDemo: room.status == RoomStatus.demoFinished,
   );
 }
 

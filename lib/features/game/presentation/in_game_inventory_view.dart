@@ -9,6 +9,7 @@ import '../../combat/presentation/combat_providers.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/presentation/game_master_controller.dart';
+import '../../music/presentation/apply_music_from_response.dart';
 import '../../players/domain/inventory_item.dart';
 import '../../players/domain/inventory_rules.dart';
 import '../../players/domain/player.dart';
@@ -27,7 +28,8 @@ class InGameInventoryView extends ConsumerStatefulWidget {
   final String playerId;
 
   @override
-  ConsumerState<InGameInventoryView> createState() => _InGameInventoryViewState();
+  ConsumerState<InGameInventoryView> createState() =>
+      _InGameInventoryViewState();
 }
 
 class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
@@ -36,7 +38,8 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final players = ref.watch(roomPlayersProvider(widget.roomId)).value ?? const [];
+    final players =
+        ref.watch(roomPlayersProvider(widget.roomId)).value ?? const [];
     Player? player;
     for (final candidate in players) {
       if (candidate.id == widget.playerId) {
@@ -52,9 +55,9 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Text(
             l10n.inGameInventoryTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.gold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppColors.gold),
           ),
         ),
         Expanded(
@@ -96,11 +99,12 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
         itemId: item.id,
         equipped: equipped,
       );
-      await ref.read(playerRepositoryProvider).patchOwnPlayer(
-            playerId: player.id,
-            inventory: next,
-          );
-      await ref.read(gameEventRepositoryProvider).createSystem(
+      await ref
+          .read(playerRepositoryProvider)
+          .patchOwnPlayer(playerId: player.id, inventory: next);
+      await ref
+          .read(gameEventRepositoryProvider)
+          .createSystem(
             roomId: widget.roomId,
             content: equipped
                 ? '${player.figurineName} : ${l10n.itemEquip} ${item.name}'
@@ -142,12 +146,16 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
       return;
     }
     final nextHp = (player.hp + result.heal).clamp(0, 100);
-    await ref.read(playerRepositoryProvider).patchOwnPlayer(
+    await ref
+        .read(playerRepositoryProvider)
+        .patchOwnPlayer(
           playerId: player.id,
           hp: nextHp,
           inventory: result.inventory,
         );
-    await ref.read(gameEventRepositoryProvider).createSystem(
+    await ref
+        .read(gameEventRepositoryProvider)
+        .createSystem(
           roomId: widget.roomId,
           content:
               '${player.figurineName} : ${item.name} (+${result.heal} PV, ${player.hp} -> $nextHp)',
@@ -161,47 +169,54 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
   ) async {
     final result = consumeScroll(inventory: player.inventory, itemId: item.id);
     if (result.effect != null) {
-      await ref.read(playerRepositoryProvider).patchOwnPlayer(
+      await ref
+          .read(playerRepositoryProvider)
+          .patchOwnPlayer(
             playerId: player.id,
             inventory: result.inventory,
             effects: upsertEffect(player.effects, result.effect!),
           );
-      await ref.read(gameEventRepositoryProvider).createSystem(
+      await ref
+          .read(gameEventRepositoryProvider)
+          .createSystem(
             roomId: widget.roomId,
-            content: '${player.figurineName} : ${item.name} (${result.effect!.name})',
+            content:
+                '${player.figurineName} : ${item.name} (${result.effect!.name})',
           );
       return;
     }
 
     final l10n = AppLocalizations.of(context);
     final content = '${l10n.actionUseItem} : ${item.name}';
-    await ref.read(gameEventRepositoryProvider).createAction(
+    await ref
+        .read(gameEventRepositoryProvider)
+        .createAction(
           roomId: widget.roomId,
           playerId: player.id,
           content: '${player.figurineName} : $content',
         );
-    final response =
-        await ref.read(gameMasterControllerProvider.notifier).submit(
-              GameMasterInput(
-                roomId: widget.roomId,
-                playerId: player.id,
-                playerName: player.figurineName,
-                action: content,
-                players: players.map(toGameMasterPlayerContext).toList(),
-                enemies: enemiesForRoom(ref, widget.roomId),
-                recentEvents: recentEventsForRoom(ref, widget.roomId),
-                combat: toGameMasterCombat(
-                  readActiveCombat(ref, widget.roomId),
-                ),
-                locale: localeForRoom(ref, widget.roomId),
-              ),
-            );
+    final response = await ref
+        .read(gameMasterControllerProvider.notifier)
+        .submit(
+          GameMasterInput(
+            roomId: widget.roomId,
+            playerId: player.id,
+            playerName: player.figurineName,
+            action: content,
+            players: players.map(toGameMasterPlayerContext).toList(),
+            enemies: enemiesForRoom(ref, widget.roomId),
+            recentEvents: recentEventsForRoom(ref, widget.roomId),
+            combat: toGameMasterCombat(readActiveCombat(ref, widget.roomId)),
+            locale: localeForRoom(ref, widget.roomId),
+          ),
+        );
     if (!AppConfig.isGameMasterRemote) {
-      ref.read(pendingAbilityRollProvider.notifier).setRoll(
-            pendingRollFromResponse(response),
-          );
+      ref
+          .read(pendingAbilityRollProvider.notifier)
+          .setRoll(pendingRollFromResponse(response));
     }
     applyLocalCombatFromResponse(ref: ref, response: response);
+    applyMusicFromResponse(ref: ref, response: response);
     await applyLocalFinishFromResponse(
       ref: ref,
       roomId: widget.roomId,
@@ -261,7 +276,9 @@ class _ItemTile extends StatelessWidget {
               if (onEquip != null)
                 OutlinedButton(
                   onPressed: busy ? null : onEquip,
-                  child: Text(item.equipped ? l10n.itemUnequip : l10n.itemEquip),
+                  child: Text(
+                    item.equipped ? l10n.itemUnequip : l10n.itemEquip,
+                  ),
                 ),
               if (onUse != null)
                 FilledButton(

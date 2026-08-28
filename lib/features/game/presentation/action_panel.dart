@@ -10,11 +10,31 @@ import '../../dice/domain/dice_roll_service.dart';
 import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/presentation/game_master_controller.dart';
+import '../../music/presentation/apply_music_from_response.dart';
 import '../../players/domain/player.dart';
 import '../../rooms/presentation/room_finish.dart';
 import '../domain/player_action.dart';
+import 'gm_choice_bar.dart';
 import 'pending_ability_roll.dart';
 import 'pending_roll_providers.dart';
+
+class PendingPlayerChoiceNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setChoice(String? value) {
+    state = value;
+  }
+
+  void clear() {
+    state = null;
+  }
+}
+
+final pendingPlayerChoiceProvider =
+    NotifierProvider<PendingPlayerChoiceNotifier, String?>(
+      PendingPlayerChoiceNotifier.new,
+    );
 
 class ActionPanel extends ConsumerStatefulWidget {
   const ActionPanel({
@@ -62,7 +82,8 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
     final l10n = AppLocalizations.of(context);
     final pending = activePendingRoll(ref, widget.roomId);
     final combat = watchActiveCombat(ref, widget.roomId);
-    final isMyRoll = pending != null &&
+    final isMyRoll =
+        pending != null &&
         widget.currentPlayer != null &&
         pending.playerId == widget.currentPlayer!.id;
     final canAct =
@@ -70,6 +91,17 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
         !_isSubmitting &&
         !isMyRoll &&
         !widget.paused;
+    final choices =
+        ref.watch(gameMasterControllerProvider).value?.choices ?? const [];
+
+    ref.listen<String?>(pendingPlayerChoiceProvider, (previous, next) {
+      final text = next?.trim();
+      if (text == null || text.isEmpty) {
+        return;
+      }
+      ref.read(pendingPlayerChoiceProvider.notifier).clear();
+      _applyGmChoice(text);
+    });
 
     return Material(
       color: AppColors.surface,
@@ -84,9 +116,9 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   l10n.gamePaused,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.gold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.gold),
                 ),
               ),
             CombatBanner(combat: combat),
@@ -109,6 +141,14 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
                   ),
               ],
             ),
+            if (choices.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              GmChoiceBar(
+                choices: choices,
+                enabled: canAct,
+                onSelected: (choice) => _applyGmChoice(choice.playerCommand),
+              ),
+            ],
             const SizedBox(height: 8),
             TextField(
               controller: _actionController,
@@ -155,6 +195,19 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
     );
   }
 
+  Future<void> _applyGmChoice(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty ||
+        widget.currentPlayer == null ||
+        _isSubmitting ||
+        widget.paused) {
+      return;
+    }
+    _selectedAction = PlayerActionType.free;
+    _actionController.text = trimmed;
+    await _submitAction();
+  }
+
   Future<void> _submitAction() async {
     final player = widget.currentPlayer;
     if (player == null) {
@@ -172,29 +225,28 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
         content: '${player.figurineName} : $content',
       );
 
-      final response =
-          await ref.read(gameMasterControllerProvider.notifier).submit(
-                GameMasterInput(
-                  roomId: widget.roomId,
-                  playerId: player.id,
-                  playerName: player.figurineName,
-                  action: content,
-                  players:
-                      widget.players.map(toGameMasterPlayerContext).toList(),
-                  enemies: enemiesForRoom(ref, widget.roomId),
-                  recentEvents: recentEventsForRoom(ref, widget.roomId),
-                  combat: toGameMasterCombat(
-                    readActiveCombat(ref, widget.roomId),
-                  ),
-                  locale: localeForRoom(ref, widget.roomId),
-                ),
-              );
+      final response = await ref
+          .read(gameMasterControllerProvider.notifier)
+          .submit(
+            GameMasterInput(
+              roomId: widget.roomId,
+              playerId: player.id,
+              playerName: player.figurineName,
+              action: content,
+              players: widget.players.map(toGameMasterPlayerContext).toList(),
+              enemies: enemiesForRoom(ref, widget.roomId),
+              recentEvents: recentEventsForRoom(ref, widget.roomId),
+              combat: toGameMasterCombat(readActiveCombat(ref, widget.roomId)),
+              locale: localeForRoom(ref, widget.roomId),
+            ),
+          );
       if (!AppConfig.isGameMasterRemote) {
-        ref.read(pendingAbilityRollProvider.notifier).setRoll(
-              pendingRollFromResponse(response),
-            );
+        ref
+            .read(pendingAbilityRollProvider.notifier)
+            .setRoll(pendingRollFromResponse(response));
       }
       applyLocalCombatFromResponse(ref: ref, response: response);
+      applyMusicFromResponse(ref: ref, response: response);
       await applyLocalFinishFromResponse(
         ref: ref,
         roomId: widget.roomId,
@@ -226,7 +278,9 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
 
     final roll = _diceService.roll(count: 1, sides: sides);
     try {
-      await ref.read(gameEventRepositoryProvider).createAction(
+      await ref
+          .read(gameEventRepositoryProvider)
+          .createAction(
             roomId: widget.roomId,
             playerId: player.id,
             content: '${player.figurineName} lance ${roll.label}',
@@ -243,4 +297,3 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
     }
   }
 }
-

@@ -59,82 +59,89 @@ class HomeScreen extends ConsumerWidget {
                             ),
                             semanticLabel: l10n.emblemSemantic,
                           ),
-                        const SizedBox(height: 24),
-                        Text(
-                          l10n.appTitle,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.appTagline,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 32),
-                        if (authState.isLoading)
-                          const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.gold,
-                            ),
-                          )
-                        else if (user != null) ...[
+                          const SizedBox(height: 24),
                           Text(
-                            _signedInWelcome(
-                              l10n,
-                              profileState.value?.displayName,
-                            ),
+                            l10n.appTitle,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: configured
-                                ? () => canPlay
-                                    ? context.pushNamed('play-hub')
-                                    : routeAfterSession(context, ref)
-                                : null,
-                            child: Text(l10n.continuePlay),
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           const SizedBox(height: 8),
-                          OutlinedButton(
-                            onPressed: () async {
-                              await ref
-                                  .read(authControllerProvider.notifier)
-                                  .signOut();
-                              ref.invalidate(currentProfileProvider);
-                            },
-                            child: Text(l10n.signOut),
+                          Text(
+                            l10n.appTagline,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                        ] else ...[
-                          _AuthStatus(authState: authState),
-                          const SizedBox(height: 16),
-                          OutlinedButton(
-                            onPressed: configured
-                                ? () => _playAsGuest(context, ref)
-                                : null,
-                            child: Text(l10n.playAsGuest),
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            onPressed: configured
-                                ? () => context.pushNamed(
+                          const SizedBox(height: 32),
+                          if (authState.isLoading)
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.gold,
+                              ),
+                            )
+                          else if (user != null) ...[
+                            Text(
+                              _signedInWelcome(
+                                l10n,
+                                profileState.value?.displayName,
+                              ),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton(
+                              onPressed: configured
+                                  ? () => canPlay
+                                        ? context.pushNamed('play-hub')
+                                        : routeAfterSession(context, ref)
+                                  : null,
+                              child: Text(l10n.continuePlay),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: configured
+                                  ? () => context.pushNamed('profile')
+                                  : null,
+                              child: Text(l10n.myProfile),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: () async {
+                                await ref
+                                    .read(authControllerProvider.notifier)
+                                    .signOut();
+                                ref.invalidate(currentProfileProvider);
+                              },
+                              child: Text(l10n.signOut),
+                            ),
+                          ] else ...[
+                            _AuthStatus(authState: authState),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: configured
+                                  ? () => _playAsGuest(context, ref)
+                                  : null,
+                              child: Text(l10n.playAsGuest),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: configured
+                                  ? () => context.pushNamed(
                                       'auth',
                                       queryParameters: {'mode': 'login'},
                                     )
-                                : null,
-                            child: Text(l10n.logIn),
-                          ),
-                          const SizedBox(height: 8),
-                          FilledButton.tonal(
-                            onPressed: configured
-                                ? () => context.pushNamed('auth')
-                                : null,
-                            child: Text(l10n.signUp),
-                          ),
+                                  : null,
+                              child: Text(l10n.logIn),
+                            ),
+                            const SizedBox(height: 8),
+                            FilledButton.tonal(
+                              onPressed: configured
+                                  ? () => context.pushNamed('auth')
+                                  : null,
+                              child: Text(l10n.signUp),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
                     ),
                   ),
                 ),

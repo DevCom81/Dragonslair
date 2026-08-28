@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../game/presentation/action_panel.dart';
+import '../../game/presentation/gm_choice_bar.dart';
 import '../../game/presentation/pending_ability_roll.dart';
 import '../../game/presentation/pending_roll_providers.dart';
 import '../../game_master/presentation/game_master_controller.dart';
@@ -14,10 +16,12 @@ import 'game_event_providers.dart';
 class GameJournal extends ConsumerStatefulWidget {
   const GameJournal({
     required this.roomId,
+    this.closeOnChoice = false,
     super.key,
   });
 
   final String roomId;
+  final bool closeOnChoice;
 
   @override
   ConsumerState<GameJournal> createState() => _GameJournalState();
@@ -80,9 +84,9 @@ class _GameJournalState extends ConsumerState<GameJournal> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Text(
             l10n.journalTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.gold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppColors.gold),
           ),
         ),
         Expanded(
@@ -103,7 +107,8 @@ class _GameJournalState extends ConsumerState<GameJournal> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 itemCount: events.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (context, index) => _EventTile(event: events[index]),
+                itemBuilder: (context, index) =>
+                    _EventTile(event: events[index]),
               );
             },
             error: (error, stackTrace) => Center(child: Text(error.toString())),
@@ -125,22 +130,19 @@ class _GameJournalState extends ConsumerState<GameJournal> {
         if (choices.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.gmChoices,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.gold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                for (final choice in choices)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text('• ${choice.label}'),
-                  ),
-              ],
+            child: GmChoiceBar(
+              choices: choices,
+              enabled:
+                  currentPlayer != null &&
+                  (pending == null || pending.playerId != currentPlayer.id),
+              onSelected: (choice) {
+                ref
+                    .read(pendingPlayerChoiceProvider.notifier)
+                    .setChoice(choice.playerCommand);
+                if (widget.closeOnChoice) {
+                  Navigator.of(context).maybePop();
+                }
+              },
             ),
           ),
       ],

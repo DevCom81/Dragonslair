@@ -36,4 +36,21 @@ void main() {
     expect(session.canResume, isTrue);
     expect(session.isConsumed, isFalse);
   });
+
+  test('paused demo clock ignores wall time after freeze', () {
+    final started = DateTime.utc(2026, 8, 27, 10);
+    final session = DemoSession(
+      userId: 'u1',
+      roomId: 'r1',
+      startedAt: started,
+      expiresAt: started.add(const Duration(minutes: 10)),
+      pausedAt: started.add(const Duration(minutes: 4)),
+    );
+    expect(
+      session.remainingPlayTime(DateTime.utc(2026, 8, 27, 12)),
+      const Duration(minutes: 6),
+    );
+    expect(session.isExpired, isFalse);
+    expect(session.canResume, isTrue);
+  });
 }

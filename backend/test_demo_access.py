@@ -172,6 +172,32 @@ class DemoAccessTest(unittest.TestCase):
         )
         self.assertEqual(status, "expired")
 
+    def test_paused_clock_does_not_consume_wall_time(self) -> None:
+        start = datetime(2026, 8, 27, 10, 0, tzinfo=timezone.utc)
+        paused = start + timedelta(minutes=3)
+        now = start + timedelta(minutes=30)
+        _, _, status = next_demo_clock(
+            now=now,
+            started_at=start,
+            expires_at=start + timedelta(minutes=10),
+            completed_at=None,
+            paused_at=paused,
+        )
+        self.assertEqual(status, "ok")
+        status = evaluate_demo_play(
+            access_level="demo",
+            room_status="paused",
+            room_scenario_id="demo",
+            room_host_id="user",
+            user_id="user",
+            started_at=start,
+            expires_at=start + timedelta(minutes=10),
+            completed_at=None,
+            now=now,
+            paused_at=paused,
+        )
+        self.assertEqual(status, "ok")
+
 
 if __name__ == "__main__":
     unittest.main()

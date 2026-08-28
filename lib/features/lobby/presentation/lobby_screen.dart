@@ -8,6 +8,7 @@ import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../music/presentation/music_controller.dart';
 import '../../figurines/domain/figurine_definition.dart';
 import '../../figurines/presentation/figurine_sprite.dart';
 import '../../players/domain/player.dart';
@@ -17,10 +18,7 @@ import '../../rooms/presentation/room_providers.dart';
 import '../../scenarios/domain/room_start_rules.dart';
 
 class LobbyScreen extends ConsumerWidget {
-  const LobbyScreen({
-    required this.roomId,
-    super.key,
-  });
+  const LobbyScreen({required this.roomId, super.key});
 
   final String roomId;
 
@@ -73,7 +71,8 @@ class LobbyScreen extends ConsumerWidget {
                   takenClassIds: players.map((player) => player.classId),
                 );
                 final isPaused = room.status == RoomStatus.paused;
-                final canStart = isHost &&
+                final canStart =
+                    isHost &&
                     startIssues.isEmpty &&
                     room.status == RoomStatus.waiting;
                 final canResume = isHost && isPaused;
@@ -86,7 +85,8 @@ class LobbyScreen extends ConsumerWidget {
                 final info = _LobbyInfo(
                   name: room.name,
                   joinCode: room.joinCode,
-                  scenarioLine: room.scenarioId != null ||
+                  scenarioLine:
+                      room.scenarioId != null ||
                           (room.scenario != null && room.scenario!.isNotEmpty)
                       ? l10n.scenarioMinPlayersLine(
                           scenarioLabel,
@@ -141,7 +141,8 @@ class LobbyScreen extends ConsumerWidget {
                   ),
                 );
               },
-              error: (error, stackTrace) => Center(child: Text(error.toString())),
+              error: (error, stackTrace) =>
+                  Center(child: Text(error.toString())),
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.gold),
               ),
@@ -158,6 +159,7 @@ class LobbyScreen extends ConsumerWidget {
 
   Future<void> _startRoom(BuildContext context, WidgetRef ref) async {
     try {
+      await ref.read(musicControllerProvider.notifier).unlock();
       await ref.read(roomRepositoryProvider).startRoom(roomId);
     } catch (error) {
       if (context.mounted) {
@@ -173,6 +175,7 @@ class LobbyScreen extends ConsumerWidget {
 
   Future<void> _resumeRoom(BuildContext context, WidgetRef ref) async {
     try {
+      await ref.read(musicControllerProvider.notifier).unlock();
       await ref.read(roomRepositoryProvider).resumeRoom(roomId);
     } catch (error) {
       if (context.mounted) {
@@ -320,12 +323,7 @@ class _CompactLobby extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
-            children: [
-              info,
-              const SizedBox(height: 16),
-              players,
-              footer,
-            ],
+            children: [info, const SizedBox(height: 16), players, footer],
           ),
         ),
         startButton,
@@ -352,10 +350,7 @@ class _MediumLobby extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          flex: 3,
-          child: ListView(children: [players]),
-        ),
+        Expanded(flex: 3, child: ListView(children: [players])),
         const SizedBox(width: 24),
         Expanded(
           flex: 2,
@@ -394,28 +389,16 @@ class _ExpandedLobby extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: ListView(
-            children: [
-              info,
-              const SizedBox(height: 16),
-              footer,
-            ],
-          ),
+          child: ListView(children: [info, const SizedBox(height: 16), footer]),
         ),
         const SizedBox(width: 24),
-        Expanded(
-          flex: 2,
-          child: ListView(children: [players]),
-        ),
+        Expanded(flex: 2, child: ListView(children: [players])),
         const SizedBox(width: 24),
         SizedBox(
           width: 280,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
-              startButton,
-            ],
+            children: [const Spacer(), startButton],
           ),
         ),
       ],

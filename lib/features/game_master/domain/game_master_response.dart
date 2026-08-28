@@ -1,3 +1,5 @@
+import '../../music/domain/music_mood.dart';
+
 enum GameMasterActionType {
   narrate('narrate'),
   spawnEnemy('spawn_enemy'),
@@ -15,7 +17,8 @@ enum GameMasterActionType {
   requestRoll('request_roll'),
   applyEffect('apply_effect'),
   removeEffect('remove_effect'),
-  finishGame('finish_game');
+  finishGame('finish_game'),
+  setMusicMood('set_music_mood');
 
   const GameMasterActionType(this.value);
 
@@ -30,39 +33,42 @@ enum GameMasterActionType {
 }
 
 class GameMasterAction {
-  const GameMasterAction({
-    required this.type,
-    required this.payload,
-  });
+  const GameMasterAction({required this.type, required this.payload});
 
   final GameMasterActionType type;
   final Map<String, dynamic> payload;
 
   factory GameMasterAction.fromJson(Map<String, dynamic> json) {
+    final payload = Map<String, dynamic>.from(
+      json['payload'] as Map<dynamic, dynamic>? ?? const {},
+    );
+    if (json['mood'] != null && payload['mood'] == null) {
+      payload['mood'] = json['mood'];
+    }
     return GameMasterAction(
       type: GameMasterActionType.fromJson(json['type']),
-      payload: Map<String, dynamic>.from(
-        json['payload'] as Map<dynamic, dynamic>? ?? const {},
-      ),
+      payload: payload,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.value,
-      'payload': payload,
-    };
+    return {'type': type.value, 'payload': payload};
   }
 }
 
 class GameMasterChoice {
-  const GameMasterChoice({
-    required this.label,
-    this.action,
-  });
+  const GameMasterChoice({required this.label, this.action});
 
   final String label;
   final String? action;
+
+  String get playerCommand {
+    final fromAction = action?.trim() ?? '';
+    if (fromAction.isNotEmpty) {
+      return fromAction;
+    }
+    return label.trim();
+  }
 
   factory GameMasterChoice.fromJson(Map<String, dynamic> json) {
     return GameMasterChoice(
@@ -72,10 +78,7 @@ class GameMasterChoice {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'label': label,
-      'action': action,
-    };
+    return {'label': label, 'action': action};
   }
 }
 
@@ -94,14 +97,19 @@ class GameMasterResponse {
     return GameMasterResponse(
       narration: json['narration'] as String,
       actions: (json['actions'] as List<dynamic>? ?? const [])
-          .map((action) => GameMasterAction.fromJson(
-                Map<String, dynamic>.from(action as Map<dynamic, dynamic>),
-              ))
+          .map(
+            (action) => GameMasterAction.fromJson(
+              Map<String, dynamic>.from(action as Map<dynamic, dynamic>),
+            ),
+          )
+          .where(_keepMusicAction)
           .toList(),
       choices: (json['choices'] as List<dynamic>? ?? const [])
-          .map((choice) => GameMasterChoice.fromJson(
-                Map<String, dynamic>.from(choice as Map<dynamic, dynamic>),
-              ))
+          .map(
+            (choice) => GameMasterChoice.fromJson(
+              Map<String, dynamic>.from(choice as Map<dynamic, dynamic>),
+            ),
+          )
           .toList(),
     );
   }
@@ -113,4 +121,11 @@ class GameMasterResponse {
       'choices': choices.map((choice) => choice.toJson()).toList(),
     };
   }
+}
+
+bool _keepMusicAction(GameMasterAction action) {
+  if (action.type != GameMasterActionType.setMusicMood) {
+    return true;
+  }
+  return MusicMood.tryParse(action.payload['mood']) != null;
 }

@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from gm_locale import normalize_locale
 
@@ -23,7 +23,17 @@ GameMasterActionType = Literal[
     "apply_effect",
     "remove_effect",
     "finish_game",
+    "set_music_mood",
 ]
+
+
+VALID_MUSIC_MOODS = {
+    "tavern",
+    "exploration",
+    "mystery",
+    "tension",
+    "combat",
+}
 
 
 class BoardPosition(BaseModel):
@@ -152,6 +162,20 @@ class GameMasterAction(BaseModel):
     type: GameMasterActionType
     payload: dict[str, Any] = Field(default_factory=dict)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _fold_mood(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        data = dict(value)
+        payload = data.get("payload")
+        payload_dict = dict(payload) if isinstance(payload, dict) else {}
+        mood = data.get("mood", payload_dict.get("mood"))
+        if mood is not None:
+            payload_dict["mood"] = mood
+        data["payload"] = payload_dict
+        return data
+
 
 class GameMasterChoice(BaseModel):
     label: str = Field(min_length=1, max_length=160)
@@ -162,6 +186,22 @@ class GameMasterResponse(BaseModel):
     narration: str = Field(min_length=1, max_length=4000)
     actions: list[GameMasterAction] = Field(default_factory=list, max_length=12)
     choices: list[GameMasterChoice] = Field(default_factory=list, max_length=6)
+
+    @field_validator("actions")
+    @classmethod
+    def _drop_invalid_music(
+        cls,
+        actions: list[GameMasterAction],
+    ) -> list[GameMasterAction]:
+        kept: list[GameMasterAction] = []
+        for action in actions:
+            if action.type != "set_music_mood":
+                kept.append(action)
+                continue
+            mood = str(action.payload.get("mood") or "").strip().lower()
+            if mood in VALID_MUSIC_MOODS:
+                kept.append(action)
+        return kept
 
 
 SCENARIO_ORIENTATIONS = {

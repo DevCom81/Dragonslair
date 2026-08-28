@@ -10,6 +10,8 @@
   "signOut": "Sign out",
   "language": "Language",
   "preferences": "Preferences",
+  "musicToggle": "Music",
+  "musicVolume": "Music volume",
   "supabaseMissing": "Supabase configuration is missing. The app runs in local mode.",
   "sessionClosed": "No session.",
   "sessionConnected": "Signed in.",
@@ -39,6 +41,11 @@
   "displayNameHint": "Choose a name other players will see in your party.",
   "displayNameLabel": "Display name",
   "minTwoChars": "At least 2 characters.",
+  "profileTitle": "Profile",
+  "profileHint": "Your display name is shown in play. The figurine is your token on the board.",
+  "chooseAvatar": "Your figurine",
+  "profileSaved": "Profile saved.",
+  "myProfile": "Profile",
   "save": "Save",
   "sheetTitle": "Character sheet",
   "sheetIntro": "Pick a class, then roll 1d20 per ability. Rolls from 1 to 7 become 8, 19 or 20 become 18. The class adds +2 (max 18) to its primary ability.",
@@ -306,6 +313,19 @@
   "hudSheet": "Sheet",
   "hudInventory": "Inventory",
   "hudJournal": "Book",
+  "demoTimer": "Demo {time}",
+  "@demoTimer": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoTimerPaused": "Demo paused {time}",
+  "@demoTimerPaused": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoKeepOnUnlock": "Unlocking keeps this adventure.",
   "inGameSheetTitle": "Character sheet",
   "inGameInventoryTitle": "Inventory",
   "emptyInventory": "No items yet.",

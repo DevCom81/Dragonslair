@@ -39,6 +39,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get preferences => 'Preferences';
 
   @override
+  String get musicToggle => 'Musique';
+
+  @override
+  String get musicVolume => 'Volume de la musique';
+
+  @override
   String get supabaseMissing =>
       'Configuration Supabase absente. L app compile en mode local.';
 
@@ -115,6 +121,22 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get minTwoChars => 'Au moins 2 caracteres.';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String get profileHint =>
+      'Ton pseudo est visible en jeu. La figurine est ton pion sur le plateau.';
+
+  @override
+  String get chooseAvatar => 'Ta figurine';
+
+  @override
+  String get profileSaved => 'Profil enregistre.';
+
+  @override
+  String get myProfile => 'Profil';
 
   @override
   String get save => 'Enregistrer';
@@ -697,6 +719,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get hudJournal => 'Livre';
+
+  @override
+  String demoTimer(String time) {
+    return 'Demo $time';
+  }
+
+  @override
+  String demoTimerPaused(String time) {
+    return 'Demo en pause $time';
+  }
+
+  @override
+  String get demoKeepOnUnlock => 'Debloquer conserve cette partie.';
 
   @override
   String get inGameSheetTitle => 'Fiche de personnage';

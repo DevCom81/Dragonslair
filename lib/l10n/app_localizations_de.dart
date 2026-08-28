@@ -39,6 +39,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get preferences => 'Einstellungen';
 
   @override
+  String get musicToggle => 'Musik';
+
+  @override
+  String get musicVolume => 'Musiklautstaerke';
+
+  @override
   String get supabaseMissing =>
       'Supabase-Konfiguration fehlt. Die App laeuft im lokalen Modus.';
 
@@ -115,6 +121,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get minTwoChars => 'Mindestens 2 Zeichen.';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String get profileHint =>
+      'Dein Name ist im Spiel sichtbar. Die Figur ist dein Spielstein auf dem Brett.';
+
+  @override
+  String get chooseAvatar => 'Deine Figur';
+
+  @override
+  String get profileSaved => 'Profil gespeichert.';
+
+  @override
+  String get myProfile => 'Profil';
 
   @override
   String get save => 'Speichern';
@@ -700,6 +722,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hudJournal => 'Buch';
+
+  @override
+  String demoTimer(String time) {
+    return 'Demo $time';
+  }
+
+  @override
+  String demoTimerPaused(String time) {
+    return 'Demo pausiert $time';
+  }
+
+  @override
+  String get demoKeepOnUnlock => 'Freischalten behalt dieses Abenteuer.';
 
   @override
   String get inGameSheetTitle => 'Charakterbogen';

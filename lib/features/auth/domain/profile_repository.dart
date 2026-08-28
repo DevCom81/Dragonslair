@@ -18,6 +18,10 @@ abstract interface class ProfileRepository {
     required CharacterStats stats,
     required String classId,
   });
+  Future<PlayerProfile> upsertAvatar({
+    required String userId,
+    required int? figurineId,
+  });
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
@@ -63,24 +67,20 @@ class SupabaseProfileRepository implements ProfileRepository {
   }) async {
     final trimmed = displayName.trim();
     if (trimmed.length < 2 || trimmed.length > 32) {
-      throw const GameException('Le pseudo doit contenir entre 2 et 32 caracteres.');
+      throw const GameException(
+        'Le pseudo doit contenir entre 2 et 32 caracteres.',
+      );
     }
 
     try {
       final row = await _requiredClient
           .from('profiles')
-          .upsert({
-            'id': userId,
-            'display_name': trimmed,
-          })
+          .upsert({'id': userId, 'display_name': trimmed})
           .select()
           .single();
 
       return PlayerProfile.fromJson(row);
     } on PostgrestException catch (error) {
-      if (error.code == '23505') {
-        throw const GameException('Ce pseudo est deja pris.');
-      }
       throw GameException(error.message, cause: error);
     }
   }
@@ -107,9 +107,29 @@ class SupabaseProfileRepository implements ProfileRepository {
 
       return PlayerProfile.fromJson(row);
     } on PostgrestException catch (error) {
-      if (error.code == '23505') {
-        throw const GameException('Ce pseudo est deja pris.');
-      }
+      throw GameException(error.message, cause: error);
+    }
+  }
+
+  @override
+  Future<PlayerProfile> upsertAvatar({
+    required String userId,
+    required int? figurineId,
+  }) async {
+    if (figurineId != null && (figurineId < 0 || figurineId > 39)) {
+      throw const GameException('Figurine invalide.');
+    }
+
+    try {
+      final row = await _requiredClient
+          .from('profiles')
+          .update({'avatar_figurine_id': figurineId})
+          .eq('id', userId)
+          .select()
+          .single();
+
+      return PlayerProfile.fromJson(row);
+    } on PostgrestException catch (error) {
       throw GameException(error.message, cause: error);
     }
   }

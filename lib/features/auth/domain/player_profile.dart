@@ -8,6 +8,7 @@ class PlayerProfile {
     required this.stats,
     required this.sheetConfirmed,
     this.classId,
+    this.avatarFigurineId,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class PlayerProfile {
   final CharacterStats stats;
   final bool sheetConfirmed;
   final String? classId;
+  final int? avatarFigurineId;
 
   bool get isReadyToPlay => sheetConfirmed && classId != null;
 
@@ -27,6 +29,7 @@ class PlayerProfile {
       stats: CharacterStats.fromJson(json),
       sheetConfirmed: json['sheet_confirmed'] as bool? ?? false,
       classId: json['class_id'] as String?,
+      avatarFigurineId: _avatarId(json['avatar_figurine_id']),
     );
   }
 
@@ -37,7 +40,19 @@ class PlayerProfile {
       'created_at': createdAt.toIso8601String(),
       'sheet_confirmed': sheetConfirmed,
       'class_id': classId,
+      'avatar_figurine_id': avatarFigurineId,
       ...stats.toJson(),
     };
+  }
+
+  static int? _avatarId(Object? value) {
+    if (value is! num) {
+      return null;
+    }
+    final id = value.toInt();
+    if (id < 0 || id > 39) {
+      return null;
+    }
+    return id;
   }
 }

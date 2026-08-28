@@ -10,6 +10,8 @@
   "signOut": "Abmelden",
   "language": "Sprache",
   "preferences": "Einstellungen",
+  "musicToggle": "Musik",
+  "musicVolume": "Musiklautstaerke",
   "supabaseMissing": "Supabase-Konfiguration fehlt. Die App laeuft im lokalen Modus.",
   "sessionClosed": "Keine Sitzung.",
   "sessionConnected": "Angemeldet.",
@@ -39,6 +41,11 @@
   "displayNameHint": "Waehle einen Namen, den die anderen in deiner Gruppe sehen.",
   "displayNameLabel": "Name",
   "minTwoChars": "Mindestens 2 Zeichen.",
+  "profileTitle": "Profil",
+  "profileHint": "Dein Name ist im Spiel sichtbar. Die Figur ist dein Spielstein auf dem Brett.",
+  "chooseAvatar": "Deine Figur",
+  "profileSaved": "Profil gespeichert.",
+  "myProfile": "Profil",
   "save": "Speichern",
   "sheetTitle": "Charakterbogen",
   "sheetIntro": "Waehle eine Klasse und wuerfle 1W20 pro Eigenschaft. 1 bis 7 werden zu 8, 19 oder 20 zu 18. Die Klasse gibt +2 (max. 18) auf ihre Haupteigenschaft.",
@@ -306,6 +313,19 @@
   "hudSheet": "Bogen",
   "hudInventory": "Inventar",
   "hudJournal": "Buch",
+  "demoTimer": "Demo {time}",
+  "@demoTimer": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoTimerPaused": "Demo pausiert {time}",
+  "@demoTimerPaused": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "demoKeepOnUnlock": "Freischalten behalt dieses Abenteuer.",
   "inGameSheetTitle": "Charakterbogen",
   "inGameInventoryTitle": "Inventar",
   "emptyInventory": "Noch keine Gegenstaende.",

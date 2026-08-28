@@ -62,26 +62,46 @@ class DemoSession {
     this.startedAt,
     this.expiresAt,
     this.completedAt,
+    this.pausedAt,
   });
+
+  static const Duration playBudget = Duration(minutes: 10);
 
   final String userId;
   final String? roomId;
   final DateTime? startedAt;
   final DateTime? expiresAt;
   final DateTime? completedAt;
+  final DateTime? pausedAt;
 
   bool get isConsumed => completedAt != null || isExpired;
 
+  bool get isPaused => pausedAt != null;
+
   bool get isExpired {
-    final end = expiresAt;
-    if (end == null) {
+    if (startedAt == null || expiresAt == null) {
       return false;
     }
-    return !DateTime.now().toUtc().isBefore(end.toUtc());
+    return remainingPlayTime() == Duration.zero;
   }
 
   bool get canResume =>
       roomId != null && roomId!.isNotEmpty && completedAt == null && !isExpired;
+
+  Duration remainingPlayTime([DateTime? now]) {
+    if (completedAt != null) {
+      return Duration.zero;
+    }
+    if (startedAt == null || expiresAt == null) {
+      return playBudget;
+    }
+    final clock = (pausedAt ?? now ?? DateTime.now()).toUtc();
+    final left = expiresAt!.toUtc().difference(clock);
+    if (left.isNegative) {
+      return Duration.zero;
+    }
+    return left;
+  }
 
   factory DemoSession.fromJson(Map<String, dynamic> json) {
     return DemoSession(
@@ -90,6 +110,7 @@ class DemoSession {
       startedAt: _dateTime(json['started_at']),
       expiresAt: _dateTime(json['expires_at']),
       completedAt: _dateTime(json['completed_at']),
+      pausedAt: _dateTime(json['paused_at']),
     );
   }
 

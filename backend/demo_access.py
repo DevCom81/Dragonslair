@@ -29,6 +29,7 @@ def next_demo_clock(
     started_at: datetime | None,
     expires_at: datetime | None,
     completed_at: datetime | None,
+    paused_at: datetime | None = None,
 ) -> tuple[datetime, datetime, DemoPlayStatus]:
     if completed_at is not None:
         start = started_at or now
@@ -38,7 +39,8 @@ def next_demo_clock(
         start = now
         return start, start + DEMO_DURATION, "ok"
     end = expires_at or (started_at + DEMO_DURATION)
-    if now < end:
+    effective_now = paused_at if paused_at is not None else now
+    if effective_now < end:
         return started_at, end, "ok"
     return started_at, end, "expired"
 
@@ -54,6 +56,7 @@ def evaluate_demo_play(
     expires_at: datetime | None,
     completed_at: datetime | None,
     now: datetime | None = None,
+    paused_at: datetime | None = None,
 ) -> DemoPlayStatus:
     current = now or datetime.now(timezone.utc)
     status = str(room_status or "").strip().lower()
@@ -70,6 +73,7 @@ def evaluate_demo_play(
         started_at=started_at,
         expires_at=expires_at,
         completed_at=completed_at,
+        paused_at=paused_at,
     )
     return clock
 

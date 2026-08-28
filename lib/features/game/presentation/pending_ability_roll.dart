@@ -14,6 +14,7 @@ import '../../events/presentation/game_event_providers.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/domain/game_master_response.dart';
 import '../../game_master/presentation/game_master_controller.dart';
+import '../../music/presentation/apply_music_from_response.dart';
 import '../../players/domain/player.dart';
 import '../../rooms/domain/room_locale.dart';
 import '../../rooms/presentation/room_finish.dart';
@@ -56,11 +57,13 @@ class PendingAbilityRoll {
   bool get isOpen => status == PendingRollStatus.pending;
 
   static PendingAbilityRoll? tryParse(Map<String, dynamic> payload) {
-    final playerId = payload['player_id'] as String? ??
+    final playerId =
+        payload['player_id'] as String? ??
         payload['target_id'] as String? ??
         payload['target'] as String?;
     final ability = payload['ability'] as String? ?? payload['stat'] as String?;
-    final dc = (payload['dc'] as num?)?.toInt() ??
+    final dc =
+        (payload['dc'] as num?)?.toInt() ??
         (payload['difficulty'] as num?)?.toInt();
     if (playerId == null ||
         ability == null ||
@@ -121,8 +124,8 @@ class PendingAbilityRollNotifier extends Notifier<PendingAbilityRoll?> {
 
 final pendingAbilityRollProvider =
     NotifierProvider<PendingAbilityRollNotifier, PendingAbilityRoll?>(
-  PendingAbilityRollNotifier.new,
-);
+      PendingAbilityRollNotifier.new,
+    );
 
 PendingAbilityRoll? pendingRollFromResponse(GameMasterResponse response) {
   for (final action in response.actions) {
@@ -157,10 +160,7 @@ GameMasterPlayerContext toGameMasterPlayerContext(Player player) {
     name: player.figurineName,
     hp: player.hp,
     figurineId: player.figurineId,
-    position: GameMasterPosition(
-      x: player.positionX,
-      y: player.positionY,
-    ),
+    position: GameMasterPosition(x: player.positionX, y: player.positionY),
     inventory: player.inventory.map((item) => item.toJson()).toList(),
     strength: player.stats.strength,
     dexterity: player.stats.dexterity,
@@ -180,10 +180,7 @@ GameMasterEnemyContext toGameMasterEnemyContext(Enemy enemy) {
     hp: enemy.hp,
     maxHp: enemy.maxHp,
     status: enemy.status.toJson(),
-    position: GameMasterPosition(
-      x: enemy.positionX,
-      y: enemy.positionY,
-    ),
+    position: GameMasterPosition(x: enemy.positionX, y: enemy.positionY),
   );
 }
 
@@ -214,7 +211,9 @@ Future<void> resolvePendingAbilityRoll({
   final pendingId = pending.id;
 
   if (pendingId != null && AppConfig.isGameMasterRemote) {
-    await ref.read(gameMasterControllerProvider.notifier).resolveRoll(
+    await ref
+        .read(gameMasterControllerProvider.notifier)
+        .resolveRoll(
           ResolveRollInput(
             pendingRollId: pendingId,
             raw: roll,
@@ -244,7 +243,9 @@ Future<void> resolvePendingAbilityRoll({
   );
 
   try {
-    final response = await ref.read(gameMasterControllerProvider.notifier).submit(
+    final response = await ref
+        .read(gameMasterControllerProvider.notifier)
+        .submit(
           GameMasterInput(
             roomId: roomId,
             playerId: player.id,
@@ -257,10 +258,11 @@ Future<void> resolvePendingAbilityRoll({
             locale: localeForRoom(ref, roomId),
           ),
         );
-    ref.read(pendingAbilityRollProvider.notifier).setRoll(
-          pendingRollFromResponse(response),
-        );
+    ref
+        .read(pendingAbilityRollProvider.notifier)
+        .setRoll(pendingRollFromResponse(response));
     applyLocalCombatFromResponse(ref: ref, response: response);
+    applyMusicFromResponse(ref: ref, response: response);
     await applyLocalFinishFromResponse(
       ref: ref,
       roomId: roomId,
@@ -307,7 +309,8 @@ class _PendingAbilityRollBarState extends ConsumerState<PendingAbilityRollBar> {
     final gmBusy = ref.watch(gameMasterControllerProvider).isLoading;
 
     if (!isMine) {
-      final name = widget.players
+      final name =
+          widget.players
               .where((candidate) => candidate.id == pending.playerId)
               .map((candidate) => candidate.figurineName)
               .firstOrNull ??
@@ -316,9 +319,9 @@ class _PendingAbilityRollBarState extends ConsumerState<PendingAbilityRollBar> {
         padding: const EdgeInsets.only(bottom: 8),
         child: Text(
           l10n.pendingRollWaiting(name),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         ),
       );
     }
@@ -331,18 +334,18 @@ class _PendingAbilityRollBarState extends ConsumerState<PendingAbilityRollBar> {
         children: [
           Text(
             l10n.pendingRollBody(ability, pending.dc),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.gold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.gold),
           ),
           if (pending.reason.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 pending.reason,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ),
           const SizedBox(height: 8),

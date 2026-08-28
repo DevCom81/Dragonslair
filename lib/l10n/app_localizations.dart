@@ -162,6 +162,18 @@ abstract class AppLocalizations {
   /// **'Preferences'**
   String get preferences;
 
+  /// No description provided for @musicToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get musicToggle;
+
+  /// No description provided for @musicVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Music volume'**
+  String get musicVolume;
+
   /// No description provided for @supabaseMissing.
   ///
   /// In en, this message translates to:
@@ -305,6 +317,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'At least 2 characters.'**
   String get minTwoChars;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @profileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your display name is shown in play. The figurine is your token on the board.'**
+  String get profileHint;
+
+  /// No description provided for @chooseAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Your figurine'**
+  String get chooseAvatar;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved.'**
+  String get profileSaved;
+
+  /// No description provided for @myProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get myProfile;
 
   /// No description provided for @save.
   ///
@@ -1372,6 +1414,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Book'**
   String get hudJournal;
+
+  /// No description provided for @demoTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo {time}'**
+  String demoTimer(String time);
+
+  /// No description provided for @demoTimerPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo paused {time}'**
+  String demoTimerPaused(String time);
+
+  /// No description provided for @demoKeepOnUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocking keeps this adventure.'**
+  String get demoKeepOnUnlock;
 
   /// No description provided for @inGameSheetTitle.
   ///

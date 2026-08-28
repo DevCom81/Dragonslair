@@ -41,6 +41,27 @@ void main() {
     expect(response.toJson().containsKey('gm_secrets'), isFalse);
   });
 
+  test('playerCommand prefers action then label', () {
+    expect(
+      const GameMasterChoice(label: 'Ouvrir la porte').playerCommand,
+      'Ouvrir la porte',
+    );
+    expect(
+      const GameMasterChoice(
+        label: 'Fouiller',
+        action: 'Je fouille les debris',
+      ).playerCommand,
+      'Je fouille les debris',
+    );
+    expect(
+      GameMasterChoice.fromJson({
+        'label': 'Ecouter',
+        'action': '  ',
+      }).playerCommand,
+      'Ecouter',
+    );
+  });
+
   test('clamps parsed DC between 5 and 25', () {
     expect(
       PendingAbilityRoll.tryParse({

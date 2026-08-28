@@ -5,6 +5,7 @@ import '../features/access/presentation/access_offer_screen.dart';
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/character_sheet_screen.dart';
 import '../features/auth/presentation/display_name_screen.dart';
+import '../features/auth/presentation/profile_screen.dart';
 import '../features/board/presentation/board_screen.dart';
 import '../features/figurines/presentation/figurine_selection_screen.dart';
 import '../features/game_master/presentation/game_master_screen.dart';
@@ -35,6 +36,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/display-name',
         name: 'display-name',
         builder: (context, state) => const DisplayNameScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/play',

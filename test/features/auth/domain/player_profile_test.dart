@@ -14,6 +14,18 @@ void main() {
     expect(profile.stats.strength, 10);
     expect(profile.sheetConfirmed, isFalse);
     expect(profile.classId, isNull);
+    expect(profile.avatarFigurineId, isNull);
     expect(profile.isReadyToPlay, isFalse);
+  });
+
+  test('parses avatar figurine id on profile', () {
+    final profile = PlayerProfile.fromJson({
+      'id': 'user-id',
+      'display_name': 'Aldric',
+      'created_at': '2026-08-27T08:00:00Z',
+      'avatar_figurine_id': 2,
+    });
+
+    expect(profile.avatarFigurineId, 2);
   });
 }

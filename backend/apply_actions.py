@@ -41,6 +41,7 @@ from supabase_admin import (
     fetch_room_narrative_context,
     fetch_room_player,
     fetch_room_players,
+    fetch_user_entitlement,
     finish_room,
     heal_enemy,
     move_enemy,
@@ -371,11 +372,19 @@ async def _apply_combat(*, room_id: str, action: GameMasterAction) -> str | None
 async def _apply_finish(*, room_id: str, action: GameMasterAction) -> str | None:
     ending = parse_finish_game(action.payload)
     context = await fetch_room_narrative_context(room_id=room_id)
-    status = (
-        "demo_finished"
-        if str(context.get("scenario_id") or "") == "demo"
-        else "finished"
+    host_id = str(context.get("host_id") or "").strip()
+    access_level = "demo"
+    if host_id:
+        try:
+            entitlement = await fetch_user_entitlement(user_id=host_id)
+            access_level = str(entitlement.get("access_level") or "demo")
+        except Exception:
+            access_level = "demo"
+    demo_cut = (
+        str(context.get("scenario_id") or "") == "demo"
+        and access_level.strip().lower() != "full"
     )
+    status = "demo_finished" if demo_cut else "finished"
     changed = await finish_room(room_id=room_id, ending=ending, status=status)
     if not changed:
         return None
