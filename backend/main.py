@@ -17,6 +17,7 @@ from campaign_memory import (
     summary_window,
 )
 from demo_access import canned_demo_ending, ensure_finish_action, normalize_access_level
+from downloads import DownloadConfigError, create_windows_presigned_url
 from gm_locale import normalize_locale
 from purchases import (
     PurchaseConfigError,
@@ -108,6 +109,22 @@ app.add_middleware(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/v1/downloads/windows")
+async def download_windows(
+    authorization: str | None = Header(default=None),
+) -> dict[str, str]:
+    try:
+        user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        url = create_windows_presigned_url(user_id=user_id)
+        return {"download_url": url}
+    except HTTPException:
+        raise
+    except DownloadConfigError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except SupabaseAdminError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
 
 
 def _bearer_token(authorization: str | None) -> str:

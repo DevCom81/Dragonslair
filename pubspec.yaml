@@ -43,6 +43,10 @@ dependencies:
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
   just_audio: ^0.9.46
+  # Windows has no native just_audio backend; media_kit provides MP3 playback
+  # for the .exe only. Android/iOS/Web keep using just_audio / HTML audio.
+  just_audio_media_kit: ^2.1.0
+  media_kit_libs_windows_audio: any
 
 dev_dependencies:
   flutter_test:
@@ -75,3 +79,7 @@ flutter_launcher_icons:
     image_path: Assets/DragonsLair.png
     background_color: "#000000"
     theme_color: "#000000"
+  windows:
+    generate: true
+    image_path: Assets/DragonsLair.png
+    icon_size: 256

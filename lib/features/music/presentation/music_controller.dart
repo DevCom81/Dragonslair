@@ -86,11 +86,10 @@ class MusicController extends Notifier<MusicPlaybackState> {
         ? narrativeMood
         : (state.previousMood ?? MusicMood.exploration);
     final target = combatActive ? MusicMood.combat : narrative;
-    final unchanged =
-        state.currentMood == target &&
-        state.combatActive == combatActive &&
-        state.previousMood == narrative;
-    if (unchanged) {
+    if (state.currentMood == target && state.combatActive == combatActive) {
+      if (state.previousMood != narrative) {
+        state = state.copyWith(previousMood: narrative);
+      }
       if (state.isUnlocked) {
         await _service.ensurePlaying(
           assetPath: target.assetPath,
@@ -118,12 +117,30 @@ class MusicController extends Notifier<MusicPlaybackState> {
     final clamped = volume.clamp(0.0, 1.0);
     state = state.copyWith(volume: clamped);
     unawaited(_service.setOutputVolume(state.outputVolume));
+    final mood = state.currentMood;
+    if (state.isUnlocked && mood != null) {
+      unawaited(
+        _service.ensurePlaying(
+          assetPath: mood.assetPath,
+          targetVolume: state.outputVolume,
+        ),
+      );
+    }
     unawaited(_persist());
   }
 
   void toggleMute() {
     state = state.copyWith(isMuted: !state.isMuted);
     unawaited(_service.setOutputVolume(state.outputVolume));
+    final mood = state.currentMood;
+    if (state.isUnlocked && mood != null && !state.isMuted) {
+      unawaited(
+        _service.ensurePlaying(
+          assetPath: mood.assetPath,
+          targetVolume: state.outputVolume,
+        ),
+      );
+    }
     unawaited(_persist());
   }
 

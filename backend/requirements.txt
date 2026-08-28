@@ -3,3 +3,4 @@ httpx
 pydantic
 python-dotenv
 uvicorn
+boto3

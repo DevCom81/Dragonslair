@@ -98,6 +98,18 @@ void main() {
     expect(container.read(musicControllerProvider).isUnlocked, isTrue);
   });
 
+  test('same scene after unlock does not restart the track', () async {
+    final music = controller();
+    await music.unlock();
+    fake.played.clear();
+    await music.syncScene(
+      narrativeMood: MusicMood.exploration,
+      combatActive: false,
+    );
+
+    expect(fake.played, [MusicMood.exploration.assetPath]);
+  });
+
   test('unlock retries playback after a failed autoplay', () async {
     final music = controller();
     await music.unlock();

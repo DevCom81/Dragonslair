@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
-import 'web_audio_prime.dart';
+import 'web_bgm.dart';
 
 abstract class MusicService {
   void primeFromUserGesture();
@@ -31,33 +31,42 @@ class JustAudioMusicService implements MusicService {
   JustAudioMusicService({
     AudioPlayer? player,
     this.fadeDuration = const Duration(seconds: 2),
-  }) : _player = player ?? AudioPlayer();
+  }) : _injectedPlayer = player;
 
-  final AudioPlayer _player;
+  final AudioPlayer? _injectedPlayer;
+  AudioPlayer? _mobilePlayer;
   final Duration fadeDuration;
+  final _web = WebBgmPlayer();
   var _generation = 0;
   var _disposed = false;
   String? _loadedAsset;
 
+  AudioPlayer get _player =>
+      _injectedPlayer ?? (_mobilePlayer ??= AudioPlayer());
+
+  String _webUrl(String assetPath) => '${Uri.base.origin}/assets/$assetPath';
+
   @override
   void primeFromUserGesture() {
-    primeWebAudio();
-    if (_loadedAsset != null && !_disposed) {
-      unawaited(_playIgnoringErrors());
+    if (_disposed) {
+      return;
     }
-  }
-
-  Future<void> _playIgnoringErrors() async {
-    try {
-      await _player.play();
-    } on Object catch (error, stackTrace) {
-      debugPrint('Music play failed: $error\n$stackTrace');
+    if (kIsWeb) {
+      _web.prime();
     }
   }
 
   @override
-  Future<void> preload(String assetPath) {
-    return _setSource(assetPath);
+  Future<void> preload(String assetPath) async {
+    if (_disposed) {
+      return;
+    }
+    if (kIsWeb) {
+      _web.preload(_webUrl(assetPath));
+      _loadedAsset = assetPath;
+      return;
+    }
+    await _setMobileSource(assetPath);
   }
 
   @override
@@ -68,22 +77,27 @@ class JustAudioMusicService implements MusicService {
     if (_disposed) {
       return;
     }
-    final generation = ++_generation;
     final volume = targetVolume.clamp(0.0, 1.0);
+    if (kIsWeb) {
+      await _playWeb(assetPath, volume);
+      return;
+    }
+    final generation = ++_generation;
     try {
-      if (_player.playing || _loadedAsset != null) {
+      final changingTrack =
+          _loadedAsset != null && _loadedAsset != assetPath && _player.playing;
+      if (changingTrack) {
         await _rampVolume(to: 0, generation: generation);
       }
       if (_disposed || generation != _generation) {
         return;
       }
-      await _setSource(assetPath);
+      await _setMobileSource(assetPath);
       if (_disposed || generation != _generation) {
         return;
       }
-      await _player.setVolume(0);
+      await _player.setVolume(volume);
       await _player.play();
-      await _rampVolume(to: volume, generation: generation);
     } on Object catch (error, stackTrace) {
       debugPrint('Music crossfade failed: $error\n$stackTrace');
       await _restoreVolume(volume);
@@ -99,8 +113,12 @@ class JustAudioMusicService implements MusicService {
       return;
     }
     final volume = targetVolume.clamp(0.0, 1.0);
+    if (kIsWeb) {
+      await _playWeb(assetPath, volume);
+      return;
+    }
     try {
-      await _setSource(assetPath);
+      await _setMobileSource(assetPath);
       await _player.setVolume(volume);
       if (!_player.playing) {
         await _player.play();
@@ -116,8 +134,13 @@ class JustAudioMusicService implements MusicService {
     if (_disposed) {
       return;
     }
+    final clamped = volume.clamp(0.0, 1.0);
+    if (kIsWeb) {
+      _web.setVolume(clamped);
+      return;
+    }
     try {
-      await _player.setVolume(volume.clamp(0, 1));
+      await _player.setVolume(clamped);
     } on Object {
       // Ignore platform volume failures.
     }
@@ -128,6 +151,10 @@ class JustAudioMusicService implements MusicService {
     _generation++;
     _loadedAsset = null;
     if (_disposed) {
+      return;
+    }
+    if (kIsWeb) {
+      _web.stop();
       return;
     }
     try {
@@ -141,20 +168,25 @@ class JustAudioMusicService implements MusicService {
   void dispose() {
     _disposed = true;
     _generation++;
-    _player.dispose();
+    _web.stop();
+    _injectedPlayer?.dispose();
+    _mobilePlayer?.dispose();
   }
 
-  Future<void> _setSource(String assetPath) async {
+  Future<void> _playWeb(String assetPath, double volume) async {
+    try {
+      await _web.playUrl(_webUrl(assetPath), volume);
+      _loadedAsset = assetPath;
+    } on Object catch (error, stackTrace) {
+      debugPrint('Music web playback failed: $error\n$stackTrace');
+    }
+  }
+
+  Future<void> _setMobileSource(String assetPath) async {
     if (_disposed || _loadedAsset == assetPath) {
       return;
     }
-    if (kIsWeb) {
-      // setAsset inlines the whole MP3 as a data URL (~4 MB). That blocks
-      // Chrome autoplay because play() runs after the load, not on the click.
-      await _player.setUrl('assets/$assetPath');
-    } else {
-      await _player.setAsset(assetPath);
-    }
+    await _player.setAsset(assetPath);
     await _player.setLoopMode(LoopMode.one);
     _loadedAsset = assetPath;
   }
