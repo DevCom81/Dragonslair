@@ -48,11 +48,9 @@ def is_webhook_configured() -> bool:
 
 
 def already_has_full_access(entitlement: object) -> bool:
-    from demo_access import normalize_access_level
+    from entitlements import entitlement_row_is_full
 
-    if not isinstance(entitlement, dict):
-        return False
-    return normalize_access_level(entitlement.get("access_level")) == "full"
+    return entitlement_row_is_full(entitlement)
 
 
 def normalize_purchase_source(value: object) -> str:

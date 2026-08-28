@@ -1082,6 +1082,7 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
     from datetime import datetime, timezone
 
     from demo_access import evaluate_demo_play, next_demo_clock
+    from purchases import already_has_full_access
 
     entitlement = await fetch_user_entitlement(user_id=user_id)
     context = await fetch_room_narrative_context(room_id=room_id)
@@ -1091,8 +1092,9 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
     expires_at = _parse_timestamptz((session or {}).get("expires_at"))
     completed_at = _parse_timestamptz((session or {}).get("completed_at"))
     paused_at = _parse_timestamptz((session or {}).get("paused_at"))
+    access_level = "full" if already_has_full_access(entitlement) else "demo"
     status = evaluate_demo_play(
-        access_level=entitlement.get("access_level"),
+        access_level=access_level,
         room_status=context.get("status"),
         room_scenario_id=context.get("scenario_id"),
         room_host_id=context.get("host_id"),
@@ -1105,7 +1107,7 @@ async def sync_demo_play(*, user_id: str, room_id: str) -> str:
     )
     if status != "ok":
         return status
-    if str(entitlement.get("access_level") or "demo").lower() == "full":
+    if access_level == "full":
         return "ok"
     start, end, clock = next_demo_clock(
         now=now,
@@ -1132,56 +1134,172 @@ async def grant_full_entitlement(
     source: str,
     metadata: dict | None = None,
 ) -> dict:
-    from purchases import already_has_full_access, normalize_purchase_source
+    from entitlements import normalize_billing_provider
+    from purchases import normalize_purchase_source
 
-    current = await fetch_user_entitlement(user_id=user_id)
-    if already_has_full_access(current):
-        return current
     extra = metadata if isinstance(metadata, dict) else {}
-    previous = current.get("metadata")
-    merged = dict(previous) if isinstance(previous, dict) else {}
-    merged.update({key: str(value)[:240] for key, value in extra.items()})
+    purchase_source = normalize_purchase_source(source)
+    provider = normalize_billing_provider(extra.get("provider"))
+    if provider is None:
+        provider = "stripe" if purchase_source == "purchase" else "manual"
+    provider_ref = str(
+        extra.get("stripe_session_id")
+        or extra.get("provider_ref")
+        or purchase_source
+    ).strip()[:240] or purchase_source
+    await upsert_entitlement_source(
+        user_id=user_id,
+        provider=provider,
+        provider_ref=provider_ref,
+        status="active",
+        current_period_end=extra.get("current_period_end"),
+    )
+    return await refresh_user_entitlement(user_id=user_id)
+
+
+async def fetch_entitlement_sources(*, user_id: str) -> list[dict]:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{_supabase_url()}/rest/v1/entitlement_sources",
+            params={
+                "user_id": f"eq.{user_id}",
+                "select": (
+                    "user_id,provider,provider_ref,status,"
+                    "current_period_end,metadata,updated_at"
+                ),
+            },
+            headers=_admin_headers(),
+        )
+    if response.status_code >= 400:
+        raise SupabaseAdminError("Unable to load entitlement sources.")
+    rows = response.json()
+    if isinstance(rows, list):
+        return [row for row in rows if isinstance(row, dict)]
+    return []
+
+
+async def upsert_entitlement_source(
+    *,
+    user_id: str,
+    provider: str,
+    provider_ref: str,
+    status: str,
+    current_period_end: object = None,
+    metadata: dict | None = None,
+) -> dict:
+    from datetime import datetime, timezone
+
+    from entitlements import (
+        normalize_billing_provider,
+        normalize_source_status,
+        parse_timestamptz,
+    )
+
+    billing_provider = normalize_billing_provider(provider)
+    if billing_provider is None:
+        raise SupabaseAdminError("Unknown entitlement provider.")
     payload = {
         "user_id": user_id,
-        "access_level": "full",
-        "source": normalize_purchase_source(source),
-        "metadata": merged,
+        "provider": billing_provider,
+        "provider_ref": provider_ref.strip() or "legacy",
+        "status": normalize_source_status(status),
+        "current_period_end": None,
+        "metadata": metadata if isinstance(metadata, dict) else {},
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    parsed_end = parse_timestamptz(current_period_end)
+    if parsed_end is not None:
+        payload["current_period_end"] = parsed_end.isoformat()
+
     async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.patch(
-            f"{_supabase_url()}/rest/v1/user_entitlements",
-            params={"user_id": f"eq.{user_id}"},
+        patched = await client.patch(
+            f"{_supabase_url()}/rest/v1/entitlement_sources",
+            params={
+                "user_id": f"eq.{user_id}",
+                "provider": f"eq.{billing_provider}",
+                "provider_ref": f"eq.{payload['provider_ref']}",
+            },
             headers={
                 **_admin_headers(),
                 "Prefer": "return=representation",
             },
             json={
-                "access_level": payload["access_level"],
-                "source": payload["source"],
+                "status": payload["status"],
+                "current_period_end": payload["current_period_end"],
                 "metadata": payload["metadata"],
+                "updated_at": payload["updated_at"],
             },
         )
-        rows = response.json() if response.status_code < 400 else []
+        rows = patched.json() if patched.status_code < 400 else []
         if isinstance(rows, list) and rows and isinstance(rows[0], dict):
             return rows[0]
-        insert = await client.post(
-            f"{_supabase_url()}/rest/v1/user_entitlements",
+        inserted = await client.post(
+            f"{_supabase_url()}/rest/v1/entitlement_sources",
             headers={
                 **_admin_headers(),
                 "Prefer": "return=representation",
             },
             json=payload,
         )
-        if insert.status_code >= 400:
+        if inserted.status_code >= 400:
             raise SupabaseAdminError(
-                f"Unable to grant entitlement ({insert.status_code})."
+                f"Unable to record entitlement source ({inserted.status_code})."
             )
-        created = insert.json()
+        created = inserted.json()
         if isinstance(created, list) and created and isinstance(created[0], dict):
             return created[0]
         if isinstance(created, dict):
             return created
     return payload
+
+
+async def persist_computed_entitlement(*, computed: dict) -> dict:
+    user_id = str(computed.get("user_id") or "")
+    fields = {
+        "access_level": computed.get("access_level"),
+        "source": computed.get("source"),
+        "expires_at": computed.get("expires_at"),
+        "metadata": computed.get("metadata") or {},
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        patched = await client.patch(
+            f"{_supabase_url()}/rest/v1/user_entitlements",
+            params={"user_id": f"eq.{user_id}"},
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json=fields,
+        )
+        rows = patched.json() if patched.status_code < 400 else []
+        if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+            return rows[0]
+        inserted = await client.post(
+            f"{_supabase_url()}/rest/v1/user_entitlements",
+            headers={
+                **_admin_headers(),
+                "Prefer": "return=representation",
+            },
+            json={"user_id": user_id, **fields},
+        )
+        if inserted.status_code >= 400:
+            raise SupabaseAdminError(
+                f"Unable to persist entitlement ({inserted.status_code})."
+            )
+        created = inserted.json()
+        if isinstance(created, list) and created and isinstance(created[0], dict):
+            return created[0]
+        if isinstance(created, dict):
+            return created
+    return {"user_id": user_id, **fields}
+
+
+async def refresh_user_entitlement(*, user_id: str) -> dict:
+    from entitlements import compute_global_entitlement
+
+    sources = await fetch_entitlement_sources(user_id=user_id)
+    computed = compute_global_entitlement(user_id=user_id, sources=sources)
+    return await persist_computed_entitlement(computed=computed)
 
 
 

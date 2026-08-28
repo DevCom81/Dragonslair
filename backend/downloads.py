@@ -9,6 +9,7 @@ logger = logging.getLogger("dragons_lair")
 
 DOWNLOAD_EXPIRES_SECONDS = 300
 WINDOWS_DOWNLOAD_FILENAME = "Install_Dragonslair.exe"
+FULL_GAME_REQUIRED = "FULL_GAME_REQUIRED"
 
 
 class DownloadConfigError(RuntimeError):

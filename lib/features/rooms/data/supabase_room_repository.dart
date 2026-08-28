@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../access/domain/game_access.dart';
 import '../../music/domain/music_mood.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../../scenarios/domain/world_state.dart';
@@ -211,10 +212,13 @@ class SupabaseRoomRepository implements RoomRepository {
       try {
         final rows = await _requiredClient
             .from('user_entitlements')
-            .select('access_level')
+            .select('user_id,access_level,source,expires_at')
             .eq('user_id', hostId)
             .limit(1);
-        if (rows.isNotEmpty && rows.first['access_level'] == 'full') {
+        if (rows.isNotEmpty &&
+            UserEntitlement.fromJson(
+              Map<String, dynamic>.from(rows.first),
+            ).level.isFull) {
           demoCut = false;
         }
       } on PostgrestException {

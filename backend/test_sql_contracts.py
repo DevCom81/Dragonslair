@@ -37,6 +37,15 @@ class SqlContractTest(unittest.TestCase):
         self.assertIn("exploration", sql)
         self.assertNotIn("'combat'", sql)
 
+    def test_entitlement_sources_are_service_role_only(self) -> None:
+        sql = _read("supabase/migrations/20260828_entitlement_sources.sql")
+        self.assertIn("create table if not exists entitlement_sources", sql)
+        self.assertIn("revoke all on table entitlement_sources from anon, authenticated", sql)
+        self.assertNotIn("on entitlement_sources for select", sql)
+        self.assertNotIn("on entitlement_sources for insert", sql)
+        self.assertIn("expires_at is null or expires_at > now()", sql)
+        self.assertIn("from user_entitlements", sql)
+
     def test_ai_usage_is_not_readable_by_clients(self) -> None:
         sql = _read("supabase/migrations/20260827_ai_usage.sql")
         self.assertIn("revoke all on table ai_usage_events from anon, authenticated", sql)

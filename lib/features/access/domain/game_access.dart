@@ -27,9 +27,15 @@ class UserEntitlement {
   final String source;
 
   factory UserEntitlement.fromJson(Map<String, dynamic> json) {
+    final parsed = GameAccessLevel.fromJson(json['access_level']);
+    final expiresAt = DemoSession._dateTime(json['expires_at']);
+    final expired =
+        expiresAt != null && !expiresAt.toUtc().isAfter(DateTime.now().toUtc());
     return UserEntitlement(
       userId: json['user_id'] as String? ?? '',
-      level: GameAccessLevel.fromJson(json['access_level']),
+      level: parsed.isFull && !expired
+          ? GameAccessLevel.full
+          : GameAccessLevel.demo,
       source: json['source'] as String? ?? 'default',
     );
   }

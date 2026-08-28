@@ -17,11 +17,16 @@ from campaign_memory import (
     summary_window,
 )
 from demo_access import canned_demo_ending, ensure_finish_action, normalize_access_level
-from downloads import DownloadConfigError, create_windows_presigned_url
+from downloads import (
+    DownloadConfigError,
+    FULL_GAME_REQUIRED,
+    create_windows_presigned_url,
+)
 from gm_locale import normalize_locale
 from purchases import (
     PurchaseConfigError,
     PurchaseSignatureError,
+    already_has_full_access,
     create_stripe_checkout_url,
     fetch_stripe_offer,
     grant_metadata,
@@ -117,6 +122,9 @@ async def download_windows(
 ) -> dict[str, str]:
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
+        entitlement = await fetch_user_entitlement(user_id=user_id)
+        if not already_has_full_access(entitlement):
+            raise HTTPException(status_code=403, detail=FULL_GAME_REQUIRED)
         url = create_windows_presigned_url(user_id=user_id)
         return {"download_url": url}
     except HTTPException:
@@ -418,7 +426,7 @@ async def generate_scenario(
     try:
         user_id = await get_user_id_from_access_token(_bearer_token(authorization))
         entitlement = await fetch_user_entitlement(user_id=user_id)
-        if normalize_access_level(entitlement.get("access_level")) != "full":
+        if not already_has_full_access(entitlement):
             raise HTTPException(status_code=403, detail=NOT_ENTITLED)
         _enforce_ai_rate_limit(user_id)
         room = await assert_room_host(user_id=user_id, room_id=request.room_id)

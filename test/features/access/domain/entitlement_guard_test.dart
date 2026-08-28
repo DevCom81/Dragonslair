@@ -14,6 +14,16 @@ void main() {
     expect(entitlement.source, 'purchase');
   });
 
+  test('expired full cache is treated as demo', () {
+    final entitlement = UserEntitlement.fromJson({
+      'user_id': 'user-1',
+      'access_level': 'full',
+      'source': 'purchase',
+      'expires_at': '2020-01-01T00:00:00Z',
+    });
+    expect(entitlement.level.isDemo, isTrue);
+  });
+
   test('forged source cannot self-grant full', () {
     expect(
       UserEntitlement.fromJson({

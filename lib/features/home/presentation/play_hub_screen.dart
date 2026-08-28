@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +16,7 @@ import '../../access/presentation/purchase_flow.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
+import '../../downloads/presentation/windows_download_debug.dart';
 import '../../rooms/domain/room.dart';
 import '../../rooms/presentation/room_navigation.dart';
 import '../../rooms/presentation/room_providers.dart';
@@ -195,6 +197,10 @@ class _HubActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isFull = ref.watch(currentEntitlementProvider).maybeWhen(
+      data: (value) => value?.level.isFull ?? false,
+      orElse: () => false,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -223,6 +229,13 @@ class _HubActions extends ConsumerWidget {
           onPressed: () => context.pushNamed('profile'),
           child: Text(l10n.myProfile),
         ),
+        if (kIsWeb && isFull) ...[
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () => startWindowsDownload(context: context, ref: ref),
+            child: const Text('Télécharger Windows'),
+          ),
+        ],
       ],
     );
   }

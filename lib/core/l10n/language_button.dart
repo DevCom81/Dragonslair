@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/auth/presentation/profile_providers.dart';
 import '../../features/music/presentation/music_controller.dart';
 import '../../l10n/app_localizations.dart';
 import 'locale_controller.dart';
@@ -81,6 +84,34 @@ class LanguageButton extends ConsumerWidget {
                                   .setVolume(value);
                             },
                           ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                Consumer(
+                  builder: (_, ref, _) {
+                    final user = ref.watch(authControllerProvider).value;
+                    if (user == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Divider(),
+                        ListTile(
+                          leading: const Icon(Icons.logout),
+                          title: Text(l10n.signOut),
+                          onTap: () async {
+                            Navigator.of(sheetContext).pop();
+                            await ref
+                                .read(authControllerProvider.notifier)
+                                .signOut();
+                            ref.invalidate(currentProfileProvider);
+                            if (context.mounted) {
+                              context.goNamed('home');
+                            }
+                          },
                         ),
                       ],
                     );

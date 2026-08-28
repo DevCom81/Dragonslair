@@ -62,6 +62,10 @@ class AppConfig {
     return _backendUri('/v1/purchases/checkout');
   }
 
+  static Uri get windowsDownloadUri {
+    return _backendUri('/v1/downloads/windows');
+  }
+
   static Uri _backendUri(String path) {
     final baseUrl = gameMasterBackendUrl.endsWith('/')
         ? gameMasterBackendUrl.substring(0, gameMasterBackendUrl.length - 1)

@@ -32,6 +32,7 @@ from state_effects import (
     upsert_effect,
 )
 from music_mood import last_narrative_music_mood
+from purchases import already_has_full_access
 from supabase_admin import (
     create_enemy,
     create_pending_roll,
@@ -391,7 +392,9 @@ async def _apply_finish(*, room_id: str, action: GameMasterAction) -> str | None
     if host_id:
         try:
             entitlement = await fetch_user_entitlement(user_id=host_id)
-            access_level = str(entitlement.get("access_level") or "demo")
+            access_level = (
+                "full" if already_has_full_access(entitlement) else "demo"
+            )
         except Exception:
             access_level = "demo"
     demo_cut = (
