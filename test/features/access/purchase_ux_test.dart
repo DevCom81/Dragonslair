@@ -78,4 +78,40 @@ void main() {
     expect(src.contains('unlockTheGame'), isFalse);
     expect(src.split('FilledButton').length, lessThan(6));
   });
+
+  test('startUnlockCheckout reads entitlement before await and invalidates after purchase', () {
+    final src = File(
+      'lib/features/access/presentation/purchase_flow.dart',
+    ).readAsStringSync();
+    final unlockBody = src
+        .split('Future<void> startUnlockCheckout')
+        .last
+        .split('Future<void> restorePurchases')
+        .first;
+    expect(
+      unlockBody.contains('ref.read(currentEntitlementProvider).value'),
+      isTrue,
+    );
+    expect(
+      unlockBody.contains('await ref.read(currentEntitlementProvider.future)'),
+      isFalse,
+    );
+    final purchaseIdx = unlockBody.indexOf('billing.purchase');
+    final invalidateIdx = unlockBody.indexOf('_invalidateEntitlement(context)');
+    expect(purchaseIdx, isNot(-1));
+    expect(invalidateIdx, isNot(-1));
+    expect(invalidateIdx, greaterThan(purchaseIdx));
+  });
+
+  test('restorePurchases does not invalidate entitlement before restore', () {
+    final src = File(
+      'lib/features/access/presentation/purchase_flow.dart',
+    ).readAsStringSync();
+    final restoreBody = src.split('Future<void> restorePurchases').last;
+    final restoreIdx = restoreBody.indexOf('billing.restore');
+    final invalidateIdx = restoreBody.indexOf('invalidate(currentEntitlementProvider)');
+    expect(restoreIdx, isNot(-1));
+    expect(invalidateIdx, isNot(-1));
+    expect(invalidateIdx, greaterThan(restoreIdx));
+  });
 }

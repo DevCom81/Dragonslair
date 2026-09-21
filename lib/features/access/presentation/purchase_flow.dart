@@ -6,15 +6,23 @@ import '../../../l10n/app_localizations.dart';
 import '../domain/purchase_provider.dart';
 import 'access_providers.dart';
 
+void _invalidateEntitlement(BuildContext context) {
+  ProviderScope.containerOf(context).invalidate(currentEntitlementProvider);
+}
+
 Future<void> startUnlockCheckout({
   required BuildContext context,
   required WidgetRef ref,
 }) async {
   final l10n = AppLocalizations.of(context);
-  ref.invalidate(currentEntitlementProvider);
-  final entitlement = await ref.read(currentEntitlementProvider.future);
-  final isFull = entitlement?.level.isFull ?? false;
+
+  // Capture sync reads before any await. Do not invalidate entitlement here:
+  // PlayHubScreen shows a loading spinner while entitlement reloads, which
+  // unmounts _DemoAccessHub and makes this WidgetRef unsafe after await.
+  final entitlement = ref.read(currentEntitlementProvider).value;
   final billing = ref.read(purchaseProvider);
+  final isFull = entitlement?.level.isFull ?? false;
+
   if (isFull) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,7 +41,9 @@ Future<void> startUnlockCheckout({
   }
   try {
     await billing.purchase();
-    ref.invalidate(currentEntitlementProvider);
+    if (context.mounted) {
+      _invalidateEntitlement(context);
+    }
   } on PurchaseUnavailableException {
     if (context.mounted) {
       ScaffoldMessenger.of(
@@ -57,8 +67,7 @@ Future<void> restorePurchases({
   required WidgetRef ref,
 }) async {
   final l10n = AppLocalizations.of(context);
-  ref.invalidate(currentEntitlementProvider);
-  final entitlementBefore = await ref.read(currentEntitlementProvider.future);
+  final entitlementBefore = ref.read(currentEntitlementProvider).value;
   if (entitlementBefore?.level.isFull == true) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,9 +83,13 @@ Future<void> restorePurchases({
   } catch (_) {
     restoreFailed = true;
   }
-  ref.invalidate(currentEntitlementProvider);
+  if (!context.mounted) {
+    return;
+  }
+  final container = ProviderScope.containerOf(context);
+  container.invalidate(currentEntitlementProvider);
   try {
-    final entitlement = await ref.read(currentEntitlementProvider.future);
+    final entitlement = await container.read(currentEntitlementProvider.future);
     if (!context.mounted) {
       return;
     }
