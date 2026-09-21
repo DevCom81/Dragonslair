@@ -24,3 +24,9 @@ coverage/
 *.md
 !README.md
 developpement.md
+
+# IDE local configuration
+.idea/
+
+# Android / Kotlin generated diagnostics
+android/.kotlin/
