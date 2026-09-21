@@ -1,55 +1,207 @@
 # DragonsLair
 
-Un jeu de rôle médiéval-fantasy, à vivre seul ou entre amis, avec un maître du jeu qui invente la suite à chaque décision.
+DragonsLair est un jeu de rôle médiéval-fantasy assisté par IA, jouable en solo ou en multijoueur.
 
-Pas de gemmes, pas d’énergie, pas de boutique de crédits. Une aventure à essayer, puis le jeu complet à débloquer.
+Le projet combine une application Flutter, un backend Python, Supabase et un maître du jeu génératif. L'IA construit la narration et propose des actions structurées, tandis que les règles du jeu, les jets de dés et les mutations de l'état sont contrôlés par le backend.
 
----
+Le jeu est déployé sur le Web et distribué sur Android.
 
-## Le but du jeu
+## Principe technique
 
-Incarne un héros. Choisis ta classe, tes traits, ta figurine. Puis pars en quête : escortes, donjons, forêts, sièges, ou une histoire que tu as toi-même imaginée.
+DragonsLair ne confie pas directement l'état du jeu au modèle génératif.
 
-Le maître du jeu raconte, pose des choix, fait parler le monde. Toi, tu agis. Tu peux examiner, parler, attaquer, défendre, utiliser un objet, ou décrire n’importe quelle action libre. Quand le sort d’une scène est incertain, tu lances les dés. Le combat, les blessures, les objets trouvés et la fin de l’histoire découlent de la partie, pas d’un script figé.
+Une action joueur suit principalement ce flux :
 
-L’objectif : mener l’aventure à son terme — victoire, défaite, ou une issue plus trouble — et en garder le récit.
+    Action joueur
+          |
+          v
+    Application Flutter
+          |
+          v
+    Backend Python
+          |
+          v
+    Contexte de partie
+    joueurs, ennemis, combat,
+    mémoire, événements, scénario
+          |
+          v
+    Maître du jeu IA
+          |
+          v
+    Réponse JSON structurée
+          |
+          v
+    Validation Pydantic
+          |
+          v
+    Moteur de règles
+          |
+          v
+    Supabase
+          |
+          v
+    État partagé par les joueurs
 
----
+Le maître du jeu peut notamment proposer des actions comme :
 
-## Comment on joue
+- demander un jet de caractéristique
+- démarrer ou terminer un combat
+- faire apparaître ou déplacer un ennemi
+- infliger ou restaurer des points de vie
+- gérer des objets et des effets
+- modifier l'ambiance musicale
+- terminer une aventure
 
-1. **Crée ton personnage**  
-   Un pseudo, six caractéristiques, une classe. Ta fiche t’accompagne en jeu, avec l’inventaire et le journal de l’histoire.
+Ces intentions sont interprétées et validées par le backend avant de modifier l'état persistant de la partie.
 
-2. **Essaie DragonsLair gratuitement**  
-   Une démo solo, courte, avec maître du jeu, dés et combat. Le temps d’une poignée de minutes, l’aventure s’ouvre… et s’arrête au seuil du secret.
+## IA générative et règles déterministes
 
-3. **Débloque le jeu**  
-   Aventures sans limite de temps, parties avec tes amis, histoires que tu crées toi-même, parties sauvegardées et reprises.
+La séparation entre narration générative et règles de jeu est un principe central du projet.
 
-4. **Autour de la table**  
-   En version complète, tu crées une partie ou tu rejoins des compagnons. Chacun choisit sa figurine. L’hôte lance la séance. Sur le plateau, vous agissez à tour de rôle. L’hôte peut mettre en pause : la même table vous attend plus tard.
+Lorsqu'une action possède une issue incertaine, le maître du jeu demande un jet plutôt que d'appliquer immédiatement ses conséquences.
 
-5. **La fin**  
-   Quand l’aventure se clôt, un résumé rassemble le destin des héros, les moments forts, les ennemis vaincus. Puis retour à la taverne, pour une nouvelle quête.
+Le backend contrôle ensuite :
 
----
+- la caractéristique utilisée
+- la difficulté du jet
+- les bonus d'équipement
+- les effets actifs
+- le modificateur du personnage
+- le résultat final
 
-## Ce que tu y trouves
+Une fois le jet résolu, son résultat est réinjecté dans le contexte du maître du jeu afin de poursuivre la scène.
 
-- Un maître du jeu qui s’adapte à tes actions, pas un scénario unique à dérouler.
-- Des choix libres, pas seulement des boutons.
-- Des jets de dés partagés à la table.
-- Du combat, des ennemis sur le plateau, des objets à ramasser, équiper ou boire.
-- Solo ou à plusieurs.
-- Quatre langues : français, anglais, espagnol, allemand.
+L'IA dirige donc la narration et propose les intentions. Le moteur conserve la responsabilité des règles et de l'état du jeu.
 
----
+## Mémoire de campagne
 
-## Démo et jeu complet
+Une partie peut évoluer sur une longue période sans renvoyer l'intégralité de son historique au modèle.
 
-**La démo** te laisse créer un personnage et vivre une première scène, seul, le temps d’une courte séance.
+DragonsLair combine :
 
-**Le jeu complet** lève la limite de temps, ouvre le multijoueur, la création d’aventures et la sauvegarde de tes parties.
+- les événements récents pour le contexte immédiat
+- un résumé de campagne compact pour la mémoire longue
+- l'état courant des joueurs et ennemis
+- l'état du combat
+- le monde et l'objectif du scénario
+- des informations réservées au maître du jeu
 
-La licence est liée à ton compte : tu la retrouves en te reconnectant, sur le même appareil ou un autre.
+Les informations privées du maître du jeu sont séparées de l'état public transmis aux joueurs.
+
+## Fonctionnalités
+
+- Jeu de rôle solo et multijoueur
+- Actions libres en langage naturel
+- Maître du jeu génératif
+- Génération de scénarios
+- Mémoire de campagne
+- Jets de dés et caractéristiques
+- Combats et gestion des ennemis
+- Inventaire et équipement
+- Buffs, debuffs, blessures et effets temporaires
+- Plateau avec figurines
+- Journal des événements
+- Sauvegarde et reprise des parties
+- Ambiance musicale dynamique
+- Démo limitée et accès complet
+- Paiements Web avec Stripe
+- Google Play Billing sur Android
+- Suivi de consommation des appels IA
+- Français, anglais, espagnol et allemand
+
+## Stack
+
+### Application
+
+- Flutter / Dart
+- Riverpod
+- GoRouter
+- Supabase Flutter
+- just_audio
+
+### Backend
+
+- Python
+- Pydantic
+- httpx
+- Supabase
+- OpenRouter
+
+### Services
+
+- Supabase pour l'authentification, la persistance et le temps réel
+- OpenRouter pour l'orchestration des modèles génératifs
+- Stripe pour les achats Web
+- Google Play Billing pour Android
+- Cloudflare R2 pour la distribution privée de l'installeur Windows
+
+### Déploiement
+
+- Firebase Hosting pour l'application Web
+- Backend Python déployable via Procfile
+- Google Play pour Android
+
+## Structure du projet
+
+    lib/
+      core/
+      features/
+        access/
+        auth/
+        board/
+        combat/
+        dice/
+        enemies/
+        events/
+        figurines/
+        game/
+        game_master/
+        music/
+        players/
+        rooms/
+        scenarios/
+
+    backend/
+      models.py
+      openrouter_client.py
+      apply_actions.py
+      state_effects.py
+      campaign_memory.py
+      scenario_generator.py
+      supabase_admin.py
+      ...
+
+L'application Flutter est organisée par fonctionnalités avec séparation des responsabilités entre domaine, données et présentation lorsque le module le nécessite.
+
+Le backend porte les frontières de confiance liées à l'IA, les mutations de l'état du jeu, les accès privilégiés à Supabase, les paiements et les règles qui ne doivent pas dépendre du client.
+
+## Tests
+
+Le projet possède des tests Flutter et Python couvrant notamment :
+
+- règles de combat
+- jets et résolutions
+- inventaire et personnages
+- scénarios
+- mémoire de campagne
+- effets d'état
+- sécurité et contrats SQL
+- droits d'accès
+- achats Stripe
+- Google Play Billing et RTDN
+- rate limiting
+- consommation IA
+- comportement responsive
+
+## Philosophie produit
+
+DragonsLair cherche à conserver la liberté d'un jeu de rôle sur table sans laisser un modèle génératif devenir l'unique source de vérité.
+
+L'IA raconte et improvise.
+
+Le moteur contrôle les règles.
+
+La partie conserve son état.
+
+Les joueurs décident de l'histoire.
