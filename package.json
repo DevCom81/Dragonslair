@@ -1,0 +1,18 @@
+{
+  "name": "dragonslair-convex",
+  "private": true,
+  "description": "Convex backend for DragonsLair. LOT 0A spike files remain until Android/Windows validation.",
+  "scripts": {
+    "convex:dev": "convex dev",
+    "typecheck": "tsc --noEmit -p convex/tsconfig.json && tsc --noEmit -p tsconfig.tests.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^26.6.4",
+    "convex": "^1.31.7",
+    "convex-test": "^0.0.41",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
