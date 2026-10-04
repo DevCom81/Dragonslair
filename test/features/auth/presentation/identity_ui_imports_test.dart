@@ -8,9 +8,8 @@ void main() {
       'lib/features/home/presentation/home_screen.dart',
       'lib/features/home/presentation/play_hub_screen.dart',
       'lib/features/auth/presentation/auth_controller.dart',
-      'lib/features/auth/presentation/auth_screen.dart',
+      'lib/features/auth/presentation/auth0_screens.dart',
       'lib/features/auth/presentation/display_name_screen.dart',
-      'lib/features/auth/presentation/password_reset_screen.dart',
     ];
 
     for (final path in files) {
@@ -26,26 +25,19 @@ void main() {
         reason: '$path imports dartvex',
       );
       expect(
-        source.contains('WORKOS_API_KEY'),
+        source.contains('WORKOS_API_KEY') || source.contains('AUTH0_CLIENT_SECRET'),
         isFalse,
-        reason: '$path mentions WORKOS_API_KEY',
+        reason: '$path mentions a server auth secret',
       );
       expect(
         source.contains('auth.workos.access'),
         isFalse,
-        reason: '$path reads WorkOS tokens directly',
+        reason: '$path reads legacy WorkOS tokens directly',
       );
     }
-
-    final resetSource =
-        File('lib/features/auth/presentation/password_reset_screen.dart')
-            .readAsStringSync();
-    expect(resetSource.contains('confirmPasswordReset'), isFalse);
-    expect(resetSource.contains('resetToken'), isFalse);
-    expect(resetSource.contains('newPassword'), isFalse);
   });
 
-  test('Flutter auth client does not embed a WorkOS server API key', () {
+  test('Flutter auth client does not embed auth server secrets', () {
     const roots = [
       'lib/features/auth',
       'lib/core/backend',
@@ -58,9 +50,10 @@ void main() {
         }
         final source = entity.readAsStringSync();
         expect(
-          source.contains('WORKOS_API_KEY'),
+          source.contains('WORKOS_API_KEY') ||
+              source.contains('AUTH0_CLIENT_SECRET'),
           isFalse,
-          reason: '${entity.path} contains WORKOS_API_KEY',
+          reason: '${entity.path} contains a server auth secret',
         );
       }
     }

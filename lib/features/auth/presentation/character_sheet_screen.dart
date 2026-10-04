@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../dice/domain/dice_roll_service.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/character_stats.dart';
+import '../domain/player_profile.dart';
 import 'auth_controller.dart';
 import 'onboarding.dart';
 import 'profile_providers.dart';
@@ -27,10 +28,12 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
   String? _classId;
   CharacterStats? _rawStats;
   var _isSubmitting = false;
+  var _seededFromProfile = false;
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(currentProfileProvider);
+    final profileAsync = ref.watch(currentProfileProvider);
+    _seedFromProfile(profileAsync.value);
     final l10n = AppLocalizations.of(context);
     final selectedClass = _classId == null
         ? null
@@ -164,6 +167,16 @@ class _CharacterSheetScreenState extends ConsumerState<CharacterSheetScreen> {
         ),
       ],
     );
+  }
+
+  void _seedFromProfile(PlayerProfile? profile) {
+    if (_seededFromProfile || profile == null) {
+      return;
+    }
+    _seededFromProfile = true;
+    if (CharacterClassCatalog.isPlayableId(profile.classId)) {
+      _classId = profile.classId;
+    }
   }
 
   void _rollStats() {

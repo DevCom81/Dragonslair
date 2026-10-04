@@ -1,9 +1,15 @@
 // @vitest-environment node
-import { describe, expect, test } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, test, vi } from "vitest";
+import { runCli } from "./cli";
 import { archivedLegacyIds, compareMigrationAudit } from "./convexAudit";
 import { buildConvexImportPlan } from "./convexImportPlan";
 import type { MigrationAuditSnapshot } from "./convexAudit";
 import type { MigrationBundle, SanitizedAuthUser, WorkosMapping } from "./types";
+import { writeMigrationExport } from "./writeExport";
+import { writeWorkosMapping } from "./writeWorkosMapping";
 
 const EMAIL = "11111111-1111-4111-8111-111111111111";
 const ANON = "22222222-2222-4222-8222-222222222222";
@@ -238,5 +244,82 @@ describe("LOT 12 B5 post-import audit", () => {
     const report = audit(happySnapshot());
     expect(report.findings.some((item) => item.code === "INCOMPLETE_ROOM_GRAPH")).toBe(false);
     expect(report.verdict).toBe("B5_PASS");
+  });
+});
+
+describe("LOT 14B convex-audit target guard", () => {
+  test("convex-audit production is read-only without production write confirm", async () => {
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-14b-audit-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-14b-auditmap-"));
+    writeMigrationExport(exportDir, bundle());
+    writeWorkosMapping(mapDir, mapping);
+    const result = await runCli(
+      [
+        "node",
+        "cli.ts",
+        "convex-audit",
+        "--target",
+        "prod:PLACEHOLDER_DEPLOYMENT",
+        "--dir",
+        exportDir,
+        "--mapping-dir",
+        mapDir,
+      ],
+      vi.fn(),
+      {
+        env: {
+          CONVEX_DEPLOYMENT: "prod:PLACEHOLDER_DEPLOYMENT",
+        } as NodeJS.ProcessEnv,
+        loadAuditSnapshot: async () => happySnapshot(),
+      },
+    );
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("environment: PRODUCTION");
+    expect(result.stdout).toContain("production write: not requested");
+    expect(result.stdout).toContain("mode: audit (read-only, zero Convex writes)");
+    expect(result.stdout).toContain("B5_PASS");
+  });
+
+  test("convex-audit mismatch is refused even for production", async () => {
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-14b-audmis-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-14b-audmismap-"));
+    writeMigrationExport(exportDir, bundle());
+    writeWorkosMapping(mapDir, mapping);
+    await expect(
+      runCli(
+        [
+          "node",
+          "cli.ts",
+          "convex-audit",
+          "--target",
+          "prod:PLACEHOLDER_DEPLOYMENT",
+          "--dir",
+          exportDir,
+          "--mapping-dir",
+          mapDir,
+        ],
+        vi.fn(),
+        {
+          env: {
+            CONVEX_DEPLOYMENT: "prod:OTHER_DEPLOYMENT",
+          } as NodeJS.ProcessEnv,
+          loadAuditSnapshot: async () => {
+            throw new Error("snapshot must not run");
+          },
+        },
+      ),
+    ).rejects.toThrow(/does not match/);
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+  });
+
+  test("convex-audit without --target is refused", async () => {
+    await expect(
+      runCli(["node", "cli.ts", "convex-audit"], vi.fn(), {
+        env: {} as NodeJS.ProcessEnv,
+      }),
+    ).rejects.toThrow(/CONVEX_DEPLOYMENT and --target are required for convex-audit/);
   });
 });

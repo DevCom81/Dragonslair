@@ -1,20 +1,18 @@
 import 'dart:async';
 
+import 'package:auth0_flutter/auth0_flutter_web.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 import '../../features/access/data/convex_entitlement_repository.dart';
 import '../../features/access/domain/entitlement_repository.dart';
+import '../../features/auth/data/auth0_auth_repository.dart';
 import '../../features/auth/data/convex_profile_repository.dart';
-import '../../features/auth/data/convex_workos_auth_gateway.dart';
 import '../../features/auth/data/supabase_auth_repository.dart';
-import '../../features/auth/data/workos_auth_repository.dart';
-import '../../features/auth/data/workos_session_store.dart';
 import '../../features/auth/domain/auth_access_token_source.dart';
 import '../../features/auth/domain/auth_capabilities.dart';
 import '../../features/auth/domain/auth_repository.dart';
 import '../../features/auth/domain/profile_repository.dart';
-import '../../features/auth/domain/workos_auth_gateway.dart';
 import '../../features/combat/data/convex_combat_repository.dart';
 import '../../features/downloads/data/convex_windows_download_client.dart';
 import '../../features/downloads/data/legacy_windows_download_client.dart';
@@ -59,38 +57,30 @@ final backendModeProvider = Provider<BackendMode>((ref) {
   return AppConfig.backendMode;
 });
 
-final workOsAuthGatewayProvider = Provider<WorkOsAuthGateway>((ref) {
-  final client = ref.watch(convexClientProvider);
-  if (client == null) {
-    throw const AppAuthException(
-      'CONVEX_URL est requis pour BACKEND_MODE=convex.',
-    );
-  }
-  return ConvexWorkOsAuthGateway(client);
-});
-
-final workOsSessionStoreProvider = Provider<WorkOsSessionStore>((ref) {
-  return const SharedPreferencesWorkOsSessionStore();
+final auth0WebProvider = Provider<Auth0Web>((ref) {
+  return Auth0Web(
+    AppConfig.auth0Domain,
+    AppConfig.auth0ClientId,
+    cacheLocation: CacheLocation.localStorage,
+  );
 });
 
 AuthRepository createAuthRepository({
   required BackendMode mode,
   required SupabaseClient? client,
-  WorkOsAuthGateway? workOsGateway,
-  WorkOsSessionStore? workOsSessionStore,
+  Auth0Web? auth0,
 }) {
   switch (mode) {
     case BackendMode.legacy:
       return SupabaseAuthRepository(client);
     case BackendMode.convex:
-      final gateway = workOsGateway;
-      if (gateway == null) {
-        throw StateError('WorkOS gateway missing.');
-      }
-      return WorkOsAuthRepository(
-        gateway: gateway,
-        sessionStore:
-            workOsSessionStore ?? const SharedPreferencesWorkOsSessionStore(),
+      return Auth0AuthRepository(
+        auth0: auth0 ??
+            Auth0Web(
+              AppConfig.auth0Domain,
+              AppConfig.auth0ClientId,
+              cacheLocation: CacheLocation.localStorage,
+            ),
       );
   }
 }
@@ -100,10 +90,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     case BackendMode.legacy:
       return SupabaseAuthRepository(ref.watch(supabaseClientProvider));
     case BackendMode.convex:
-      return WorkOsAuthRepository(
-        gateway: ref.watch(workOsAuthGatewayProvider),
-        sessionStore: ref.watch(workOsSessionStoreProvider),
-      );
+      return Auth0AuthRepository(auth0: ref.watch(auth0WebProvider));
   }
 });
 
@@ -113,7 +100,7 @@ final authAccessTokenSourceProvider = Provider<AuthAccessTokenSource?>((ref) {
       return null;
     case BackendMode.convex:
       final repository = ref.watch(authRepositoryProvider);
-      if (repository is WorkOsAuthRepository) {
+      if (repository is Auth0AuthRepository) {
         return repository;
       }
       return null;
@@ -126,13 +113,11 @@ final authCapabilitiesProvider = Provider<AuthCapabilities>((ref) {
       return AuthCapabilities(
         isConfigured: AppConfig.isSupabaseConfigured,
         supportsAnonymousSignIn: true,
-        supportsPasswordReset: false,
       );
     case BackendMode.convex:
       return AuthCapabilities(
-        isConfigured: AppConfig.isConvexConfigured,
+        isConfigured: AppConfig.isIdentityConfigured,
         supportsAnonymousSignIn: false,
-        supportsPasswordReset: true,
       );
   }
 });

@@ -9,6 +9,9 @@ class AppConfig {
   static const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const _backendMode = String.fromEnvironment('BACKEND_MODE');
   static const _convexUrl = String.fromEnvironment('CONVEX_URL');
+  static const _auth0Domain = String.fromEnvironment('AUTH0_DOMAIN');
+  static const _auth0ClientId = String.fromEnvironment('AUTH0_CLIENT_ID');
+  static const _auth0Audience = String.fromEnvironment('AUTH0_AUDIENCE');
   static const _gameMasterMode = String.fromEnvironment(
     'GAME_MASTER_MODE',
   );
@@ -23,7 +26,20 @@ class AppConfig {
 
   static String get convexUrl => _readConfig('CONVEX_URL', _convexUrl);
 
+  static String get auth0Domain => _readConfig('AUTH0_DOMAIN', _auth0Domain);
+
+  static String get auth0ClientId =>
+      _readConfig('AUTH0_CLIENT_ID', _auth0ClientId);
+
+  static String get auth0Audience =>
+      _readConfig('AUTH0_AUDIENCE', _auth0Audience);
+
   static bool get isConvexConfigured => convexUrl.isNotEmpty;
+
+  static bool get isAuth0Configured =>
+      auth0Domain.isNotEmpty &&
+      auth0ClientId.isNotEmpty &&
+      auth0Audience.isNotEmpty;
 
   static String get gameMasterMode =>
       _readConfig('GAME_MASTER_MODE', _gameMasterMode, defaultValue: 'mock');
@@ -44,7 +60,7 @@ class AppConfig {
       case BackendMode.legacy:
         return isSupabaseConfigured;
       case BackendMode.convex:
-        return isConvexConfigured;
+        return isConvexConfigured && isAuth0Configured;
     }
   }
 

@@ -159,6 +159,8 @@ describe("LOT 12 B4 Convex import plan", () => {
     expect(plan.users).toHaveLength(1);
     expect(plan.users[0]?.workosSubject).toBe("user_01ALICE");
     expect(plan.users[0]?.legacyUuid).toBe(EMAIL);
+    expect(plan.users[0]).not.toHaveProperty("convexId");
+    expect(JSON.stringify(plan.users)).not.toContain("dusty-rabbit");
   });
 
   test("missing WorkOS mapping is BLOCKED", () => {
@@ -330,16 +332,100 @@ describe("LOT 12 B4 Convex import execute gates", () => {
     ).toThrow(/does not match/);
   });
 
-  test("production target is refused", () => {
-    expect(() =>
+  test("staging execute remains allowed with existing confirmations", () => {
+    expect(
       assertConvexExecuteAllowed({
         execute: true,
         dryRunFlag: false,
-        target: "prod:dragonslair",
-        deployment: "prod:dragonslair",
-        confirm: "prod:dragonslair",
+        target: "dev:dusty-rabbit-684",
+        deployment: "dev:dusty-rabbit-684",
+        confirm: "dev:dusty-rabbit-684",
       }),
-    ).toThrow(/production/);
+    ).toEqual({
+      deployment: "dev:dusty-rabbit-684",
+      target: "dev:dusty-rabbit-684",
+      production: false,
+    });
+  });
+
+  test("production target without production confirm is refused", () => {
+    try {
+      assertConvexExecuteAllowed({
+        execute: true,
+        dryRunFlag: false,
+        target: "prod:PLACEHOLDER_DEPLOYMENT",
+        deployment: "prod:PLACEHOLDER_DEPLOYMENT",
+        confirm: "prod:PLACEHOLDER_DEPLOYMENT",
+      });
+      throw new Error("expected refusal");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "CONVEX_TARGET_PROD" });
+    }
+  });
+
+  test("production target with wrong production confirm is refused", () => {
+    try {
+      assertConvexExecuteAllowed({
+        execute: true,
+        dryRunFlag: false,
+        target: "prod:PLACEHOLDER_DEPLOYMENT",
+        deployment: "prod:PLACEHOLDER_DEPLOYMENT",
+        confirm: "prod:PLACEHOLDER_DEPLOYMENT",
+        productionConfirm: "yes",
+      });
+      throw new Error("expected refusal");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "CONVEX_PRODUCTION_CONFIRM_MISMATCH" });
+    }
+  });
+
+  test("production execute is allowed only when armed", () => {
+    expect(
+      assertConvexExecuteAllowed({
+        execute: true,
+        dryRunFlag: false,
+        target: "prod:PLACEHOLDER_DEPLOYMENT",
+        deployment: "prod:PLACEHOLDER_DEPLOYMENT",
+        confirm: "prod:PLACEHOLDER_DEPLOYMENT",
+        productionConfirm: "DRAGONSLAIR_PRODUCTION",
+      }),
+    ).toEqual({
+      deployment: "prod:PLACEHOLDER_DEPLOYMENT",
+      target: "prod:PLACEHOLDER_DEPLOYMENT",
+      production: true,
+    });
+  });
+
+  test("production confirm does not override target mismatch", () => {
+    try {
+      assertConvexExecuteAllowed({
+        execute: true,
+        dryRunFlag: false,
+        target: "prod:PLACEHOLDER_DEPLOYMENT",
+        deployment: "prod:OTHER_DEPLOYMENT",
+        confirm: "prod:OTHER_DEPLOYMENT",
+        productionConfirm: "DRAGONSLAIR_PRODUCTION",
+      });
+      throw new Error("expected refusal");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "CONVEX_TARGET_MISMATCH" });
+    }
+  });
+
+  test("explicit CONVEX_PRODUCTION_DEPLOYMENT requires arming even without prod in the name", () => {
+    try {
+      assertConvexExecuteAllowed({
+        execute: true,
+        dryRunFlag: false,
+        target: "happy-animal-123",
+        deployment: "happy-animal-123",
+        confirm: "happy-animal-123",
+        productionDeployment: "happy-animal-123",
+      });
+      throw new Error("expected refusal");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "CONVEX_TARGET_PROD" });
+    }
   });
 
   test("without --execute execute is refused", () => {
@@ -433,6 +519,50 @@ describe("LOT 12 B4 CLI dry-run", () => {
     expect(result.code).toBe(0);
   });
 
+  test("convex-import dry-run against a production selector does not create a writer", async () => {
+    const fetchMock = vi.fn();
+    const bundle = validBundle();
+    const { writeMigrationExport } = await import("./writeExport");
+    const { writeWorkosMapping } = await import("./writeWorkosMapping");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-b4-proddry-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-b4-proddrymap-"));
+    writeMigrationExport(exportDir, bundle);
+    writeWorkosMapping(mapDir, validMapping);
+    const result = await runCli(
+      [
+        "node",
+        "cli.ts",
+        "convex-import",
+        "--dry-run",
+        "--target",
+        "prod:PLACEHOLDER_DEPLOYMENT",
+        "--dir",
+        exportDir,
+        "--mapping-dir",
+        mapDir,
+      ],
+      fetchMock,
+      {
+        env: {
+          CONVEX_DEPLOYMENT: "prod:PLACEHOLDER_DEPLOYMENT",
+        } as NodeJS.ProcessEnv,
+        createImportWriter: () => {
+          throw new Error("writer must not be created");
+        },
+      },
+    );
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("environment: PRODUCTION");
+    expect(result.stdout).toContain("production write: not requested");
+    expect(result.stdout).toContain("mode: dry-run (zero Convex writes)");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   test("convex-import --execute with a production target does not create a writer", async () => {
     const fetchMock = vi.fn();
     const bundle = validBundle();
@@ -454,7 +584,7 @@ describe("LOT 12 B4 CLI dry-run", () => {
           "convex-import",
           "--execute",
           "--target",
-          "prod:dragonslair",
+          "prod:PLACEHOLDER_DEPLOYMENT",
           "--dir",
           exportDir,
           "--mapping-dir",
@@ -463,8 +593,8 @@ describe("LOT 12 B4 CLI dry-run", () => {
         fetchMock,
         {
           env: {
-            CONVEX_DEPLOYMENT: "prod:dragonslair",
-            CONVEX_MIGRATION_CONFIRM: "prod:dragonslair",
+            CONVEX_DEPLOYMENT: "prod:PLACEHOLDER_DEPLOYMENT",
+            CONVEX_MIGRATION_CONFIRM: "prod:PLACEHOLDER_DEPLOYMENT",
           } as NodeJS.ProcessEnv,
           createImportWriter: () => {
             writerCreated = true;
@@ -476,6 +606,140 @@ describe("LOT 12 B4 CLI dry-run", () => {
     rmSync(exportDir, { recursive: true, force: true });
     rmSync(mapDir, { recursive: true, force: true });
     expect(writerCreated).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("convex-import production confirm without --execute does not create a writer", async () => {
+    const fetchMock = vi.fn();
+    const bundle = validBundle();
+    const { writeMigrationExport } = await import("./writeExport");
+    const { writeWorkosMapping } = await import("./writeWorkosMapping");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-14b-noexec-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-14b-noexecmap-"));
+    writeMigrationExport(exportDir, bundle);
+    writeWorkosMapping(mapDir, validMapping);
+    const result = await runCli(
+      [
+        "node",
+        "cli.ts",
+        "convex-import",
+        "--target",
+        "prod:PLACEHOLDER_DEPLOYMENT",
+        "--dir",
+        exportDir,
+        "--mapping-dir",
+        mapDir,
+      ],
+      fetchMock,
+      {
+        env: {
+          CONVEX_DEPLOYMENT: "prod:PLACEHOLDER_DEPLOYMENT",
+          CONVEX_MIGRATION_CONFIRM: "prod:PLACEHOLDER_DEPLOYMENT",
+          CONVEX_PRODUCTION_CONFIRM: "DRAGONSLAIR_PRODUCTION",
+        } as NodeJS.ProcessEnv,
+        createImportWriter: () => {
+          throw new Error("writer must not be created");
+        },
+      },
+    );
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("production write: not requested");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("convex-import --execute staging still writes with existing confirmations", async () => {
+    const fetchMock = vi.fn();
+    const bundle = validBundle();
+    const { writeMigrationExport } = await import("./writeExport");
+    const { writeWorkosMapping } = await import("./writeWorkosMapping");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-14b-stg-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-14b-stgmap-"));
+    writeMigrationExport(exportDir, bundle);
+    writeWorkosMapping(mapDir, validMapping);
+    const writer = createMemoryWriter();
+    const result = await runCli(
+      [
+        "node",
+        "cli.ts",
+        "convex-import",
+        "--execute",
+        "--target",
+        "dev:dusty-rabbit-684",
+        "--dir",
+        exportDir,
+        "--mapping-dir",
+        mapDir,
+      ],
+      fetchMock,
+      {
+        env: {
+          CONVEX_DEPLOYMENT: "dev:dusty-rabbit-684",
+          CONVEX_MIGRATION_CONFIRM: "dev:dusty-rabbit-684",
+        } as NodeJS.ProcessEnv,
+        createImportWriter: () => writer,
+      },
+    );
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("environment: staging/dev");
+    expect(result.stdout).toContain("production write: not applicable");
+    expect(result.stdout).toContain("writes:");
+    expect(writer.calls.length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("convex-import --execute production armed creates a writer", async () => {
+    const fetchMock = vi.fn();
+    const bundle = validBundle();
+    const { writeMigrationExport } = await import("./writeExport");
+    const { writeWorkosMapping } = await import("./writeWorkosMapping");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const exportDir = mkdtempSync(join(tmpdir(), "jdr-14b-armed-"));
+    const mapDir = mkdtempSync(join(tmpdir(), "jdr-14b-armedmap-"));
+    writeMigrationExport(exportDir, bundle);
+    writeWorkosMapping(mapDir, validMapping);
+    const writer = createMemoryWriter();
+    const result = await runCli(
+      [
+        "node",
+        "cli.ts",
+        "convex-import",
+        "--execute",
+        "--target",
+        "prod:PLACEHOLDER_DEPLOYMENT",
+        "--dir",
+        exportDir,
+        "--mapping-dir",
+        mapDir,
+      ],
+      fetchMock,
+      {
+        env: {
+          CONVEX_DEPLOYMENT: "prod:PLACEHOLDER_DEPLOYMENT",
+          CONVEX_MIGRATION_CONFIRM: "prod:PLACEHOLDER_DEPLOYMENT",
+          CONVEX_PRODUCTION_CONFIRM: "DRAGONSLAIR_PRODUCTION",
+        } as NodeJS.ProcessEnv,
+        createImportWriter: () => writer,
+      },
+    );
+    rmSync(exportDir, { recursive: true, force: true });
+    rmSync(mapDir, { recursive: true, force: true });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("environment: PRODUCTION");
+    expect(result.stdout).toContain("production write: ARMED");
+    expect(result.stdout).toContain("mode: execute");
+    expect(writer.calls.length).toBeGreaterThan(0);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

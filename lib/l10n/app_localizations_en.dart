@@ -102,6 +102,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAccount => 'Create account';
 
   @override
+  String get authHostedHint =>
+      'Sign in with Auth0. Enabled identity providers are shown by Universal Login.';
+
+  @override
+  String get authSignInCancelled => 'Sign-in cancelled.';
+
+  @override
+  String get authSignInFailed => 'Sign-in failed.';
+
+  @override
   String get alreadyHaveAccount => 'Already have an account? Log in';
 
   @override

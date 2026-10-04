@@ -6,14 +6,11 @@ void main() {
   test('legacy anonymous remains supported', () {
     const repository = SupabaseAuthRepository(null);
     expect(repository.supportsAnonymousSignIn, isTrue);
-    expect(repository.supportsPasswordReset, isFalse);
   });
 
-  test('legacy password reset remains unavailable', () {
+  test('legacy external sign-in remains unavailable', () {
     expect(
-      () => const SupabaseAuthRepository(null).requestPasswordReset(
-        email: 'a@b.c',
-      ),
+      () => const SupabaseAuthRepository(null).startSignIn(),
       throwsA(isA<AppAuthException>()),
     );
   });

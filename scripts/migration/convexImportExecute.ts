@@ -1,14 +1,14 @@
 import { spawn } from "node:child_process";
 import { computeGlobalEntitlement } from "../../convex/lib/entitlements";
 import type { ConvexImportPlan } from "./convexImportPlan";
+import {
+  CONVEX_PRODUCTION_CONFIRM_VALUE,
+  ConvexImportExecuteError,
+  assertConvexTargetPair,
+  isProductionConvexTarget,
+} from "./convexTarget";
 
-export class ConvexImportExecuteError extends Error {
-  readonly code: string;
-  constructor(code: string, message: string) {
-    super(message);
-    this.code = code;
-  }
-}
+export { ConvexImportExecuteError } from "./convexTarget";
 
 export type ImportWriter = {
   calls: string[];
@@ -35,7 +35,9 @@ export function assertConvexExecuteAllowed(args: {
   target?: string;
   deployment?: string;
   confirm?: string;
-}): { deployment: string } {
+  productionConfirm?: string;
+  productionDeployment?: string;
+}): { deployment: string; target: string; production: boolean } {
   if (args.dryRunFlag && args.execute) {
     throw new ConvexImportExecuteError(
       "EXECUTE_DRY_RUN_CONFLICT",
@@ -48,34 +50,39 @@ export function assertConvexExecuteAllowed(args: {
       "convex-import writes only when --execute is explicitly set",
     );
   }
-  const deployment = String(args.deployment ?? "").trim();
-  const target = String(args.target ?? "").trim();
+  const { target, deployment } = assertConvexTargetPair({
+    target: args.target,
+    deployment: args.deployment,
+    requiredFor: "execute",
+  });
   const confirm = String(args.confirm ?? "").trim();
-  if (!deployment || !target) {
-    throw new ConvexImportExecuteError(
-      "CONVEX_TARGET_MISSING",
-      "CONVEX_DEPLOYMENT and --target are required for --execute",
-    );
-  }
-  if (/prod/i.test(deployment) || /prod/i.test(target)) {
-    throw new ConvexImportExecuteError(
-      "CONVEX_TARGET_PROD",
-      "convex-import refuses a production Convex target",
-    );
-  }
-  if (target !== deployment) {
-    throw new ConvexImportExecuteError(
-      "CONVEX_TARGET_MISMATCH",
-      " --target does not match CONVEX_DEPLOYMENT",
-    );
-  }
   if (confirm !== deployment) {
     throw new ConvexImportExecuteError(
       "CONVEX_CONFIRM_MISMATCH",
       "CONVEX_MIGRATION_CONFIRM must equal CONVEX_DEPLOYMENT",
     );
   }
-  return { deployment };
+  const production = isProductionConvexTarget({
+    target,
+    deployment,
+    productionDeployment: args.productionDeployment,
+  });
+  if (production) {
+    const productionConfirm = String(args.productionConfirm ?? "").trim();
+    if (!productionConfirm) {
+      throw new ConvexImportExecuteError(
+        "CONVEX_TARGET_PROD",
+        `convex-import refuses a production Convex target unless CONVEX_PRODUCTION_CONFIRM=${CONVEX_PRODUCTION_CONFIRM_VALUE}`,
+      );
+    }
+    if (productionConfirm !== CONVEX_PRODUCTION_CONFIRM_VALUE) {
+      throw new ConvexImportExecuteError(
+        "CONVEX_PRODUCTION_CONFIRM_MISMATCH",
+        `CONVEX_PRODUCTION_CONFIRM must equal ${CONVEX_PRODUCTION_CONFIRM_VALUE}`,
+      );
+    }
+  }
+  return { deployment, target, production };
 }
 
 export async function executeConvexImportPlan(

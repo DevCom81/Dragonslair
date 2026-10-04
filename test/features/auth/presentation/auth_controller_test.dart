@@ -41,35 +41,13 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthUser?> restoreSession() async => user;
 
   @override
-  Future<AuthUser> signIn({
-    required String email,
-    required String password,
-  }) async {
-    return user!;
-  }
-
-  @override
-  Future<AuthUser> signUp({
-    required String email,
-    required String password,
-  }) async {
-    return user!;
-  }
+  Future<void> startSignIn({String? context}) async {}
 
   @override
   Future<AuthUser> signInAnonymously() async => user!;
 
   @override
-  Future<AuthUser> verifyEmailCode({required String code}) async => user!;
-
-  @override
-  Future<void> requestPasswordReset({required String email}) async {}
-
-  @override
   bool get supportsAnonymousSignIn => true;
-
-  @override
-  bool get supportsPasswordReset => false;
 
   @override
   Future<void> signOut() async {

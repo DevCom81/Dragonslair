@@ -63,7 +63,8 @@ class CharacterStats {
   }
 
   static int _stat(Map<String, dynamic> json, String key) {
-    final value = (json[key] as num?)?.toInt() ?? defaultValue;
+    final raw = json[key];
+    final value = raw is num ? raw.toInt() : defaultValue;
     if (value < minValue || value > maxValue) {
       throw ArgumentError('$key must be between $minValue and $maxValue');
     }

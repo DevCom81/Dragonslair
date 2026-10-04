@@ -1,12 +1,11 @@
+import 'package:auth0_flutter/auth0_flutter_web.dart';
 import 'package:dragons_lair/core/backend/backend_bootstrap.dart';
 import 'package:dragons_lair/core/backend/backend_composition.dart';
 import 'package:dragons_lair/core/backend/backend_mode.dart';
 import 'package:dragons_lair/core/config/app_config.dart';
 import 'package:dragons_lair/core/supabase/supabase_client_provider.dart';
+import 'package:dragons_lair/features/auth/data/auth0_auth_repository.dart';
 import 'package:dragons_lair/features/auth/data/supabase_auth_repository.dart';
-import 'package:dragons_lair/features/auth/data/workos_auth_repository.dart';
-import 'package:dragons_lair/features/auth/data/workos_session_store.dart';
-import 'package:dragons_lair/features/auth/domain/workos_auth_gateway.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,34 +34,34 @@ void main() {
     expect(container.read(authAccessTokenSourceProvider), isNull);
   });
 
-  test('convex composition selects WorkOS auth', () {
+  test('convex composition selects Auth0', () {
     final repository = createAuthRepository(
       mode: BackendMode.convex,
       client: null,
-      workOsGateway: _FakeGateway(),
-      workOsSessionStore: _MemoryStore(),
+      auth0: Auth0Web('example.auth0.com', 'client_id'),
     );
-    expect(repository, isA<WorkOsAuthRepository>());
+    expect(repository, isA<Auth0AuthRepository>());
     expect(repository, isNot(isA<SupabaseAuthRepository>()));
   });
 
-  test('convex provider selects WorkOS auth', () {
+  test('convex provider selects Auth0', () {
     final container = ProviderContainer(
       overrides: [
         backendModeProvider.overrideWith((ref) => BackendMode.convex),
-        workOsAuthGatewayProvider.overrideWith((ref) => _FakeGateway()),
-        workOsSessionStoreProvider.overrideWith((ref) => _MemoryStore()),
+        auth0WebProvider.overrideWith(
+          (ref) => Auth0Web('example.auth0.com', 'client_id'),
+        ),
       ],
     );
     addTearDown(container.dispose);
 
     expect(
       container.read(authRepositoryProvider),
-      isA<WorkOsAuthRepository>(),
+      isA<Auth0AuthRepository>(),
     );
     expect(
       container.read(authAccessTokenSourceProvider),
-      isA<WorkOsAuthRepository>(),
+      isA<Auth0AuthRepository>(),
     );
   });
 
@@ -86,64 +85,4 @@ void main() {
       AppConfig.isSupabaseConfigured,
     );
   });
-}
-
-class _MemoryStore implements WorkOsSessionStore {
-  String? access;
-  String? refresh;
-
-  @override
-  Future<void> save({
-    required String accessToken,
-    required String refreshToken,
-  }) async {
-    access = accessToken;
-    refresh = refreshToken;
-  }
-
-  @override
-  Future<String?> readAccessToken() async => access;
-
-  @override
-  Future<String?> readRefreshToken() async => refresh;
-
-  @override
-  Future<void> clear() async {
-    access = null;
-    refresh = null;
-  }
-}
-
-class _FakeGateway implements WorkOsAuthGateway {
-  @override
-  Future<void> requestPasswordReset({required String email}) async {}
-
-  @override
-  Future<WorkOsTokenPair> refreshSession({required String refreshToken}) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<WorkOsSignInResult> signInWithPassword({
-    required String email,
-    required String password,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<WorkOsSignInResult> signUpWithPassword({
-    required String email,
-    required String password,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<WorkOsTokenPair> verifyEmailCode({
-    required String code,
-    required String pendingAuthenticationToken,
-  }) {
-    throw UnimplementedError();
-  }
 }

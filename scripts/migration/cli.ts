@@ -10,6 +10,7 @@ import { createMissingWorkosUsers, formatWorkosCreateReport } from "./workosCrea
 import { runConvexImportCommand } from "./convexImportCli";
 import type { ImportWriter } from "./convexImportExecute";
 import { runConvexAuditCommand } from "./convexAuditCli";
+import type { MigrationAuditSnapshot } from "./convexAudit";
 
 function hasFlag(args: string[], name: string): boolean {
   return args.includes(name);
@@ -37,6 +38,7 @@ function refuseImport(args: string[]): void {
 export type CliExtras = {
   env?: NodeJS.ProcessEnv;
   createImportWriter?: () => ImportWriter;
+  loadAuditSnapshot?: () => Promise<MigrationAuditSnapshot>;
 };
 
 export async function runCli(
@@ -139,10 +141,11 @@ export async function runCli(
       mappingDir: option(args, "--mapping-dir", option(args, "--out", "migration-work")),
       target: option(args, "--target", ""),
       env: extras.env ?? process.env,
+      loadSnapshot: extras.loadAuditSnapshot,
     });
   }
   throw new Error(
-    "Usage: cli.ts export --out migration-export | cli.ts --dry-run --dir migration-export | cli.ts workos-map --dir migration-export --out migration-work | cli.ts workos-create --dir migration-export --out migration-work | cli.ts convex-import --dir migration-export --mapping-dir migration-work [--dry-run|--execute --target <deployment>] | cli.ts convex-audit --dir migration-export --mapping-dir migration-work --target <deployment>",
+    "Usage: cli.ts export --out migration-export | cli.ts --dry-run --dir migration-export | cli.ts workos-map --dir migration-export --out migration-work | cli.ts workos-create --dir migration-export --out migration-work | cli.ts convex-import --dir migration-export --mapping-dir migration-work [--dry-run|--execute --target <deployment>] | cli.ts convex-audit --dir migration-export --mapping-dir migration-work --target <deployment>. Production writes also require CONVEX_PRODUCTION_CONFIRM=DRAGONSLAIR_PRODUCTION.",
   );
 }
 

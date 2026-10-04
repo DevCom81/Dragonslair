@@ -224,7 +224,7 @@ export default defineSchema({
     .index("by_room_and_created", ["roomId", "createdAt"])
     .index("by_user_and_created", ["userId", "createdAt"]),
 
-  // Temporary LOT 12 remap. Not a permanent identity store.
+  // Legacy migration audit data only. Not used by the runtime auth path.
   identityMap: defineTable({
     supabaseUserId: v.string(),
     workosSubject: v.string(),
@@ -233,9 +233,4 @@ export default defineSchema({
     .index("by_supabase_user", ["supabaseUserId"])
     .index("by_workos_subject", ["workosSubject"]),
 
-  // LOT 0A spike only. Remove after Android/Windows validation.
-  spikeMarkers: defineTable({
-    subject: v.string(),
-    marker: v.string(),
-  }).index("by_subject", ["subject"]),
 });

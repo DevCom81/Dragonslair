@@ -122,4 +122,42 @@ describe("ensureUser", () => {
       expect(entitlements[0]?.source).toBe("purchase");
     });
   });
+
+  test("creates a user when subject is unknown even if an email already exists", async () => {
+    const t = backend();
+    await t.run(async (ctx: MutationCtx) => {
+      await ctx.db.insert("users", {
+        workosSubject: "user_01OTHER",
+        email: "other@example.com",
+        createdAt: 1,
+      });
+    });
+    const user = await t
+      .withIdentity({
+        subject: "user_01NEW",
+        issuer: "https://api.workos.com/user_management/client_01EXAMPLE",
+        email: "other@example.com",
+      })
+      .mutation(api.users.ensureUser, {});
+    expect(user?.workosSubject).toBe("user_01NEW");
+
+    await t.run(async (ctx: MutationCtx) => {
+      expect(await ctx.db.query("users").collect()).toHaveLength(2);
+    });
+  });
+
+  test("creates a user when subject is unknown and JWT has no email", async () => {
+    const t = backend();
+    const user = await t
+      .withIdentity({
+        subject: "user_01CURRENT",
+        issuer: "https://api.workos.com/user_management/client_01EXAMPLE",
+      })
+      .mutation(api.users.ensureUser, {});
+    expect(user?.workosSubject).toBe("user_01CURRENT");
+
+    await t.run(async (ctx: MutationCtx) => {
+      expect(await ctx.db.query("users").collect()).toHaveLength(1);
+    });
+  });
 });

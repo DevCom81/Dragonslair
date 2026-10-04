@@ -48,10 +48,9 @@ import type * as pendingRolls from "../pendingRolls.js";
 import type * as players from "../players.js";
 import type * as profiles from "../profiles.js";
 import type * as prompts from "../prompts.js";
+import type * as resetTestData from "../resetTestData.js";
 import type * as rolls from "../rolls.js";
 import type * as rooms from "../rooms.js";
-import type * as spike from "../spike.js";
-import type * as spikeAuth from "../spikeAuth.js";
 import type * as stripe from "../stripe.js";
 import type * as users from "../users.js";
 
@@ -102,10 +101,9 @@ declare const fullApi: ApiFromModules<{
   players: typeof players;
   profiles: typeof profiles;
   prompts: typeof prompts;
+  resetTestData: typeof resetTestData;
   rolls: typeof rolls;
   rooms: typeof rooms;
-  spike: typeof spike;
-  spikeAuth: typeof spikeAuth;
   stripe: typeof stripe;
   users: typeof users;
 }>;

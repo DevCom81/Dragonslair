@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/backend/backend_composition.dart';
+import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/player_profile.dart';
 import 'profile_providers.dart';
 
@@ -17,7 +18,7 @@ Future<void> routeAfterSession(BuildContext context, WidgetRef ref) async {
     context.goNamed('display-name');
     return;
   }
-  if (!profile.isReadyToPlay) {
+  if (!isProfileReady(profile)) {
     context.goNamed('character-sheet');
     return;
   }
@@ -25,5 +26,6 @@ Future<void> routeAfterSession(BuildContext context, WidgetRef ref) async {
 }
 
 bool isProfileReady(PlayerProfile? profile) {
-  return profile?.isReadyToPlay ?? false;
+  return (profile?.sheetConfirmed ?? false) &&
+      CharacterClassCatalog.isPlayableId(profile?.classId);
 }

@@ -27,6 +27,41 @@ void main() {
     expect(profile.stats.strength, 12);
   });
 
+  test('profile mapping treats unset classId as absent', () {
+    final profile = profileFromConvex({
+      '_id': 'profile_1',
+      'displayName': 'Hero',
+      'createdAt': 1_700_000_000_000,
+      'sheetConfirmed': true,
+      'classId': 'unset',
+      'strength': 12,
+      'dexterity': 10,
+      'constitution': 11,
+      'intelligence': 9,
+      'wisdom': 8,
+      'charisma': 13,
+    });
+    expect(profile.classId, isNull);
+    expect(profile.isReadyToPlay, isFalse);
+    expect(profile.stats.strength, 12);
+  });
+
+  test('profile mapping ignores non-numeric stats instead of throwing', () {
+    final profile = profileFromConvex({
+      '_id': 'profile_1',
+      'displayName': 'Hero',
+      'createdAt': 1_700_000_000_000,
+      'sheetConfirmed': false,
+      'strength': Object(),
+      'dexterity': 10,
+      'constitution': 11,
+      'intelligence': 9,
+      'wisdom': 8,
+      'charisma': 13,
+    });
+    expect(profile.stats.strength, 10);
+  });
+
   test('waiting and continuable rooms keep server order and ids', () {
     final rooms = roomsFromConvex([
       {

@@ -134,21 +134,30 @@ class HomeScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             ],
-                            OutlinedButton(
+                            FilledButton(
                               onPressed: configured
-                                  ? () => context.pushNamed(
-                                      'auth',
-                                      queryParameters: {'mode': 'login'},
-                                    )
+                                  ? () async {
+                                      try {
+                                        await ref
+                                            .read(
+                                              authControllerProvider.notifier,
+                                            )
+                                            .startSignIn();
+                                      } catch (error) {
+                                        if (!context.mounted) {
+                                          return;
+                                        }
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(error.toString()),
+                                            backgroundColor: AppColors.danger,
+                                          ),
+                                        );
+                                      }
+                                    }
                                   : null,
                               child: Text(l10n.logIn),
-                            ),
-                            const SizedBox(height: 8),
-                            FilledButton.tonal(
-                              onPressed: configured
-                                  ? () => context.pushNamed('auth')
-                                  : null,
-                              child: Text(l10n.signUp),
                             ),
                           ],
                         ],

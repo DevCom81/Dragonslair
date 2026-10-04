@@ -102,6 +102,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createAccount => 'Crear cuenta';
 
   @override
+  String get authHostedHint =>
+      'Inicia sesion con Auth0. Universal Login muestra los proveedores activados.';
+
+  @override
+  String get authSignInCancelled => 'Inicio de sesion cancelado.';
+
+  @override
+  String get authSignInFailed => 'No se pudo iniciar sesion.';
+
+  @override
   String get alreadyHaveAccount => 'Ya tienes cuenta? Inicia sesion';
 
   @override

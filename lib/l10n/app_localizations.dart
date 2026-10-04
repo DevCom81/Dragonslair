@@ -276,6 +276,24 @@ abstract class AppLocalizations {
   /// **'Create account'**
   String get createAccount;
 
+  /// No description provided for @authHostedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Auth0. Enabled identity providers are shown by Universal Login.'**
+  String get authHostedHint;
+
+  /// No description provided for @authSignInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled.'**
+  String get authSignInCancelled;
+
+  /// No description provided for @authSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed.'**
+  String get authSignInFailed;
+
   /// No description provided for @alreadyHaveAccount.
   ///
   /// In en, this message translates to:

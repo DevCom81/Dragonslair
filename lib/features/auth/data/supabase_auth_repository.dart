@@ -50,58 +50,10 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await _requiredClient.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
-      final user = response.user;
-      if (user == null) {
-        throw const AppAuthException('Connexion impossible.');
-      }
-      return authUserFromSupabase(user);
-    } on AuthException catch (error) {
-      throw AppAuthException(error.message, cause: error);
-    }
-  }
-
-  @override
-  Future<AuthUser> signUp({
-    required String email,
-    required String password,
-  }) async {
-    final trimmedEmail = email.trim();
-    try {
-      final response = await _requiredClient.auth.signUp(
-        email: trimmedEmail,
-        password: password,
-      );
-      final sessionUser = response.session?.user ?? response.user;
-      if (response.session == null) {
-        try {
-          return await signIn(email: trimmedEmail, password: password);
-        } on AppAuthException {
-          throw const AppAuthException(
-            'Compte cree. Desactive Confirm email dans Supabase Auth.',
-          );
-        }
-      }
-      if (sessionUser == null) {
-        throw const AppAuthException('Inscription impossible.');
-      }
-      return authUserFromSupabase(sessionUser);
-    } on AppAuthException {
-      rethrow;
-    } on AuthException catch (error) {
-      throw AppAuthException(
-        '${error.message} Si le compte est cree, desactive Confirm email dans Supabase Auth.',
-        cause: error,
-      );
-    }
+  Future<void> startSignIn({String? context}) {
+    throw const AppAuthException(
+      'La connexion externe n est pas disponible en mode legacy.',
+    );
   }
 
   @override
@@ -124,24 +76,7 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> verifyEmailCode({required String code}) {
-    throw const AppAuthException(
-      'La verification email WorkOS n est pas utilisee en mode legacy.',
-    );
-  }
-
-  @override
-  Future<void> requestPasswordReset({required String email}) {
-    throw const AppAuthException(
-      'La reinitialisation du mot de passe n est pas disponible en mode legacy.',
-    );
-  }
-
-  @override
   bool get supportsAnonymousSignIn => true;
-
-  @override
-  bool get supportsPasswordReset => false;
 
   @override
   Future<void> signOut() async {

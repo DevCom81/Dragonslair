@@ -101,6 +101,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get createAccount => 'Creer le compte';
 
   @override
+  String get authHostedHint =>
+      'Connectez-vous avec Auth0. Les fournisseurs actives sont affiches par Universal Login.';
+
+  @override
+  String get authSignInCancelled => 'Connexion annulee.';
+
+  @override
+  String get authSignInFailed => 'Connexion impossible.';
+
+  @override
   String get alreadyHaveAccount => 'Deja un compte ? Se connecter';
 
   @override

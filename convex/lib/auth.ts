@@ -14,7 +14,7 @@ export class UnauthenticatedError extends Error {
   }
 }
 
-export type WorkosIdentity = {
+export type AuthIdentity = {
   subject: string;
   issuer: string;
   email?: string;
@@ -29,7 +29,7 @@ export class UserNotFoundError extends Error {
   }
 }
 
-export async function requireIdentity(ctx: AuthCtx): Promise<WorkosIdentity> {
+export async function requireIdentity(ctx: AuthCtx): Promise<AuthIdentity> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) {
     throw new UnauthenticatedError();
@@ -46,13 +46,13 @@ export async function requireIdentity(ctx: AuthCtx): Promise<WorkosIdentity> {
   };
 }
 
-export async function findUserByWorkosSubject(
+export async function findUserByAuthSubject(
   ctx: DbCtx,
-  workosSubject: string,
+  authSubject: string,
 ) {
   const matches = await ctx.db
     .query("users")
-    .withIndex("by_workos_subject", (q) => q.eq("workosSubject", workosSubject))
+    .withIndex("by_workos_subject", (q) => q.eq("workosSubject", authSubject))
     .collect();
   if (matches.length === 0) {
     return null;
@@ -62,9 +62,11 @@ export async function findUserByWorkosSubject(
   );
 }
 
+export const findUserByWorkosSubject = findUserByAuthSubject;
+
 export async function requireUser(ctx: DbCtx) {
   const identity = await requireIdentity(ctx);
-  const user = await findUserByWorkosSubject(ctx, identity.subject);
+  const user = await findUserByAuthSubject(ctx, identity.subject);
   if (user === null) {
     throw new UserNotFoundError();
   }

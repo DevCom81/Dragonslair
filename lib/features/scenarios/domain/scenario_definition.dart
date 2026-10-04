@@ -120,6 +120,10 @@ class CharacterClassCatalog {
 
   static const classBonus = 2;
 
+  static bool isPlayableId(String? id) {
+    return id != null && allIds.contains(id);
+  }
+
   static CharacterClass byId(String id) {
     return all.firstWhere(
       (item) => item.id == id,

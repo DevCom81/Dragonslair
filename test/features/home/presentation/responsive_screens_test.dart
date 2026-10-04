@@ -1,5 +1,5 @@
 import 'package:dragons_lair/app/app.dart';
-import 'package:dragons_lair/features/auth/presentation/auth_screen.dart';
+import 'package:dragons_lair/features/auth/presentation/auth0_screens.dart';
 import 'package:dragons_lair/features/auth/presentation/character_sheet_screen.dart';
 import 'package:dragons_lair/features/rooms/presentation/create_room_screen.dart';
 import 'package:dragons_lair/features/rooms/presentation/join_room_by_code_screen.dart';
@@ -30,7 +30,7 @@ void main() {
     const screens = <String, Widget>{
       'create-room': CreateRoomScreen(),
       'character-sheet': CharacterSheetScreen(),
-      'auth': AuthScreen(),
+      'callback': Auth0CallbackScreen(),
       'join-room': JoinRoomByCodeScreen(),
     };
 

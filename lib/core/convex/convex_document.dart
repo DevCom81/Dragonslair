@@ -99,7 +99,14 @@ String? convexOptionalString(Object? value) {
     return null;
   }
   final trimmed = value.trim();
-  return trimmed.isEmpty ? null : trimmed;
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final normalized = trimmed.toLowerCase();
+  if (normalized == 'unset' || normalized == 'undefined') {
+    return null;
+  }
+  return trimmed;
 }
 
 List<String> convexStringList(Object? value) {

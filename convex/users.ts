@@ -2,14 +2,14 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
-  findUserByWorkosSubject,
+  findUserByAuthSubject,
   requireIdentity,
 } from "./lib/auth";
 
-async function usersForSubject(ctx: MutationCtx, workosSubject: string) {
+async function usersForSubject(ctx: MutationCtx, authSubject: string) {
   return await ctx.db
     .query("users")
-    .withIndex("by_workos_subject", (q) => q.eq("workosSubject", workosSubject))
+    .withIndex("by_workos_subject", (q) => q.eq("workosSubject", authSubject))
     .collect();
 }
 
@@ -66,7 +66,6 @@ export const ensureUser = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await requireIdentity(ctx);
-    // Migrated users are found by WorkOS subject; legacyUuid is never cleared.
     const existing = await usersForSubject(ctx, identity.subject);
     if (existing.length > 0) {
       const user = oldestUser(existing);
@@ -107,6 +106,6 @@ export const me = query({
   args: {},
   handler: async (ctx) => {
     const identity = await requireIdentity(ctx);
-    return await findUserByWorkosSubject(ctx, identity.subject);
+    return await findUserByAuthSubject(ctx, identity.subject);
   },
 });

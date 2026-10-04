@@ -7,6 +7,9 @@ void main() {
     expect(CharacterClassCatalog.fighter.primaryStatKey, 'strength');
     expect(CharacterClassCatalog.cleric.primaryStatKey, 'wisdom');
     expect(CharacterClassCatalog.wizard.primaryStatKey, 'intelligence');
+    expect(CharacterClassCatalog.isPlayableId('druid'), isTrue);
+    expect(CharacterClassCatalog.isPlayableId('unset'), isFalse);
+    expect(CharacterClassCatalog.isPlayableId(null), isFalse);
   });
 
   test('requires a cleric in dungeon and forest', () {

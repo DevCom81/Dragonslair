@@ -4,28 +4,40 @@ import { buildConvexImportPlan } from "./convexImportPlan";
 import { loadMigrationDir } from "./loadExport";
 import { loadWorkosMapping } from "./writeWorkosMapping";
 import type { MigrationAuditSnapshot } from "./convexAudit";
+import {
+  assertConvexTargetPair,
+  formatConvexGuardBanner,
+  isProductionConvexTarget,
+} from "./convexTarget";
 
 export async function runConvexAuditCommand(args: {
   dir: string;
   mappingDir: string;
   target?: string;
-  env?: { CONVEX_DEPLOYMENT?: string };
+  env?: { CONVEX_DEPLOYMENT?: string; CONVEX_PRODUCTION_DEPLOYMENT?: string };
   loadSnapshot?: () => Promise<MigrationAuditSnapshot>;
 }): Promise<{ code: number; stdout: string }> {
-  const deployment = String(args.env?.CONVEX_DEPLOYMENT ?? "").trim();
-  const target = String(args.target ?? "").trim();
-  if (/prod/i.test(deployment) || /prod/i.test(target)) {
-    throw new Error("convex-audit refuses a production Convex target");
-  }
-  if (target && deployment && target !== deployment) {
-    throw new Error("--target does not match CONVEX_DEPLOYMENT");
-  }
+  const { target, deployment } = assertConvexTargetPair({
+    target: args.target,
+    deployment: args.env?.CONVEX_DEPLOYMENT,
+    requiredFor: "audit",
+  });
+  const production = isProductionConvexTarget({
+    target,
+    deployment,
+    productionDeployment: args.env?.CONVEX_PRODUCTION_DEPLOYMENT,
+  });
   const bundle = loadMigrationDir(args.dir);
   const mapping = loadWorkosMapping(args.mappingDir);
   const plan = buildConvexImportPlan(bundle, mapping);
   const lines = [
-    `Convex target: ${deployment || "(unset)"}`,
-    "mode: audit (read-only, zero Convex writes)",
+    formatConvexGuardBanner({
+      target,
+      deployment,
+      mode: "audit",
+      production,
+      productionArmed: false,
+    }),
   ];
   if (plan.verdict !== "CONVEX_IMPORT_READY") {
     lines.push("LOT12 B5: B5_BLOCKED", "findings:", "  [CRITICAL] PLAN_BLOCKED: import plan is not READY");
