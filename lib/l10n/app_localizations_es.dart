@@ -111,6 +111,48 @@ class AppLocalizationsEs extends AppLocalizations {
   String get authRequired => 'Se requiere autenticacion.';
 
   @override
+  String get forgotPassword => 'Olvidaste la contrasena?';
+
+  @override
+  String get emailVerificationTitle => 'Verificar correo';
+
+  @override
+  String get emailVerificationHint =>
+      'Introduce el codigo enviado por correo antes de continuar.';
+
+  @override
+  String get verificationCode => 'Codigo de verificacion';
+
+  @override
+  String get verifyEmail => 'Verificar';
+
+  @override
+  String get passwordResetTitle => 'Restablecer contrasena';
+
+  @override
+  String get passwordResetHint =>
+      'Introduce tu correo. Si existe una cuenta, se enviara un mensaje.';
+
+  @override
+  String get passwordResetSent =>
+      'Si existe una cuenta para esta direccion, se envio un correo de restablecimiento.';
+
+  @override
+  String get resetToken => 'Token del correo';
+
+  @override
+  String get newPassword => 'Nueva contrasena';
+
+  @override
+  String get sendResetEmail => 'Enviar correo';
+
+  @override
+  String get confirmNewPassword => 'Definir contrasena';
+
+  @override
+  String get convexConfigMissing => 'Falta la configuracion de Convex.';
+
+  @override
   String get displayNameTitle => 'Tu nombre';
 
   @override

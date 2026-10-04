@@ -1,10 +1,14 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import '../backend/backend_mode.dart';
+
 class AppConfig {
   const AppConfig._();
 
   static const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const _backendMode = String.fromEnvironment('BACKEND_MODE');
+  static const _convexUrl = String.fromEnvironment('CONVEX_URL');
   static const _gameMasterMode = String.fromEnvironment(
     'GAME_MASTER_MODE',
   );
@@ -17,6 +21,10 @@ class AppConfig {
   static String get supabaseAnonKey =>
       _readConfig('SUPABASE_ANON_KEY', _supabaseAnonKey);
 
+  static String get convexUrl => _readConfig('CONVEX_URL', _convexUrl);
+
+  static bool get isConvexConfigured => convexUrl.isNotEmpty;
+
   static String get gameMasterMode =>
       _readConfig('GAME_MASTER_MODE', _gameMasterMode, defaultValue: 'mock');
 
@@ -25,6 +33,20 @@ class AppConfig {
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
+  static BackendMode get backendMode =>
+      parseBackendMode(_readConfig('BACKEND_MODE', _backendMode));
+
+  /// Identity/auth is ready for the selected backend.
+  /// Legacy: Supabase keys present. Convex: CONVEX_URL present.
+  static bool get isIdentityConfigured {
+    switch (backendMode) {
+      case BackendMode.legacy:
+        return isSupabaseConfigured;
+      case BackendMode.convex:
+        return isConvexConfigured;
+    }
+  }
 
   static bool get isGameMasterRemote =>
       gameMasterMode.toLowerCase() == 'remote';

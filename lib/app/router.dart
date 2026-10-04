@@ -5,6 +5,7 @@ import '../features/access/presentation/access_offer_screen.dart';
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/character_sheet_screen.dart';
 import '../features/auth/presentation/display_name_screen.dart';
+import '../features/auth/presentation/password_reset_screen.dart';
 import '../features/auth/presentation/profile_screen.dart';
 import '../features/board/presentation/board_screen.dart';
 import '../features/figurines/presentation/figurine_selection_screen.dart';
@@ -29,8 +30,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/auth',
         name: 'auth',
-        builder: (context, state) =>
-            AuthScreen(isSignUp: state.uri.queryParameters['mode'] != 'login'),
+        builder: (context, state) => AuthScreen(
+          isSignUp: !_authRouteShowsLogin(state.uri.queryParameters),
+        ),
+      ),
+      GoRoute(
+        path: '/auth/reset',
+        name: 'password-reset',
+        builder: (context, state) => const PasswordResetScreen(),
       ),
       GoRoute(
         path: '/display-name',
@@ -104,3 +111,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+bool _authRouteShowsLogin(Map<String, String> queryParameters) {
+  if (queryParameters['mode'] == 'login') {
+    return true;
+  }
+  // AuthKit may append an authorization code to the registered Redirect URI.
+  // DragonsLair still signs in with email/password; show login, ignore the code.
+  return queryParameters.containsKey('code');
+}

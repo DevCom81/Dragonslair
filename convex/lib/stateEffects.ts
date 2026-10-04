@@ -8,6 +8,14 @@ export const DC_MAX = 25;
 export const COMBAT_ROUND_MAX = 999;
 export const DEFAULT_POTION_HEAL = 20;
 export const POTION_ITEM_TYPES = new Set(["potion", "consumable"]);
+export const EQUIPABLE_ITEM_TYPES = new Set([
+  "weapon",
+  "armor",
+  "shield",
+  "accessory",
+]);
+export const ACTION_CONTENT_MAX = 2000;
+export const PLAYER_DICE_SIDES = new Set([6, 20]);
 
 export const VALID_ABILITIES = new Set([
   "strength",
@@ -531,6 +539,68 @@ export function consumePotion(
     }
   }
   return { inventory: next, heal };
+}
+
+export function isEquippableItem(item: JsonMap): boolean {
+  return EQUIPABLE_ITEM_TYPES.has(String(item.type ?? ""));
+}
+
+export function setEquipped(
+  inventory: JsonMap[],
+  itemId: string,
+  equipped: boolean,
+): JsonMap[] {
+  const target = inventory.find((item) => String(item.id ?? "") === itemId);
+  if (target === undefined || !isEquippableItem(target)) {
+    return inventory;
+  }
+  const targetType = String(target.type ?? "");
+  const next = cloneList(inventory);
+  for (const item of next) {
+    if (String(item.id ?? "") === itemId) {
+      item.equipped = equipped;
+    } else if (
+      equipped &&
+      item.equipped === true &&
+      String(item.type ?? "") === targetType
+    ) {
+      item.equipped = false;
+    }
+  }
+  return next;
+}
+
+export function isScrollItem(item: JsonMap): boolean {
+  return String(item.type ?? "") === "scroll";
+}
+
+export function consumeScroll(
+  inventory: JsonMap[],
+  itemId: string,
+): { inventory: JsonMap[]; effect: JsonMap | null } {
+  const next: JsonMap[] = [];
+  let effect: JsonMap | null = null;
+  for (const item of cloneList(inventory)) {
+    if (String(item.id ?? "") !== itemId || !isScrollItem(item) || effect !== null) {
+      next.push(item);
+      continue;
+    }
+    const parsed = normalizeEffect(item.effect);
+    if (parsed === null) {
+      next.push(item);
+      continue;
+    }
+    effect = parsed;
+    if (asInt(item.quantity, 1) > 1) {
+      item.quantity = asInt(item.quantity, 1) - 1;
+      next.push(item);
+    }
+  }
+  return { inventory: next, effect };
+}
+
+export function clampBoardPosition(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 export function asPayload(value: unknown): JsonMap {

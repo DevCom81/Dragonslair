@@ -11,7 +11,19 @@ import {
 } from "./lib/auth";
 import { GameRuleError, NotFoundError } from "./lib/errors";
 import { isFigurineId } from "./lib/validators";
-import { applyHeal, asInventory, consumePotion } from "./lib/stateEffects";
+import {
+  ACTION_CONTENT_MAX,
+  PLAYER_DICE_SIDES,
+  applyHeal,
+  asEffects,
+  asInventory,
+  clampBoardPosition,
+  consumePotion,
+  consumeScroll,
+  setEquipped,
+  upsertEffect,
+} from "./lib/stateEffects";
+import { insertActionEvent, insertSystemEvent } from "./gameEvents";
 import type { Doc, Id } from "./_generated/dataModel";
 
 async function profileForUser(ctx: MutationCtx, userId: Id<"users">) {
@@ -224,6 +236,148 @@ export const usePotion = mutation({
       createdAt: Date.now(),
     });
     return await ctx.db.get(player._id);
+  },
+});
+
+function assertPlaying(room: Doc<"rooms">) {
+  if (room.status !== "playing") {
+    throw new GameRuleError("La partie n est pas en cours.");
+  }
+}
+
+const EQUIP_VERB: Record<"fr" | "en" | "de" | "es", { on: string; off: string }> = {
+  fr: { on: "Equiper", off: "Retirer" },
+  en: { on: "Equip", off: "Unequip" },
+  de: { on: "Anlegen", off: "Ablegen" },
+  es: { on: "Equipar", off: "Quitar" },
+};
+
+export const updatePosition = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    x: v.number(),
+    y: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { room, player } = await requirePlayer(ctx, args.roomId);
+    assertPlaying(room);
+    if (!Number.isFinite(args.x) || !Number.isFinite(args.y)) {
+      throw new GameRuleError("Position invalide.");
+    }
+    await ctx.db.patch(player._id, {
+      positionX: clampBoardPosition(args.x),
+      positionY: clampBoardPosition(args.y),
+    });
+    return await ctx.db.get(player._id);
+  },
+});
+
+export const setItemEquipped = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    itemId: v.string(),
+    equipped: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const { room, player } = await requirePlayer(ctx, args.roomId);
+    assertPlaying(room);
+    const inventory = asInventory(player.inventory);
+    const nextInventory = setEquipped(inventory, args.itemId, args.equipped);
+    if (JSON.stringify(nextInventory) === JSON.stringify(inventory)) {
+      return player;
+    }
+    const used = nextInventory.find((item) => String(item.id ?? "") === args.itemId);
+    await ctx.db.patch(player._id, { inventory: nextInventory });
+    const verbs = EQUIP_VERB[room.locale];
+    await insertSystemEvent(ctx, {
+      roomId: room._id,
+      content: `${player.figurineName} : ${args.equipped ? verbs.on : verbs.off} ${String(used?.name ?? args.itemId)}`,
+      createdAt: Date.now(),
+    });
+    return await ctx.db.get(player._id);
+  },
+});
+
+export const useScroll = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    itemId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { room, player } = await requirePlayer(ctx, args.roomId);
+    assertPlaying(room);
+    const inventory = asInventory(player.inventory);
+    const result = consumeScroll(inventory, args.itemId);
+    if (result.effect === null) {
+      throw new GameRuleError("Parchemin inutilisable.");
+    }
+    const nextEffects = upsertEffect(asEffects(player.effects), result.effect);
+    await ctx.db.patch(player._id, {
+      inventory: result.inventory,
+      effects: nextEffects,
+    });
+    const used = inventory.find((item) => String(item.id ?? "") === args.itemId);
+    await insertSystemEvent(ctx, {
+      roomId: room._id,
+      content:
+        `${player.figurineName} : ${String(used?.name ?? "Parchemin")} (${String(result.effect.name ?? "effet")})`,
+      createdAt: Date.now(),
+    });
+    return await ctx.db.get(player._id);
+  },
+});
+
+export const submitAction = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { room, player } = await requirePlayer(ctx, args.roomId);
+    assertPlaying(room);
+    const content = args.content.trim().slice(0, ACTION_CONTENT_MAX);
+    if (content.length === 0) {
+      throw new GameRuleError("Action vide.");
+    }
+    const now = Date.now();
+    await insertActionEvent(ctx, {
+      roomId: room._id,
+      playerId: player._id,
+      content: `${player.figurineName} : ${content}`,
+      createdAt: now,
+    });
+    return { roomId: room._id, playerId: player._id, createdAt: now };
+  },
+});
+
+export const announceDice = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    sides: v.number(),
+    raw: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { room, player } = await requirePlayer(ctx, args.roomId);
+    assertPlaying(room);
+    if (!PLAYER_DICE_SIDES.has(args.sides)) {
+      throw new GameRuleError("De invalide.");
+    }
+    if (
+      !Number.isInteger(args.raw) ||
+      args.raw < 1 ||
+      args.raw > args.sides
+    ) {
+      throw new GameRuleError("Resultat de de invalide.");
+    }
+    const now = Date.now();
+    const label = `1d${args.sides} : ${args.raw} = ${args.raw}`;
+    await insertActionEvent(ctx, {
+      roomId: room._id,
+      playerId: player._id,
+      content: `${player.figurineName} lance ${label}`,
+      createdAt: now,
+    });
+    return { roomId: room._id, playerId: player._id, sides: args.sides, raw: args.raw };
   },
 });
 

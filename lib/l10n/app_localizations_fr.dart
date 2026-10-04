@@ -110,6 +110,48 @@ class AppLocalizationsFr extends AppLocalizations {
   String get authRequired => 'Authentification requise.';
 
   @override
+  String get forgotPassword => 'Mot de passe oublie ?';
+
+  @override
+  String get emailVerificationTitle => 'Verifier l email';
+
+  @override
+  String get emailVerificationHint =>
+      'Saisis le code envoye par email avant de continuer.';
+
+  @override
+  String get verificationCode => 'Code de verification';
+
+  @override
+  String get verifyEmail => 'Verifier';
+
+  @override
+  String get passwordResetTitle => 'Reinitialiser le mot de passe';
+
+  @override
+  String get passwordResetHint =>
+      'Saisis ton email. Si un compte existe, un message sera envoye.';
+
+  @override
+  String get passwordResetSent =>
+      'Si un compte existe pour cette adresse, un email de reinitialisation a ete envoye.';
+
+  @override
+  String get resetToken => 'Jeton recu par email';
+
+  @override
+  String get newPassword => 'Nouveau mot de passe';
+
+  @override
+  String get sendResetEmail => 'Envoyer l email';
+
+  @override
+  String get confirmNewPassword => 'Definir le mot de passe';
+
+  @override
+  String get convexConfigMissing => 'Configuration Convex absente.';
+
+  @override
   String get displayNameTitle => 'Ton pseudo';
 
   @override

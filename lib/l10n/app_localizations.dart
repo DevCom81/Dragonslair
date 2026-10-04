@@ -294,6 +294,84 @@ abstract class AppLocalizations {
   /// **'Authentication required.'**
   String get authRequired;
 
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @emailVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get emailVerificationTitle;
+
+  /// No description provided for @emailVerificationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code sent by email before continuing.'**
+  String get emailVerificationHint;
+
+  /// No description provided for @verificationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get verificationCode;
+
+  /// No description provided for @verifyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyEmail;
+
+  /// No description provided for @passwordResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get passwordResetTitle;
+
+  /// No description provided for @passwordResetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email. If an account exists, a message will be sent.'**
+  String get passwordResetHint;
+
+  /// No description provided for @passwordResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If an account exists for this address, a password reset email has been sent.'**
+  String get passwordResetSent;
+
+  /// No description provided for @resetToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token from email'**
+  String get resetToken;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPassword;
+
+  /// No description provided for @sendResetEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Send email'**
+  String get sendResetEmail;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Set password'**
+  String get confirmNewPassword;
+
+  /// No description provided for @convexConfigMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Convex configuration is missing.'**
+  String get convexConfigMissing;
+
   /// No description provided for @displayNameTitle.
   ///
   /// In en, this message translates to:

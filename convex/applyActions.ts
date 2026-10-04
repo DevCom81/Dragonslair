@@ -2,7 +2,7 @@ import { internalMutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { accessLevelForUser } from "./lib/access";
+import { applyFinishToRoom } from "./lib/finishRoom";
 import {
   applyDamage,
   applyHeal,
@@ -22,7 +22,6 @@ import {
   normalizeEffect,
   parseDefeatEnemy,
   parseEnemyHp,
-  parseFinishGame,
   parseMoveEnemy,
   parseRequestRoll,
   parseSpawnEnemy,
@@ -86,44 +85,8 @@ async function applyFinish(
   roomId: Id<"rooms">,
   action: GmAction,
 ): Promise<string | null> {
-  const ending = parseFinishGame(action.payload);
-  const room = await ctx.db.get(roomId);
-  if (room === null) {
-    return null;
-  }
-  let accessLevel: "demo" | "full" = "demo";
-  if (room.hostUserId) {
-    try {
-      accessLevel = await accessLevelForUser(ctx, room.hostUserId);
-    } catch {
-      accessLevel = "demo";
-    }
-  }
-  const demoCut = room.scenarioId === "demo" && accessLevel !== "full";
-  const status = demoCut ? "demo_finished" : "finished";
-  if (room.status !== "playing" && room.status !== "paused") {
-    return null;
-  }
-  const finishedAt = Date.now();
-  await ctx.db.patch(roomId, {
-    status,
-    finishedAt,
-    ending: {
-      result: ending.result,
-      summary: ending.summary,
-      epilogue: ending.epilogue,
-    },
-  });
-  const sessions = await ctx.db
-    .query("demoSessions")
-    .withIndex("by_room", (q) => q.eq("roomId", roomId))
-    .collect();
-  for (const session of sessions) {
-    if (session.completedAt === undefined) {
-      await ctx.db.patch(session._id, { completedAt: finishedAt });
-    }
-  }
-  return `Fin de partie (${ending.result}).`;
+  const result = await applyFinishToRoom(ctx, roomId, action.payload);
+  return result.summary;
 }
 
 async function applyCombat(

@@ -1,8 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
-import '../../../core/supabase/supabase_client_provider.dart';
 import 'game_access.dart';
 
 abstract interface class EntitlementRepository {
@@ -10,10 +8,6 @@ abstract interface class EntitlementRepository {
   Future<DemoSession?> fetchDemoSession(String userId);
   Future<DemoPlayResult> ensureDemoPlay(String roomId);
 }
-
-final entitlementRepositoryProvider = Provider<EntitlementRepository>((ref) {
-  return SupabaseEntitlementRepository(ref.watch(supabaseClientProvider));
-});
 
 class SupabaseEntitlementRepository implements EntitlementRepository {
   const SupabaseEntitlementRepository(this._client);

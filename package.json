@@ -5,14 +5,27 @@
   "scripts": {
     "convex:dev": "convex dev",
     "typecheck": "tsc --noEmit -p convex/tsconfig.json && tsc --noEmit -p tsconfig.tests.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate:export": "tsx scripts/migration/cli.ts export --out migration-export",
+    "migrate:dry-run": "tsx scripts/migration/cli.ts --dry-run --dir migration-export",
+    "migrate:workos-map": "tsx scripts/migration/cli.ts workos-map --dir migration-export --out migration-work",
+    "migrate:workos-create": "tsx scripts/migration/cli.ts workos-create --dir migration-export --out migration-work",
+    "migrate:convex-import": "tsx scripts/migration/cli.ts convex-import --dir migration-export --mapping-dir migration-work",
+    "migrate:convex-audit": "tsx scripts/migration/cli.ts convex-audit --dir migration-export --mapping-dir migration-work"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^26.6.4",
     "convex": "^1.31.7",
     "convex-test": "^0.0.41",
+    "tsx": "^4.20.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "jose": "^5.10.0",
+    "stripe": "^18.5.0"
   }
 }

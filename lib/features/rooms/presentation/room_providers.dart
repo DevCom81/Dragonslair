@@ -1,13 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/supabase/supabase_client_provider.dart';
-import '../data/supabase_room_repository.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../domain/room.dart';
-import '../domain/room_repository.dart';
 
-final roomRepositoryProvider = Provider<RoomRepository>((ref) {
-  return SupabaseRoomRepository(ref.watch(supabaseClientProvider));
-});
+export '../../../core/backend/backend_composition.dart' show roomRepositoryProvider;
 
 final waitingRoomsProvider = StreamProvider.autoDispose<List<Room>>((ref) {
   return ref.watch(roomRepositoryProvider).watchWaitingRooms();

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
@@ -14,7 +14,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/demo_timer_hud.dart';
 import '../../access/presentation/purchase_flow.dart';
-import '../../auth/presentation/auth_controller.dart';
+import '../../auth/domain/current_domain_user.dart';
+import '../../auth/presentation/current_domain_user.dart';
 import '../../combat/presentation/combat_providers.dart';
 import '../../enemies/presentation/enemy_providers.dart';
 import '../../events/domain/game_event.dart';
@@ -83,12 +84,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final playersState = ref.watch(roomPlayersProvider(widget.roomId));
-    final currentUser = ref.watch(authControllerProvider).value;
+    final domainUserId = ref.watch(currentDomainUserIdProvider).value;
     final room = ref.watch(roomProvider(widget.roomId)).value;
     final paused = room?.status == RoomStatus.paused;
     final finished = room?.status.isClosed ?? false;
-    final isHost =
-        currentUser != null && room != null && currentUser.id == room.hostId;
+    final isHost = isCurrentDomainUser(domainUserId, room?.hostId);
     final showDemoTimer =
         (room?.scenarioId == ScenarioCatalog.demo.id) &&
         (ref.watch(currentEntitlementProvider).value?.level.isDemo ?? false);
@@ -111,7 +111,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       _syncSceneMusic();
     });
 
-    if (AppConfig.isGameMasterRemote) {
+    if (ref.read(serverAuthoritativeGameplayProvider)) {
       ref.listen(roomCombatProvider(widget.roomId), (previous, next) {
         _syncSceneMusic();
       });
@@ -194,7 +194,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                 data: (players) {
                   final currentPlayer = _currentPlayer(
                     players,
-                    currentUser?.id,
+                    domainUserId,
                   );
                   final enemies =
                       ref.watch(roomEnemiesProvider(widget.roomId)).value ??
@@ -206,17 +206,22 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                     board: GameBoard(
                       players: players,
                       enemies: enemies,
-                      currentUserId: currentUser?.id,
+                      currentUserId: domainUserId,
                       onMovePlayer: (player, x, y) {
                         if (paused || finished) {
                           return Future.value();
                         }
-                        if (player.userId != currentUser?.id) {
+                        if (!isCurrentDomainUser(domainUserId, player.userId)) {
                           return Future.value();
                         }
                         return ref
                             .read(playerRepositoryProvider)
-                            .updatePosition(playerId: player.id, x: x, y: y);
+                            .updatePosition(
+                              playerId: player.id,
+                              roomId: widget.roomId,
+                              x: x,
+                              y: y,
+                            );
                       },
                     ),
                     journal: GameJournal(roomId: widget.roomId),
@@ -309,7 +314,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       return null;
     }
     for (final player in players) {
-      if (player.userId == userId) {
+      if (isCurrentDomainUser(userId, player.userId)) {
         return player;
       }
     }
@@ -372,11 +377,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   Future<void> _pauseRoom() async {
     final l10n = AppLocalizations.of(context);
     try {
-      await ref.read(roomRepositoryProvider).pauseRoom(widget.roomId);
+      await ref.read(gameplayCommandsProvider).pauseRoom(
+            roomId: widget.roomId,
+            pausedContent: l10n.gamePaused,
+          );
       ref.invalidate(currentDemoSessionProvider);
-      await ref
-          .read(gameEventRepositoryProvider)
-          .createSystem(roomId: widget.roomId, content: l10n.gamePaused);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

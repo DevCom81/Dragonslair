@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../domain/player_profile.dart';
-import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
 
 final currentProfileProvider = FutureProvider<PlayerProfile?>((ref) {

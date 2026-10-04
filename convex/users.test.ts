@@ -81,4 +81,45 @@ describe("ensureUser", () => {
       expect(await ctx.db.query("userEntitlements").collect()).toHaveLength(2);
     });
   });
+
+  test("does not duplicate a migrated user and keeps legacyUuid", async () => {
+    const t = backend();
+    const subject = "user_01MIGRATED";
+    const legacyUuid = "11111111-1111-4111-8111-111111111111";
+    const userId = await t.run(async (ctx: MutationCtx) => {
+      const id = await ctx.db.insert("users", {
+        workosSubject: subject,
+        email: "migrated@example.com",
+        legacyUuid,
+        createdAt: 1,
+      });
+      await ctx.db.insert("userEntitlements", {
+        userId: id,
+        accessLevel: "full",
+        source: "purchase",
+        grantedAt: 1,
+        metadata: {},
+      });
+      return id;
+    });
+    const user = await t
+      .withIdentity({
+        subject,
+        issuer: "https://api.workos.com/user_management/client_01EXAMPLE",
+        email: "migrated@example.com",
+      })
+      .mutation(api.users.ensureUser, {});
+    expect(user?._id).toEqual(userId);
+    expect(user?.legacyUuid).toBe(legacyUuid);
+    expect(user?.workosSubject).toBe(subject);
+
+    await t.run(async (ctx: MutationCtx) => {
+      const users = await ctx.db.query("users").collect();
+      const entitlements = await ctx.db.query("userEntitlements").collect();
+      expect(users).toHaveLength(1);
+      expect(entitlements).toHaveLength(1);
+      expect(entitlements[0]?.accessLevel).toBe("full");
+      expect(entitlements[0]?.source).toBe("purchase");
+    });
+  });
 });

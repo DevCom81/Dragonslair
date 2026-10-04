@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../figurines/presentation/figurine_picker.dart';
-import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
 import 'profile_providers.dart';
 

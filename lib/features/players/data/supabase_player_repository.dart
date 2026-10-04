@@ -137,6 +137,7 @@ class SupabasePlayerRepository implements PlayerRepository {
     required String playerId,
     required double x,
     required double y,
+    String? roomId,
   }) async {
     final userId = _requiredClient.auth.currentUser?.id;
     if (userId == null) {

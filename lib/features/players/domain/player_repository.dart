@@ -18,6 +18,7 @@ abstract interface class PlayerRepository {
     required String playerId,
     required double x,
     required double y,
+    String? roomId,
   });
   Future<void> patchOwnPlayer({
     required String playerId,

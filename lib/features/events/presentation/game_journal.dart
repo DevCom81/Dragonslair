@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../auth/presentation/auth_controller.dart';
+import '../../auth/domain/current_domain_user.dart';
+import '../../auth/presentation/current_domain_user.dart';
 import '../../game/presentation/action_panel.dart';
 import '../../game/presentation/gm_choice_bar.dart';
 import '../../game/presentation/pending_ability_roll.dart';
@@ -71,10 +72,12 @@ class _GameJournalState extends ConsumerState<GameJournal> {
     final choices = gmResponse?.choices ?? const [];
     final players =
         ref.watch(roomPlayersProvider(widget.roomId)).value ?? const [];
-    final currentUserId = ref.watch(authControllerProvider).value?.id;
-    final currentPlayer = currentUserId == null
+    final domainUserId = ref.watch(currentDomainUserIdProvider).value;
+    final currentPlayer = domainUserId == null
         ? null
-        : players.where((player) => player.userId == currentUserId).firstOrNull;
+        : players
+            .where((player) => isCurrentDomainUser(domainUserId, player.userId))
+            .firstOrNull;
     final pending = activePendingRoll(ref, widget.roomId);
 
     return Column(

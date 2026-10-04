@@ -9,6 +9,16 @@ node_modules/
 build/
 coverage/
 
+migration-export/
+**/migration-export/**
+migration-export.inprogress/
+migration-export.bak/
+
+migration-work/
+**/migration-work/**
+migration-work.inprogress/
+migration-work.bak/
+
 .env
 .env.local
 

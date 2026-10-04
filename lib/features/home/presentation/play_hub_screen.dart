@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
@@ -14,6 +13,7 @@ import '../../access/presentation/access_providers.dart';
 import '../../access/presentation/demo_start.dart';
 import '../../access/presentation/purchase_flow.dart';
 import '../../access/presentation/purchase_platform.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../auth/domain/player_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -74,7 +74,7 @@ class PlayHubScreen extends ConsumerWidget {
                           ? _DemoAccessHub(
                               welcome: _welcomeText(l10n, profile, classLabel),
                               subtitle: l10n.hubSubtitle,
-                              guestBanner: user is User && user.isAnonymous
+                              guestBanner: showsAnonymousGuestUi(user)
                                   ? l10n.guestBanner
                                   : null,
                             )
@@ -82,7 +82,7 @@ class PlayHubScreen extends ConsumerWidget {
                           ? _ExpandedHub(
                               welcome: _welcomeText(l10n, profile, classLabel),
                               subtitle: l10n.hubSubtitle,
-                              guestBanner: user is User && user.isAnonymous
+                              guestBanner: showsAnonymousGuestUi(user)
                                   ? l10n.guestBanner
                                   : null,
                             )
@@ -99,7 +99,7 @@ class PlayHubScreen extends ConsumerWidget {
                                   l10n.hubSubtitle,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
-                                if (user is User && user.isAnonymous) ...[
+                                if (showsAnonymousGuestUi(user)) ...[
                                   const SizedBox(height: 12),
                                   Text(
                                     l10n.guestBanner,

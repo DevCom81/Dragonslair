@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/onboarding.dart';
 import '../../auth/presentation/profile_providers.dart';
@@ -22,7 +22,9 @@ class HomeScreen extends ConsumerWidget {
     final profileState = ref.watch(currentProfileProvider);
     final canPlay = isProfileReady(profileState.value);
     final user = authState.value;
-    final configured = AppConfig.isSupabaseConfigured;
+    final configured = ref.watch(authCapabilitiesProvider).isConfigured;
+    final supportsAnonymous =
+        ref.watch(authCapabilitiesProvider).supportsAnonymousSignIn;
 
     return Scaffold(
       appBar: AppBar(
@@ -114,8 +116,16 @@ class HomeScreen extends ConsumerWidget {
                               child: Text(l10n.signOut),
                             ),
                           ] else ...[
-                            _AuthStatus(authState: authState),
+                            _AuthStatus(
+                              authState: authState,
+                              unconfiguredMessage: configured
+                                  ? null
+                                  : supportsAnonymous
+                                      ? l10n.supabaseMissing
+                                      : l10n.convexConfigMissing,
+                            ),
                             const SizedBox(height: 16),
+                            if (supportsAnonymous) ...[
                             OutlinedButton(
                               onPressed: configured
                                   ? () => _playAsGuest(context, ref)
@@ -123,6 +133,7 @@ class HomeScreen extends ConsumerWidget {
                               child: Text(l10n.playAsGuest),
                             ),
                             const SizedBox(height: 8),
+                            ],
                             OutlinedButton(
                               onPressed: configured
                                   ? () => context.pushNamed(
@@ -224,15 +235,20 @@ String _signedInWelcome(AppLocalizations l10n, String? displayName) {
 }
 
 class _AuthStatus extends StatelessWidget {
-  const _AuthStatus({required this.authState});
+  const _AuthStatus({
+    required this.authState,
+    required this.unconfiguredMessage,
+  });
 
-  final AsyncValue<User?> authState;
+  final AsyncValue<AuthUser?> authState;
+  final String? unconfiguredMessage;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    if (!AppConfig.isSupabaseConfigured) {
-      return _StatusMessage(message: l10n.supabaseMissing);
+    final missing = unconfiguredMessage;
+    if (missing != null) {
+      return _StatusMessage(message: missing);
     }
 
     return authState.when(
@@ -241,7 +257,9 @@ class _AuthStatus extends StatelessWidget {
           return _StatusMessage(message: l10n.sessionClosed);
         }
         return _StatusMessage(
-          message: user.isAnonymous ? l10n.sessionGuest : l10n.sessionConnected,
+          message: showsAnonymousGuestUi(user)
+              ? l10n.sessionGuest
+              : l10n.sessionConnected,
         );
       },
       error: (error, stackTrace) => _StatusMessage(message: error.toString()),

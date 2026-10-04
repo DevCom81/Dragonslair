@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/l10n/locale_controller.dart';
@@ -383,7 +383,8 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Text(
-              _mode == _CreateMode.custom && AppConfig.isGameMasterRemote
+              _mode == _CreateMode.custom &&
+                      ref.read(serverAuthoritativeGameplayProvider)
                   ? l10n.generatingAdventure
                   : l10n.create,
             ),
@@ -428,12 +429,13 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
             minPlayers: custom ? 1 : _scenario.minPlayers,
             requiredClassIds: custom ? const [] : _scenario.requiredClassIds,
             scenarioPrompt: custom ? draft.prompt.trim() : '',
-            worldState: custom && !AppConfig.isGameMasterRemote
+            worldState: custom &&
+                    !ref.read(serverAuthoritativeGameplayProvider)
                 ? draft.mockWorldState()
                 : const {},
             locale: _locale,
           );
-      if (custom && AppConfig.isGameMasterRemote) {
+      if (custom && ref.read(serverAuthoritativeGameplayProvider)) {
         await ref.read(scenarioGeneratorProvider).generate(
               roomId: room.id,
               draft: draft,

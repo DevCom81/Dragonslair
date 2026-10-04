@@ -1,8 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
-import '../../../core/supabase/supabase_client_provider.dart';
 import 'character_stats.dart';
 import 'player_profile.dart';
 
@@ -23,10 +21,6 @@ abstract interface class ProfileRepository {
     required int? figurineId,
   });
 }
-
-final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return SupabaseProfileRepository(ref.watch(supabaseClientProvider));
-});
 
 class SupabaseProfileRepository implements ProfileRepository {
   const SupabaseProfileRepository(this._client);

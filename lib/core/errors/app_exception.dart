@@ -30,3 +30,9 @@ class RealtimeException extends AppException {
 class GameException extends AppException {
   const GameException(super.message, {super.cause});
 }
+
+class UnsupportedConvexWriteException extends GameException {
+  const UnsupportedConvexWriteException([
+    super.message = 'This write is not a public Convex mutation.',
+  ]);
+}

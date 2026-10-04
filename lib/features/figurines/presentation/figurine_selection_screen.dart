@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/player_profile.dart';
-import '../../auth/domain/profile_repository.dart';
+import '../../auth/domain/current_domain_user.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/current_domain_user.dart';
 import '../../auth/presentation/profile_providers.dart';
 import '../../players/domain/player.dart';
 import '../../players/presentation/player_providers.dart';
@@ -40,6 +42,7 @@ class _FigurineSelectionScreenState
     final roomState = ref.watch(roomProvider(widget.roomId));
     final playersState = ref.watch(roomPlayersProvider(widget.roomId));
     final user = ref.watch(authControllerProvider).value;
+    final domainUserId = ref.watch(currentDomainUserIdProvider).value;
     final profileState = ref.watch(currentProfileProvider);
 
     final l10n = AppLocalizations.of(context);
@@ -65,7 +68,8 @@ class _FigurineSelectionScreenState
                       room: room,
                       scenario: scenario,
                       players: players,
-                      userId: user?.id,
+                      authUserId: user?.id,
+                      domainUserId: domainUserId,
                       profile: profile,
                     );
                   },
@@ -98,14 +102,17 @@ class _FigurineSelectionScreenState
     required Room room,
     required ScenarioDefinition scenario,
     required List<Player> players,
-    required String? userId,
+    required String? authUserId,
+    required String? domainUserId,
     required PlayerProfile? profile,
   }) {
-    final alreadyJoined =
-        userId != null && players.any((player) => player.userId == userId);
+    final alreadyJoined = players.any(
+      (player) => isCurrentDomainUser(domainUserId, player.userId),
+    );
+    final isHost = isCurrentDomainUser(domainUserId, room.hostId);
     if (room.status != RoomStatus.waiting) {
-      if (alreadyJoined || userId == room.hostId) {
-        _redirectMember(room, alreadyJoined, userId == room.hostId);
+      if (alreadyJoined || isHost) {
+        _redirectMember(room, alreadyJoined, isHost);
         return const Center(
           child: CircularProgressIndicator(color: AppColors.gold),
         );
@@ -124,7 +131,7 @@ class _FigurineSelectionScreenState
         classId != null && scenario.allowedClassIds.contains(classId);
     final preferred = profile?.avatarFigurineId;
     final canUsePreferred =
-        userId != null &&
+        authUserId != null &&
         profile != null &&
         classId != null &&
         classAllowed &&
@@ -134,7 +141,7 @@ class _FigurineSelectionScreenState
         !alreadyJoined;
 
     if (canUsePreferred && !_didAutoJoin) {
-      _tryAutoJoin(userId, profile, FigurineCatalog.byId(preferred));
+      _tryAutoJoin(authUserId, profile, FigurineCatalog.byId(preferred));
       return const Center(
         child: CircularProgressIndicator(color: AppColors.gold),
       );
@@ -178,7 +185,7 @@ class _FigurineSelectionScreenState
           padding: const EdgeInsets.all(16),
           child: FilledButton(
             onPressed:
-                userId == null ||
+                authUserId == null ||
                     profile == null ||
                     classId == null ||
                     !classAllowed ||
@@ -187,7 +194,7 @@ class _FigurineSelectionScreenState
                     _isSubmitting
                 ? null
                 : () => _join(
-                    userId,
+                    authUserId,
                     profile,
                     FigurineCatalog.byId(_figurineId!),
                   ),

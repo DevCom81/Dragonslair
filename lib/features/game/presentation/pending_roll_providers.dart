@@ -1,14 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
-import '../../../core/supabase/supabase_client_provider.dart';
-import '../data/supabase_pending_roll_repository.dart';
-import '../domain/pending_roll_repository.dart';
+import '../../../core/backend/backend_composition.dart';
 import 'pending_ability_roll.dart';
 
-final pendingRollRepositoryProvider = Provider<PendingRollRepository>((ref) {
-  return SupabasePendingRollRepository(ref.watch(supabaseClientProvider));
-});
+export '../../../core/backend/backend_composition.dart'
+    show pendingRollRepositoryProvider;
 
 final roomPendingRollsProvider = StreamProvider.autoDispose
     .family<List<PendingAbilityRoll>, String>((ref, roomId) {
@@ -16,13 +12,16 @@ final roomPendingRollsProvider = StreamProvider.autoDispose
 });
 
 PendingAbilityRoll? activePendingRoll(WidgetRef ref, String roomId) {
-  if (AppConfig.isGameMasterRemote) {
+  if (ref.watch(useServerPendingRollsProvider)) {
     final rolls = ref.watch(roomPendingRollsProvider(roomId)).value ?? const [];
     for (final roll in rolls) {
       if (roll.isOpen) {
         return roll;
       }
     }
+    return null;
+  }
+  if (ref.watch(serverAuthoritativeGameplayProvider)) {
     return null;
   }
   return ref.watch(pendingAbilityRollProvider);

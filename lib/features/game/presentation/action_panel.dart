@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../combat/presentation/combat_banner.dart';
@@ -218,12 +218,11 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
     setState(() => _isSubmitting = true);
 
     try {
-      final events = ref.read(gameEventRepositoryProvider);
-      await events.createAction(
-        roomId: widget.roomId,
-        playerId: player.id,
-        content: '${player.figurineName} : $content',
-      );
+      await ref.read(gameplayCommandsProvider).submitAction(
+            roomId: widget.roomId,
+            player: player,
+            content: content,
+          );
 
       final response = await ref
           .read(gameMasterControllerProvider.notifier)
@@ -240,7 +239,7 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
               locale: localeForRoom(ref, widget.roomId),
             ),
           );
-      if (!AppConfig.isGameMasterRemote) {
+      if (!ref.read(serverAuthoritativeGameplayProvider)) {
         ref
             .read(pendingAbilityRollProvider.notifier)
             .setRoll(pendingRollFromResponse(response));
@@ -278,12 +277,11 @@ class _ActionPanelState extends ConsumerState<ActionPanel> {
 
     final roll = _diceService.roll(count: 1, sides: sides);
     try {
-      await ref
-          .read(gameEventRepositoryProvider)
-          .createAction(
+      await ref.read(gameplayCommandsProvider).announceDice(
             roomId: widget.roomId,
-            playerId: player.id,
-            content: '${player.figurineName} lance ${roll.label}',
+            player: player,
+            sides: sides,
+            raw: roll.values.first,
           );
     } catch (error) {
       if (mounted) {

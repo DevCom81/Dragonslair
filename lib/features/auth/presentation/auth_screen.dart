@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
@@ -24,23 +26,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _codeController = TextEditingController();
   late var _isSignUp = widget.isSignUp;
   var _isSubmitting = false;
+  var _awaitingVerification = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final supportsReset =
+        ref.watch(authCapabilitiesProvider).supportsPasswordReset;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isSignUp ? l10n.authSignUpTitle : l10n.authLogInTitle),
+        title: Text(
+          _awaitingVerification
+              ? l10n.emailVerificationTitle
+              : _isSignUp
+                  ? l10n.authSignUpTitle
+                  : l10n.authLogInTitle,
+        ),
         actions: const [LanguageButton()],
       ),
       body: SafeArea(
@@ -53,62 +66,100 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-              Text(
-                l10n.authAccountHint,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email],
-                decoration: InputDecoration(
-                  labelText: l10n.email,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  final email = value?.trim() ?? '';
-                  if (!email.contains('@') || !email.contains('.')) {
-                    return l10n.emailInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                autofillHints: const [AutofillHints.password],
-                decoration: InputDecoration(
-                  labelText: l10n.password,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if ((value ?? '').length < 6) {
-                    return l10n.passwordTooShort;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _isSubmitting ? null : _submit,
-                child: _isSubmitting
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(_isSignUp ? l10n.createAccount : l10n.logIn),
-              ),
-              TextButton(
-                onPressed: _isSubmitting
-                    ? null
-                    : () => setState(() => _isSignUp = !_isSignUp),
-                child: Text(
-                  _isSignUp ? l10n.alreadyHaveAccount : l10n.newPlayerSignUp,
-                ),
-              ),
-            ],
+                    Text(
+                      _awaitingVerification
+                          ? l10n.emailVerificationHint
+                          : l10n.authAccountHint,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    if (_awaitingVerification) ...[
+                      TextFormField(
+                        controller: _codeController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: l10n.verificationCode,
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if ((value ?? '').trim().isEmpty) {
+                            return l10n.verificationCode;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _isSubmitting ? null : _verify,
+                        child: _isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(l10n.verifyEmail),
+                      ),
+                    ] else ...[
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: InputDecoration(
+                          labelText: l10n.email,
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          final email = value?.trim() ?? '';
+                          if (!email.contains('@') || !email.contains('.')) {
+                            return l10n.emailInvalid;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          labelText: l10n.password,
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if ((value ?? '').length < 6) {
+                            return l10n.passwordTooShort;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        child: _isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(_isSignUp ? l10n.createAccount : l10n.logIn),
+                      ),
+                      if (!_isSignUp && supportsReset)
+                        TextButton(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => context.pushNamed('password-reset'),
+                          child: Text(l10n.forgotPassword),
+                        ),
+                      TextButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => setState(() => _isSignUp = !_isSignUp),
+                        child: Text(
+                          _isSignUp
+                              ? l10n.alreadyHaveAccount
+                              : l10n.newPlayerSignUp,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -139,6 +190,45 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
       }
 
+      final pending = controller.pendingVerificationEmail;
+      if (pending != null) {
+        if (mounted) {
+          setState(() => _awaitingVerification = true);
+        }
+        return;
+      }
+
+      final authState = ref.read(authControllerProvider);
+      if (authState.hasError) {
+        _showError(authState.error.toString());
+        return;
+      }
+      if (authState.value == null) {
+        _showError(l10n.authRequired);
+        return;
+      }
+      if (mounted) {
+        await routeAfterSession(context, ref);
+      }
+    } catch (error) {
+      _showError(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _verify() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    setState(() => _isSubmitting = true);
+    try {
+      await ref.read(authControllerProvider.notifier).verifyEmailCode(
+            code: _codeController.text,
+          );
       final authState = ref.read(authControllerProvider);
       if (authState.hasError) {
         _showError(authState.error.toString());

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
+import '../../../core/backend/backend_mode.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../domain/game_master_response.dart';
@@ -25,8 +27,10 @@ class _GameMasterScreenState extends ConsumerState<GameMasterScreen> {
   @override
   Widget build(BuildContext context) {
     final gameMasterState = ref.watch(gameMasterControllerProvider);
-    final canSubmit = !AppConfig.isGameMasterRemote ||
-        AppConfig.isGameMasterBackendConfigured;
+    final canSubmit = ref.watch(serverAuthoritativeGameplayProvider)
+        ? ref.watch(backendModeProvider) == BackendMode.convex ||
+            AppConfig.isGameMasterBackendConfigured
+        : true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Maitre du jeu IA')),
@@ -36,7 +40,14 @@ class _GameMasterScreenState extends ConsumerState<GameMasterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ModeBanner(canSubmit: canSubmit),
+              _ModeBanner(
+                canSubmit: canSubmit,
+                mode: ref.watch(backendModeProvider) == BackendMode.convex
+                    ? 'Convex'
+                    : AppConfig.isGameMasterRemote
+                        ? 'remote Railway'
+                        : 'mock local',
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _actionController,
@@ -73,13 +84,13 @@ class _GameMasterScreenState extends ConsumerState<GameMasterScreen> {
 }
 
 class _ModeBanner extends StatelessWidget {
-  const _ModeBanner({required this.canSubmit});
+  const _ModeBanner({required this.canSubmit, required this.mode});
 
   final bool canSubmit;
+  final String mode;
 
   @override
   Widget build(BuildContext context) {
-    final mode = AppConfig.isGameMasterRemote ? 'remote Railway' : 'mock local';
     final message = canSubmit
         ? 'Mode MJ: $mode'
         : 'Mode remote actif, mais GAME_MASTER_BACKEND_URL est absent.';

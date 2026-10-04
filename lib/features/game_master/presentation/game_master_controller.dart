@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../access/domain/demo_ending.dart';
-import '../../access/domain/entitlement_repository.dart';
 import '../../access/domain/game_access.dart';
 import '../domain/game_master_repository.dart';
 import '../domain/game_master_response.dart';
@@ -55,7 +54,9 @@ class GameMasterController extends AsyncNotifier<GameMasterResponse?> {
     String? roomId,
     String locale,
   ) async {
-    if (AppConfig.isGameMasterRemote || roomId == null || roomId.isEmpty) {
+    if (ref.read(serverAuthoritativeGameplayProvider) ||
+        roomId == null ||
+        roomId.isEmpty) {
       return null;
     }
     final result = await ref

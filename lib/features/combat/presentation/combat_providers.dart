@@ -1,16 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
-import '../../../core/supabase/supabase_client_provider.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../game_master/domain/game_master_repository.dart';
 import '../../game_master/domain/game_master_response.dart';
-import '../data/supabase_combat_repository.dart';
-import '../domain/combat_repository.dart';
 import '../domain/combat_session.dart';
 
-final combatRepositoryProvider = Provider<CombatRepository>((ref) {
-  return SupabaseCombatRepository(ref.watch(supabaseClientProvider));
-});
+export '../../../core/backend/backend_composition.dart'
+    show combatRepositoryProvider;
 
 final roomCombatProvider =
     StreamProvider.autoDispose.family<CombatSession, String>((ref, roomId) {
@@ -30,7 +26,7 @@ final localCombatProvider =
     NotifierProvider<LocalCombatNotifier, CombatSession>(LocalCombatNotifier.new);
 
 CombatSession watchActiveCombat(WidgetRef ref, String roomId) {
-  if (AppConfig.isGameMasterRemote) {
+  if (ref.watch(serverAuthoritativeGameplayProvider)) {
     return ref.watch(roomCombatProvider(roomId)).value ??
         CombatSession.inactive();
   }
@@ -38,7 +34,7 @@ CombatSession watchActiveCombat(WidgetRef ref, String roomId) {
 }
 
 CombatSession readActiveCombat(WidgetRef ref, String roomId) {
-  if (AppConfig.isGameMasterRemote) {
+  if (ref.read(serverAuthoritativeGameplayProvider)) {
     return ref.read(roomCombatProvider(roomId)).value ??
         CombatSession.inactive();
   }
@@ -56,7 +52,7 @@ void applyLocalCombatFromResponse({
   required WidgetRef ref,
   required GameMasterResponse response,
 }) {
-  if (AppConfig.isGameMasterRemote) {
+  if (ref.read(serverAuthoritativeGameplayProvider)) {
     return;
   }
   var next = ref.read(localCombatProvider);

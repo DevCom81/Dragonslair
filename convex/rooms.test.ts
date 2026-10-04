@@ -263,3 +263,88 @@ describe("rooms start/pause/resume", () => {
     });
   });
 });
+
+describe("rooms.finish", () => {
+  test("host can finish playing or paused; non-host cannot; waiting rejected; closed is idempotent", async () => {
+    const t = backend();
+    const host = await provision(t, alice, fighterSheet, true);
+    const guest = await provision(t, bob, wizardSheet, true);
+    const room = await host.mutation(api.rooms.create, {
+      name: "Finale",
+      scenarioId: "custom",
+      scenarioName: "Finale",
+      minPlayers: 1,
+      requiredClassIds: [],
+      locale: "fr",
+    });
+    await host.mutation(api.players.join, {
+      roomId: room!._id,
+      figurineId: 1,
+    });
+
+    await expect(
+      host.mutation(api.rooms.finish, { roomId: room!._id, result: "victory" }),
+    ).rejects.toBeInstanceOf(GameRuleError);
+
+    await host.mutation(api.rooms.start, { roomId: room!._id });
+    await expect(
+      guest.mutation(api.rooms.finish, { roomId: room!._id, result: "defeat" }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    const finished = await host.mutation(api.rooms.finish, {
+      roomId: room!._id,
+      result: "victory",
+    });
+    expect(finished?.status).toBe("finished");
+    expect((finished?.ending as { result: string }).result).toBe("victory");
+    await host.run(async (ctx: MutationCtx) => {
+      const events = await ctx.db
+        .query("gameEvents")
+        .withIndex("by_room", (q) => q.eq("roomId", room!._id))
+        .collect();
+      expect(events).toHaveLength(1);
+      expect(events[0]?.type).toBe("system");
+      expect(events[0]?.content).toContain("victory");
+    });
+
+    const again = await host.mutation(api.rooms.finish, {
+      roomId: room!._id,
+      result: "defeat",
+    });
+    expect(again?.status).toBe("finished");
+    expect((again?.ending as { result: string }).result).toBe("victory");
+    await host.run(async (ctx: MutationCtx) => {
+      const events = await ctx.db
+        .query("gameEvents")
+        .withIndex("by_room", (q) => q.eq("roomId", room!._id))
+        .collect();
+      expect(events).toHaveLength(1);
+    });
+  });
+
+  test("demo host finish marks demo_finished and completes the demo session", async () => {
+    const t = backend();
+    const host = await provision(t, alice, fighterSheet, false);
+    const room = await host.mutation(api.rooms.create, {
+      name: "Demo",
+      scenarioId: "demo",
+      scenarioName: "Demo",
+      minPlayers: 1,
+      requiredClassIds: [],
+    });
+    await host.mutation(api.players.join, {
+      roomId: room!._id,
+      figurineId: 1,
+    });
+    await host.mutation(api.rooms.start, { roomId: room!._id });
+    const finished = await host.mutation(api.rooms.finish, {
+      roomId: room!._id,
+    });
+    expect(finished?.status).toBe("demo_finished");
+    expect((finished?.ending as { result: string }).result).toBe("neutral");
+    await host.run(async (ctx: MutationCtx) => {
+      const sessions = await ctx.db.query("demoSessions").collect();
+      expect(sessions[0]?.completedAt).toBeDefined();
+    });
+  });
+});

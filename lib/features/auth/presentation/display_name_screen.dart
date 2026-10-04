@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../domain/profile_repository.dart';
+import '../domain/auth_user.dart';
 import 'auth_controller.dart';
 import 'onboarding.dart';
 import 'profile_providers.dart';
@@ -33,9 +34,9 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final user = ref.watch(authControllerProvider).value;
-    if (!_prefilled && user != null && user.isAnonymous) {
+    if (!_prefilled && showsAnonymousGuestUi(user)) {
       _prefilled = true;
-      final suffix = user.id.replaceAll('-', '');
+      final suffix = user!.id.replaceAll('-', '');
       final end = suffix.length < 4 ? suffix.length : 4;
       _nameController.text = l10n.guestSuggestedName(suffix.substring(0, end));
     }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../domain/player_profile.dart';
-import '../domain/profile_repository.dart';
 import 'profile_providers.dart';
 
 Future<void> routeAfterSession(BuildContext context, WidgetRef ref) async {

@@ -20,6 +20,24 @@ export async function insertSystemEvent(
   });
 }
 
+export async function insertActionEvent(
+  ctx: MutationCtx,
+  args: {
+    roomId: Id<"rooms">;
+    playerId: Id<"players">;
+    content: string;
+    createdAt: number;
+  },
+) {
+  return await ctx.db.insert("gameEvents", {
+    roomId: args.roomId,
+    playerId: args.playerId,
+    type: "action",
+    content: args.content,
+    createdAt: args.createdAt,
+  });
+}
+
 export const listByRoom = query({
   args: { roomId: v.id("rooms") },
   handler: async (ctx, args) => {

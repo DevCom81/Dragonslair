@@ -6,6 +6,7 @@ class GooglePlayPurchaseProvider implements PurchaseProvider {
     required PlayBillingStore store,
     required String productId,
     this.userId = '',
+    this.billingIdentity,
     PlayPurchaseVerifier verifier = const UnconfiguredPlayPurchaseVerifier(),
   }) : _store = store,
        _productId = productId,
@@ -14,14 +15,19 @@ class GooglePlayPurchaseProvider implements PurchaseProvider {
   final PlayBillingStore _store;
   final String _productId;
   final String userId;
+  final Future<String> Function()? billingIdentity;
   final PlayPurchaseVerifier _verifier;
 
   @override
-  bool get canPurchase =>
-      _store.isSupported &&
-      _productId.isNotEmpty &&
-      playObfuscatedAccountId(userId).isNotEmpty &&
-      _verifier.isConfigured;
+  bool get canPurchase {
+    if (!_store.isSupported || _productId.isEmpty || !_verifier.isConfigured) {
+      return false;
+    }
+    if (billingIdentity != null) {
+      return true;
+    }
+    return playObfuscatedAccountId(userId).isNotEmpty;
+  }
 
   @override
   Future<PurchaseOffer> loadOffer() async {
@@ -38,7 +44,7 @@ class GooglePlayPurchaseProvider implements PurchaseProvider {
     }
     final result = await _store.buy(
       _productId,
-      obfuscatedAccountId: playObfuscatedAccountId(userId),
+      obfuscatedAccountId: await _obfuscatedAccountId(),
     );
     if (result.isPending || result.purchaseToken.isEmpty) {
       throw const PurchaseUnavailableException();
@@ -55,7 +61,7 @@ class GooglePlayPurchaseProvider implements PurchaseProvider {
     if (!_store.isSupported || _productId.isEmpty || !_verifier.isConfigured) {
       return;
     }
-    final accountId = playObfuscatedAccountId(userId);
+    final accountId = await _obfuscatedAccountId();
     if (accountId.isEmpty) {
       return;
     }
@@ -78,5 +84,13 @@ class GooglePlayPurchaseProvider implements PurchaseProvider {
         continue;
       }
     }
+  }
+
+  Future<String> _obfuscatedAccountId() async {
+    final resolve = billingIdentity;
+    if (resolve != null) {
+      return resolve();
+    }
+    return playObfuscatedAccountId(userId);
   }
 }

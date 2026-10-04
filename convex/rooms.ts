@@ -4,7 +4,8 @@ import { v } from "convex/values";
 import { accessLevelForUser } from "./lib/access";
 import { requireHost, requireIdentity, requireReadableRoom, requireUser } from "./lib/auth";
 import { GameRuleError, NotFoundError } from "./lib/errors";
-import { roomLocale } from "./lib/validators";
+import { gameEndingResult, roomLocale } from "./lib/validators";
+import { applyFinishToRoom } from "./lib/finishRoom";
 import { insertSystemEvent } from "./gameEvents";
 import type { Id } from "./_generated/dataModel";
 
@@ -347,5 +348,32 @@ export const resume = mutation({
     await ctx.db.patch(room._id, { status: "playing" });
     await unfreezeDemoClockOnResume(ctx, room._id, now);
     return await ctx.db.get(room._id);
+  },
+});
+
+export const finish = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    result: v.optional(gameEndingResult),
+  },
+  handler: async (ctx, args) => {
+    const { room } = await requireHost(ctx, args.roomId);
+    if (room.status === "finished" || room.status === "demo_finished") {
+      return room;
+    }
+    if (room.status !== "playing" && room.status !== "paused") {
+      throw new GameRuleError("Impossible de terminer la partie.");
+    }
+    const finished = await applyFinishToRoom(ctx, room._id, {
+      result: args.result ?? "neutral",
+    });
+    if (finished.summary !== null) {
+      await insertSystemEvent(ctx, {
+        roomId: room._id,
+        content: finished.summary,
+        createdAt: Date.now(),
+      });
+    }
+    return finished.room ?? (await ctx.db.get(room._id));
   },
 });

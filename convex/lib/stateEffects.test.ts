@@ -7,6 +7,8 @@ import {
   canResolvePendingRoll,
   combatContextFromRow,
   consumePotion,
+  consumeScroll,
+  setEquipped,
   effectiveModifierFromRow,
   enemyStatusForHp,
   flattenPositionPayload,
@@ -240,6 +242,43 @@ describe("stateEffects python oracle", () => {
       "potion",
     );
     expect(empty.heal).toBe(0);
+    expect(empty.inventory).toHaveLength(1);
+  });
+
+  test("setEquipped toggles one slot per type", () => {
+    const inventory = [
+      { id: "sword", name: "Epee", type: "weapon", equipped: false },
+      { id: "axe", name: "Hache", type: "weapon", equipped: false },
+      { id: "potion", name: "Potion", type: "potion", equipped: false },
+    ];
+    const equipped = setEquipped(inventory, "sword", true);
+    expect(equipped[0]?.equipped).toBe(true);
+    const swapped = setEquipped(equipped, "axe", true);
+    expect(swapped[0]?.equipped).toBe(false);
+    expect(swapped[1]?.equipped).toBe(true);
+    expect(setEquipped(inventory, "potion", true)).toEqual(inventory);
+  });
+
+  test("consumeScroll applies granted effect and consumes stock", () => {
+    const used = consumeScroll(
+      [
+        {
+          id: "scroll",
+          name: "Parchemin",
+          type: "scroll",
+          quantity: 1,
+          effect: { id: "bless", name: "Bless", kind: "buff", stat: "strength", delta: 2 },
+        },
+      ],
+      "scroll",
+    );
+    expect(used.effect?.id).toBe("bless");
+    expect(used.inventory).toEqual([]);
+    const empty = consumeScroll(
+      [{ id: "scroll", name: "Parchemin", type: "scroll", quantity: 1 }],
+      "scroll",
+    );
+    expect(empty.effect).toBeNull();
     expect(empty.inventory).toHaveLength(1);
   });
 });

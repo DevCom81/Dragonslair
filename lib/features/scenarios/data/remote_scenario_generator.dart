@@ -6,15 +6,17 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../../../core/errors/app_exception.dart';
 import '../domain/custom_scenario_draft.dart';
+import '../domain/scenario_generator.dart';
 import '../domain/world_state.dart';
 
-class RemoteScenarioGenerator {
+class RemoteScenarioGenerator implements ScenarioGenerator {
   const RemoteScenarioGenerator({this.accessToken, http.Client? client})
     : _client = client;
 
   final String? accessToken;
   final http.Client? _client;
 
+  @override
   Future<Map<String, dynamic>> generate({
     required String roomId,
     required CustomScenarioDraft draft,

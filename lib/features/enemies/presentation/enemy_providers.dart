@@ -1,13 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/supabase/supabase_client_provider.dart';
-import '../data/supabase_enemy_repository.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../domain/enemy.dart';
-import '../domain/enemy_repository.dart';
 
-final enemyRepositoryProvider = Provider<EnemyRepository>((ref) {
-  return SupabaseEnemyRepository(ref.watch(supabaseClientProvider));
-});
+export '../../../core/backend/backend_composition.dart' show enemyRepositoryProvider;
 
 final roomEnemiesProvider =
     StreamProvider.autoDispose.family<List<Enemy>, String>((ref, roomId) {

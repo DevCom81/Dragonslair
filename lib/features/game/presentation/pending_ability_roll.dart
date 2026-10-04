@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/theme/app_colors.dart';
@@ -210,6 +211,14 @@ Future<void> resolvePendingAbilityRoll({
   final roll = dice.roll(count: 1, sides: 20).values.first;
   final pendingId = pending.id;
 
+  if (pendingId != null && ref.read(useServerPendingRollsProvider)) {
+    await ref.read(gameplayCommandsProvider).resolveServerRoll(
+          pendingRollId: pendingId,
+          raw: roll,
+        );
+    return;
+  }
+
   if (pendingId != null && AppConfig.isGameMasterRemote) {
     await ref
         .read(gameMasterControllerProvider.notifier)
@@ -232,15 +241,15 @@ Future<void> resolvePendingAbilityRoll({
   final success = total >= pending.dc;
   final outcome = success ? successLabel : failureLabel;
   final sign = modifier >= 0 ? '+$modifier' : '$modifier';
-  final content =
-      '${player.figurineName} : 1d20=$roll $sign = $total vs DD ${pending.dc}. $outcome';
+  final outcomeText =
+      '1d20=$roll $sign = $total vs DD ${pending.dc}. $outcome';
+  final content = '${player.figurineName} : $outcomeText';
 
-  final events = ref.read(gameEventRepositoryProvider);
-  await events.createAction(
-    roomId: roomId,
-    playerId: player.id,
-    content: content,
-  );
+  await ref.read(gameplayCommandsProvider).submitAction(
+        roomId: roomId,
+        player: player,
+        content: outcomeText,
+      );
 
   try {
     final response = await ref

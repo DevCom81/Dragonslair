@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
@@ -9,7 +10,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../dice/domain/dice_roll_service.dart';
 import '../../scenarios/domain/scenario_definition.dart';
 import '../domain/character_stats.dart';
-import '../domain/profile_repository.dart';
 import 'auth_controller.dart';
 import 'onboarding.dart';
 import 'profile_providers.dart';

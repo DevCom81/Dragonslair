@@ -7,7 +7,8 @@ import '../../../core/l10n/language_button.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../auth/presentation/auth_controller.dart';
+import '../../auth/domain/current_domain_user.dart';
+import '../../auth/presentation/current_domain_user.dart';
 import '../../music/presentation/music_controller.dart';
 import '../../figurines/domain/figurine_definition.dart';
 import '../../figurines/presentation/figurine_sprite.dart';
@@ -26,7 +27,7 @@ class LobbyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final roomState = ref.watch(roomProvider(roomId));
     final playersState = ref.watch(roomPlayersProvider(roomId));
-    final user = ref.watch(authControllerProvider).value;
+    final domainUserId = ref.watch(currentDomainUserIdProvider).value;
 
     ref.listen(roomProvider(roomId), (_, next) {
       final room = next.value;
@@ -59,7 +60,7 @@ class LobbyScreen extends ConsumerWidget {
               );
             }
 
-            final isHost = user != null && user.id == room.hostId;
+            final isHost = isCurrentDomainUser(domainUserId, room.hostId);
 
             return playersState.when(
               data: (players) {

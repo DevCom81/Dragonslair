@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'core/backend/backend_bootstrap.dart';
 import 'core/config/app_config.dart';
 import 'core/l10n/locale_controller.dart';
 import 'features/music/data/windows_audio_init.dart';
@@ -19,7 +20,10 @@ Future<void> main() async {
     // The app can still start with --dart-define values or local mock mode.
   }
 
-  if (AppConfig.isSupabaseConfigured) {
+  final backendMode = AppConfig.backendMode;
+  ensureSupportedBackendMode(backendMode);
+
+  if (shouldInitializeSupabase(backendMode)) {
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
       publishableKey: AppConfig.supabaseAnonKey,

@@ -111,6 +111,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authRequired => 'Authentication required.';
 
   @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get emailVerificationTitle => 'Verify email';
+
+  @override
+  String get emailVerificationHint =>
+      'Enter the code sent by email before continuing.';
+
+  @override
+  String get verificationCode => 'Verification code';
+
+  @override
+  String get verifyEmail => 'Verify';
+
+  @override
+  String get passwordResetTitle => 'Reset password';
+
+  @override
+  String get passwordResetHint =>
+      'Enter your email. If an account exists, a message will be sent.';
+
+  @override
+  String get passwordResetSent =>
+      'If an account exists for this address, a password reset email has been sent.';
+
+  @override
+  String get resetToken => 'Token from email';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get sendResetEmail => 'Send email';
+
+  @override
+  String get confirmNewPassword => 'Set password';
+
+  @override
+  String get convexConfigMissing => 'Convex configuration is missing.';
+
+  @override
   String get displayNameTitle => 'Your display name';
 
   @override

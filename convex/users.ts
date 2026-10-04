@@ -66,6 +66,7 @@ export const ensureUser = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await requireIdentity(ctx);
+    // Migrated users are found by WorkOS subject; legacyUuid is never cleared.
     const existing = await usersForSubject(ctx, identity.subject);
     if (existing.length > 0) {
       const user = oldestUser(existing);

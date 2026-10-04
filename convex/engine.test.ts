@@ -123,6 +123,10 @@ type ForbiddenPublicPlayerKeys = Extract<
   keyof typeof api.players,
   "damagePlayer" | "healPlayer" | "spawnEnemy"
 >;
+type ForbiddenPublicEventKeys = Extract<
+  keyof typeof api.gameEvents,
+  "create" | "createAction" | "createNarration" | "createSystem"
+>;
 
 describe("LOT 6 game engine", () => {
   test("public API does not expose GM applyActions or engine primitives", () => {
@@ -133,9 +137,13 @@ describe("LOT 6 game engine", () => {
     const noPublicPlayerEngineMutations: ForbiddenPublicPlayerKeys extends never
       ? true
       : false = true;
+    const noPublicGenericEvents: ForbiddenPublicEventKeys extends never
+      ? true
+      : false = true;
     expect(applyActionsIsNotPublic).toBe(false);
     expect(noPublicEnemyEngineMutations).toBe(true);
     expect(noPublicPlayerEngineMutations).toBe(true);
+    expect(noPublicGenericEvents).toBe(true);
     expect(internal.applyActions.applyGameMasterActions).toBeDefined();
   });
 

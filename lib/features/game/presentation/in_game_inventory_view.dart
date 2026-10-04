@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
+import '../../../core/backend/backend_composition.dart';
 import '../../../core/l10n/l10n_labels.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
@@ -94,19 +94,12 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
     setState(() => _busyItemId = item.id);
     final l10n = AppLocalizations.of(context);
     try {
-      final next = setEquipped(
-        inventory: player.inventory,
-        itemId: item.id,
-        equipped: equipped,
-      );
-      await ref
-          .read(playerRepositoryProvider)
-          .patchOwnPlayer(playerId: player.id, inventory: next);
-      await ref
-          .read(gameEventRepositoryProvider)
-          .createSystem(
+      await ref.read(gameplayCommandsProvider).setItemEquipped(
             roomId: widget.roomId,
-            content: equipped
+            player: player,
+            itemId: item.id,
+            equipped: equipped,
+            systemContent: equipped
                 ? '${player.figurineName} : ${l10n.itemEquip} ${item.name}'
                 : '${player.figurineName} : ${l10n.itemUnequip} ${item.name}',
           );
@@ -141,24 +134,10 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
   }
 
   Future<void> _usePotion(Player player, InventoryItem item) async {
-    final result = consumePotion(inventory: player.inventory, itemId: item.id);
-    if (result.heal <= 0) {
-      return;
-    }
-    final nextHp = (player.hp + result.heal).clamp(0, 100);
-    await ref
-        .read(playerRepositoryProvider)
-        .patchOwnPlayer(
-          playerId: player.id,
-          hp: nextHp,
-          inventory: result.inventory,
-        );
-    await ref
-        .read(gameEventRepositoryProvider)
-        .createSystem(
+    await ref.read(gameplayCommandsProvider).usePotion(
           roomId: widget.roomId,
-          content:
-              '${player.figurineName} : ${item.name} (+${result.heal} PV, ${player.hp} -> $nextHp)',
+          player: player,
+          item: item,
         );
   }
 
@@ -169,31 +148,20 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
   ) async {
     final result = consumeScroll(inventory: player.inventory, itemId: item.id);
     if (result.effect != null) {
-      await ref
-          .read(playerRepositoryProvider)
-          .patchOwnPlayer(
-            playerId: player.id,
-            inventory: result.inventory,
-            effects: upsertEffect(player.effects, result.effect!),
-          );
-      await ref
-          .read(gameEventRepositoryProvider)
-          .createSystem(
+      await ref.read(gameplayCommandsProvider).useGrantedScroll(
             roomId: widget.roomId,
-            content:
-                '${player.figurineName} : ${item.name} (${result.effect!.name})',
+            player: player,
+            item: item,
           );
       return;
     }
 
     final l10n = AppLocalizations.of(context);
     final content = '${l10n.actionUseItem} : ${item.name}';
-    await ref
-        .read(gameEventRepositoryProvider)
-        .createAction(
+    await ref.read(gameplayCommandsProvider).submitAction(
           roomId: widget.roomId,
-          playerId: player.id,
-          content: '${player.figurineName} : $content',
+          player: player,
+          content: content,
         );
     final response = await ref
         .read(gameMasterControllerProvider.notifier)
@@ -210,7 +178,7 @@ class _InGameInventoryViewState extends ConsumerState<InGameInventoryView> {
             locale: localeForRoom(ref, widget.roomId),
           ),
         );
-    if (!AppConfig.isGameMasterRemote) {
+      if (!ref.read(serverAuthoritativeGameplayProvider)) {
       ref
           .read(pendingAbilityRollProvider.notifier)
           .setRoll(pendingRollFromResponse(response));

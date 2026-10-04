@@ -111,6 +111,66 @@ export const refreshSession = action({
   },
 });
 
+const WORKOS_USERS_URL = "https://api.workos.com/user_management/users";
+const WORKOS_PASSWORD_RESET_URL =
+  "https://api.workos.com/user_management/password_reset";
+
+export const signUpWithPassword = action({
+  args: {
+    email: v.string(),
+    password: v.string(),
+  },
+  handler: async (_ctx, args): Promise<SignInResult> => {
+    const credentials = workosCredentials();
+    const email = args.email.trim();
+    if (!email || !args.password) {
+      throw new Error("Email and password are required.");
+    }
+
+    const created = await postWorkosJson(WORKOS_USERS_URL, {
+      apiKey: credentials.apiKey,
+      body: { email, password: args.password },
+    });
+    if (!created.ok && !isExistingUserConflict(created.json)) {
+      throw new Error("Unable to create the account.");
+    }
+    if (!created.ok && isExistingUserConflict(created.json)) {
+      throw new Error("Unable to create the account.");
+    }
+
+    const payload = await postAuthenticate({
+      client_id: credentials.clientId,
+      client_secret: credentials.apiKey,
+      grant_type: "password",
+      email,
+      password: args.password,
+    });
+    return toSignInResult(payload);
+  },
+});
+
+export const requestPasswordReset = action({
+  args: {
+    email: v.string(),
+  },
+  handler: async (_ctx, args): Promise<{ status: "sent" }> => {
+    const credentials = workosCredentials();
+    const email = args.email.trim();
+    if (!email) {
+      throw new Error("Email is required.");
+    }
+    try {
+      await postWorkosJson(WORKOS_PASSWORD_RESET_URL, {
+        apiKey: credentials.apiKey,
+        body: { email },
+      });
+    } catch {
+      // Timing and existence must not leak to the client.
+    }
+    return { status: "sent" };
+  },
+});
+
 function workosCredentials(): { apiKey: string; clientId: string } {
   const apiKey = process.env.WORKOS_API_KEY?.trim();
   const clientId = process.env.WORKOS_CLIENT_ID?.trim();
@@ -130,6 +190,31 @@ async function postAuthenticate(
   });
   const json: unknown = await response.json().catch(() => null);
   return { ok: response.ok, status: response.status, json };
+}
+
+async function postWorkosJson(
+  url: string,
+  args: { apiKey: string; body: Record<string, string> },
+): Promise<{ ok: boolean; status: number; json: unknown }> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${args.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args.body),
+  });
+  const json: unknown = await response.json().catch(() => null);
+  return { ok: response.ok, status: response.status, json };
+}
+
+function isExistingUserConflict(json: unknown): boolean {
+  const code = readStringField(json, "code") ?? readStringField(json, "error");
+  return (
+    code === "email_not_available" ||
+    code === "user_already_exists" ||
+    code === "entity_already_exists"
+  );
 }
 
 function toSignInResult(payload: {
